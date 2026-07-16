@@ -28,7 +28,7 @@ The full feature set is defined in the course spec PDF. This document restates t
 | Architecture | MVVM with Unidirectional Data Flow (UDF) |
 | State | `StateFlow<UiState>` in ViewModel, collected in Compose with `collectAsStateWithLifecycle()` |
 | One-time events | `SharedFlow` or `Channel` (e.g. snackbar errors) |
-| DI | TBD — Hilt or Koin, to be confirmed at team meeting |
+| DI | Hilt |
 | Backend | PocketBase (self-hosted, run by a teammate) |
 | Local DB | Room (offline cache for chat history, search history, downloads metadata, favorites) |
 | Preferences | DataStore Preferences (language, theme, premium status) |
@@ -36,7 +36,7 @@ The full feature set is defined in the course spec PDF. This document restates t
 | Background work | WorkManager (downloads) |
 | Realtime | TBD — PocketBase SSE realtime endpoint if available, fallback strategy TBD |
 | Networking | OkHttp / Ktor-client — TBD |
-| Image loading | Coil — TBD |
+| Image loading | Coil |
 | Paging | Paging 3 (required by spec for all long lists) |
 | Navigation | Compose Navigation library |
 
@@ -91,7 +91,7 @@ The app uses a custom `MaterialTheme` with `Colors`, `Typography`, and `Shapes`.
 - One-time events (snackbar messages, navigation) use `SharedFlow` or `Channel`.
 
 ### 5.3 Dependency injection
-- [TBD by team — Hilt or Koin]
+- Use Hilt.
 - Repositories, use-cases, databases, network clients must be injected (not constructed in-place).
 
 ### 5.4 Paging 3
@@ -622,19 +622,17 @@ Per the course spec:
 ## 21. Open Questions (to resolve at 19 Tir 20:00 team meeting)
 
 1. **PocketBase realtime:** SSE endpoint enabled? Who confirms?
-2. **DI library:** Hilt or Koin? All three teammates must agree.
-3. **Hilt vs manual DI:** If teammates use Hilt globally, can Sina's slice also use Hilt, or is manual DI acceptable?
-4. **Shared `MaterialTheme`:** Which teammate owns the design system file?
-5. **Shared services (UserService, AuthService, PlayerService, ThemeManager):** Who owns each?
-6. **Profile tab ownership:** Sina planned to own the follow lists + settings entry, but not the rest of the Profile tab. Confirm split.
-7. **Logout policy:** Does logging out clear Sina's offline chat cache?
-8. **Logout behavior on cached songs:** What happens to downloads on logout?
-9. **Search endpoint:** Backend owner to confirm what PocketBase collections and fields are searchable.
-10. **Song catalog minimum:** Spec requires at least 50 real songs. Who curates the list? Where do audio files live?
-11. **Git workflow:** Branch strategy (trunk-based? feature branches?), PR review rules, daily sync time.
-12. **Code style / formatter:** ktlint? detekt? Standard Android Studio formatter?
-13. **Paging 3 in chat history v1:** Spec requires it for long lists, but Sina's slice can defer to a v1.5 if time-constrained. Confirm.
-14. **Visualizer:** Canvas-drawn waveform in the full player. Who owns this?
+2. **Shared `MaterialTheme`:** Which teammate owns the design system file?
+3. **Shared services (UserService, AuthService, PlayerService, ThemeManager):** Who owns each?
+4. **Profile tab ownership:** Sina planned to own the follow lists + settings entry, but not the rest of the Profile tab. Confirm split.
+5. **Logout policy:** Does logging out clear Sina's offline chat cache?
+6. **Logout behavior on cached songs:** What happens to downloads on logout?
+7. **Search endpoint:** Backend owner to confirm what PocketBase collections and fields are searchable.
+8. **Song catalog minimum:** Spec requires at least 50 real songs. Who curates the list? Where do audio files live?
+9. **Git workflow:** Branch strategy (trunk-based? feature branches?), PR review rules, daily sync time.
+10. **Code style / formatter:** ktlint? detekt? Standard Android Studio formatter?
+11. **Paging 3 in chat history v1:** Spec requires it for long lists, but Sina's slice can defer to a v1.5 if time-constrained. Confirm.
+12. **Visualizer:** Canvas-drawn waveform in the full player. Who owns this?
 
 ---
 

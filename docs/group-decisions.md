@@ -31,47 +31,59 @@ If this guide conflicts with the Android Skills, stop and ask the developer whic
 
 Use the following package and folder structure unless a new folder is explicitly agreed on.
 
-### `ui`
+```text
+.
+├── ui/
+│   ├── navigation/
+│   │   └── AppNavGraph.kt
+│   ├── theme/
+│   ├── screens/
+│   └── components/
+├── repository/
+├── model/
+├── domain/ (optional)
+├── di/
+├── data/
+│   ├── settings/
+│   ├── serialization/ (optional)
+│   ├── local/
+│   │   ├── entity/
+│   │   ├── dao/
+│   │   ├── database/
+│   │   └── converter/ (optional)
+│   └── remote/
+└── util/ (optional)
+```
 
-Contains UI-related files, navigation, themes, and ViewModels.
+### Folder Responsibilities
 
-- `ui/navigation`: app navigation graph, including `AppNavGraph.kt`.
-- `ui/theme`: colors, typography, shapes, and app theme.
-- `ui/screens`: one folder per screen. Each screen folder contains its composables and ViewModel.
-- `ui/components`: reusable composables used by more than one screen. Group related components into their own files.
+- `ui/`: UI-related files, navigation, themes, and ViewModels.
+- `ui/navigation/`: app navigation graph, including `AppNavGraph.kt`.
+- `ui/theme/`: colors, typography, shapes, and app theme.
+- `ui/screens/`: one folder per screen. Each screen folder contains its composables and ViewModel.
+- `ui/components/`: reusable composables used by more than one screen. Group related components into their own files.
+- `repository/`: repository interfaces and implementations.
+- `model/`: UI-facing models such as data classes, enum classes, data objects, and similar model types.
+- `domain/` (optional): business logic and use cases that sit between UI and data when that extra layer is useful.
+- `di/`: Hilt dependency injection modules.
+- `data/`: data-related files.
+- `data/settings/`: app settings storage and restoration.
+- `data/serialization/` (optional): serialization helpers, such as a `JsonProvider` if needed.
+- `data/local/`: local database files.
+- `data/local/entity/`: database entities and tables.
+- `data/local/dao/`: DAOs.
+- `data/local/database/`: app database definitions.
+- `data/local/converter/` (optional): converters for SQLite-compatible values and back.
+- `data/remote/`: networking files.
+- `util/` (optional): truly shared generic helpers.
 
-If a UI file does not clearly fit these categories, discuss whether it belongs directly under `ui` or in a new/existing subfolder.
+If a UI file does not clearly fit the existing categories, discuss whether it belongs directly under `ui/` or in a new/existing subfolder.
 
-### `repository`
+Use `domain/` only when it removes real complexity. Good domain candidates include use cases that combine multiple repositories, enforce product rules, or contain business logic reused by multiple ViewModels. Examples include checking whether a user can download a song, validating playlist names, building a home feed from multiple sources, or applying premium/playback rules.
 
-Contains repository interfaces and implementations.
+Do not create domain use cases that only call one repository method with no extra logic. Simple calls can stay in the ViewModel or repository. The domain layer is optional, so add it feature by feature when it is really necessary.
 
-### `model`
-
-Contains UI-facing models such as data classes, enum classes, data objects, and similar model types.
-
-### `di`
-
-Contains Hilt dependency injection modules.
-
-### `data`
-
-Contains data-related files.
-
-- `data/settings`: app settings storage and restoration.
-- `data/serialization`: serialization helpers, such as a `JsonProvider` if needed.
-- `data/local`: local database files.
-- `data/local/entity`: database entities and tables.
-- `data/local/dao`: DAOs.
-- `data/local/database`: app database definitions.
-- `data/local/converter`: converters for SQLite-compatible values and back.
-- `data/remote`: networking files.
-
-### `util`
-
-Contains functions or classes used across the project.
-
-Avoid adding to `util` unless the helper is truly shared. Overusing this folder increases coupling.
+Avoid adding to `util/` unless the helper is generic and truly shared. Overusing this folder increases coupling.
 
 ## Adding New Folders
 
