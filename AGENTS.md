@@ -192,7 +192,8 @@ Required preview coverage:
 All project diagrams must be maintained in Eraser.
 
 - Workspace/team: Parsa's Team 2.
-- Project name: Android Project.
+- Project name: Android Project. In Eraser MCP/API terms, this project is an Eraser file named `Android Project`, not a separate project object.
+- When locating the project in Eraser, use the file listing API (`list_files`) in Parsa's Team 2 and select the file titled `Android Project`. Do not rely only on search-by-title, because search may return no results even when the file exists.
 - Use diagram-as-code for architecture diagrams, process diagrams, feature graphs, and ERDs.
 - Arrange components cleanly when the API allows positioning.
 - Show all processes, graphs, and ERDs in Eraser.
