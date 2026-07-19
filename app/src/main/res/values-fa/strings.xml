@@ -1,10 +1,16 @@
 <resources>
     <string name="app_name">فیوزیک</string>
     <string name="nav_home">خانه</string>
-    <string name="nav_favorites">علاقه مندی ها</string>
+    <string name="nav_search">جستجو</string>
+    <string name="nav_downloads">دانلودها</string>
+    <string name="nav_playlists">پلی لیست ها</string>
     <string name="nav_profile">نمایه</string>
-    <string name="greeting_format">سلام %1$s!</string>
-    <string name="android_sample_name">اندروید</string>
+    <string name="shell_cd_profile">باز کردن نمایه</string>
+    <string name="shell_cd_notifications">باز کردن اعلان ها</string>
+    <string name="shell_cd_settings">باز کردن تنظیمات</string>
+    <string name="shell_cd_play_pause">پخش یا توقف آهنگ فعلی</string>
+    <string name="shell_cd_open_player">باز کردن پخش کننده</string>
+    <string name="shell_now_playing">در حال پخش</string>
     <string name="action_retry">تلاش دوباره</string>
     <string name="action_view_all">مشاهده همه</string>
     <string name="action_remove">حذف</string>
