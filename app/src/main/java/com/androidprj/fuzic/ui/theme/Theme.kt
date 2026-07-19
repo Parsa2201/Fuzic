@@ -77,6 +77,7 @@ fun FuzicTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = FuzicShapes,
         content = content
     )
 }
