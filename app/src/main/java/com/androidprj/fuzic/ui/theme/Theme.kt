@@ -1,6 +1,5 @@
 package com.androidprj.fuzic.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -12,32 +11,57 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = MidnightVioletDark,
+    onPrimary = OnDarkAccent,
+    primaryContainer = MidnightViolet,
+    onPrimaryContainer = OnDarkAccent,
+    secondary = ElectricTealDark,
+    onSecondary = OnDarkAccent,
+    secondaryContainer = ElectricTeal,
+    onSecondaryContainer = OnDarkAccent,
+    tertiary = PremiumGoldDark,
+    onTertiary = OnGold,
+    tertiaryContainer = PremiumGold,
+    onTertiaryContainer = OnGold,
+    error = MidnightErrorDark,
+    onError = OnDarkAccent,
+    background = MidnightBackgroundDark,
+    onBackground = MidnightOnDark,
+    surface = MidnightSurfaceDark,
+    onSurface = MidnightOnDark,
+    surfaceVariant = MidnightSurfaceVariantDark,
+    onSurfaceVariant = OnMidnightSurfaceVariantDark,
+    outline = MidnightOutlineDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = MidnightVioletLight,
+    onPrimary = OnDarkAccent,
+    primaryContainer = MidnightVioletContainerLight,
+    onPrimaryContainer = OnMidnightVioletContainerLight,
+    secondary = ElectricTealLight,
+    onSecondary = OnDarkAccent,
+    secondaryContainer = ElectricTealContainerLight,
+    onSecondaryContainer = OnElectricTealContainerLight,
+    tertiary = PremiumGoldLight,
+    onTertiary = OnDarkAccent,
+    tertiaryContainer = PremiumGoldContainerLight,
+    onTertiaryContainer = OnPremiumGoldContainerLight,
+    error = MidnightErrorLight,
+    onError = OnDarkAccent,
+    background = MidnightBackgroundLight,
+    onBackground = MidnightOnLight,
+    surface = MidnightSurfaceLight,
+    onSurface = MidnightOnLight,
+    surfaceVariant = MidnightSurfaceVariantLight,
+    onSurfaceVariant = OnMidnightSurfaceVariantLight,
+    outline = MidnightOutlineLight
 )
 
 @Composable
 fun FuzicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
