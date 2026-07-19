@@ -96,4 +96,25 @@
     <string name="preview_playlist_song_count_large">۵۲ آهنگ</string>
     <string name="preview_playlist_song_count_medium">۲۸ آهنگ</string>
     <string name="preview_playlist_song_count_small">۱۲ آهنگ</string>
+    <string name="profile_edit">ویرایش نمایه</string>
+    <string name="profile_premium_badge">پریمیوم</string>
+    <string name="profile_stat_followers">دنبال کننده</string>
+    <string name="profile_stat_following">دنبال شونده</string>
+    <string name="profile_stat_playlists">پلی لیست</string>
+    <string name="profile_entry_followers">دنبال کننده ها</string>
+    <string name="profile_entry_following">دنبال شونده ها</string>
+    <string name="profile_entry_liked_songs">آهنگ های پسندیده</string>
+    <string name="profile_entry_recently_played">پخش شده های اخیر</string>
+    <string name="profile_entry_settings">تنظیمات</string>
+    <string name="profile_entry_chat">چت</string>
+    <string name="profile_entry_logout">خروج</string>
+    <string name="profile_empty_title">نمایه در دسترس نیست</string>
+    <string name="profile_empty_message">برای دیدن نمایه دوباره وارد شو.</string>
+    <string name="profile_error_title">نمایه بارگذاری نشد</string>
+    <string name="profile_error_message">اتصال خود را بررسی کن و نمایه را تازه سازی کن.</string>
+    <string name="preview_profile_username">@parsa</string>
+    <string name="preview_profile_display_name">پارسا</string>
+    <string name="preview_profile_followers_count">۱.۲ هزار</string>
+    <string name="preview_profile_following_count">۳۴۲</string>
+    <string name="preview_profile_playlists_count">۱۸</string>
 </resources>

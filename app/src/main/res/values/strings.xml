@@ -96,4 +96,25 @@
     <string name="preview_playlist_song_count_large">52 songs</string>
     <string name="preview_playlist_song_count_medium">28 songs</string>
     <string name="preview_playlist_song_count_small">12 songs</string>
+    <string name="profile_edit">Edit profile</string>
+    <string name="profile_premium_badge">Premium</string>
+    <string name="profile_stat_followers">Followers</string>
+    <string name="profile_stat_following">Following</string>
+    <string name="profile_stat_playlists">Playlists</string>
+    <string name="profile_entry_followers">Followers</string>
+    <string name="profile_entry_following">Following</string>
+    <string name="profile_entry_liked_songs">Liked songs</string>
+    <string name="profile_entry_recently_played">Recently played</string>
+    <string name="profile_entry_settings">Settings</string>
+    <string name="profile_entry_chat">Chat</string>
+    <string name="profile_entry_logout">Logout</string>
+    <string name="profile_empty_title">Profile unavailable</string>
+    <string name="profile_empty_message">Sign in again to view your profile.</string>
+    <string name="profile_error_title">Profile could not load</string>
+    <string name="profile_error_message">Check your connection and refresh your profile.</string>
+    <string name="preview_profile_username">@parsa</string>
+    <string name="preview_profile_display_name">Parsa</string>
+    <string name="preview_profile_followers_count">1.2K</string>
+    <string name="preview_profile_following_count">342</string>
+    <string name="preview_profile_playlists_count">18</string>
 </resources>
