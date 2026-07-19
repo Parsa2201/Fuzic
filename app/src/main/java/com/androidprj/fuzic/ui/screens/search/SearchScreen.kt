@@ -349,8 +349,12 @@ private fun SearchResultRow(
             }
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                border = BorderStroke(
+                    width = SearchSizes.ResultBadgeBorderWidth,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                )
             ) {
                 Text(
                     text = stringResource(item.type.labelRes),
@@ -460,6 +464,7 @@ private object SearchSizes {
     val HistoryChipHeight = 64.dp
     val HistoryChipBorderWidth = 1.dp
     val HistoryIconSize = 32.dp
+    val ResultBadgeBorderWidth = 1.dp
     val ResultArtworkSize = 56.dp
     val MessageIconContainerSize = 72.dp
     val TitleSkeletonWidth = 180.dp
