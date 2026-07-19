@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">فیوزیک</string>
+    <string name="nav_home">خانه</string>
+    <string name="nav_favorites">علاقه مندی ها</string>
+    <string name="nav_profile">نمایه</string>
+    <string name="greeting_format">سلام %1$s!</string>
+    <string name="android_sample_name">اندروید</string>
+</resources>

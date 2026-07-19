@@ -9,6 +9,8 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 
 private val DarkColorScheme = darkColorScheme(
     primary = MidnightVioletDark,
@@ -76,7 +78,11 @@ fun FuzicTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
+        typography = if (LocalLayoutDirection.current == LayoutDirection.Rtl) {
+            PersianTypography
+        } else {
+            Typography
+        },
         shapes = FuzicShapes,
         content = content
     )

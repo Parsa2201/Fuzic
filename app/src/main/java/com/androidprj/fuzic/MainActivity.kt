@@ -21,8 +21,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.annotation.StringRes
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 
 class MainActivity : ComponentActivity() {
@@ -49,10 +51,10 @@ fun FuzicApp() {
                     icon = {
                         Icon(
                             it.icon,
-                            contentDescription = it.label
+                            contentDescription = stringResource(it.labelRes)
                         )
                     },
-                    label = { Text(it.label) },
+                    label = { Text(stringResource(it.labelRes)) },
                     selected = it == currentDestination,
                     onClick = { currentDestination = it }
                 )
@@ -61,7 +63,7 @@ fun FuzicApp() {
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             Greeting(
-                name = "Android",
+                name = stringResource(R.string.android_sample_name),
                 modifier = Modifier.padding(innerPadding)
             )
         }
@@ -69,18 +71,18 @@ fun FuzicApp() {
 }
 
 enum class AppDestinations(
-    val label: String,
+    @StringRes val labelRes: Int,
     val icon: ImageVector,
 ) {
-    HOME("Home", Icons.Default.Home),
-    FAVORITES("Favorites", Icons.Default.Favorite),
-    PROFILE("Profile", Icons.Default.AccountBox),
+    HOME(R.string.nav_home, Icons.Default.Home),
+    FAVORITES(R.string.nav_favorites, Icons.Default.Favorite),
+    PROFILE(R.string.nav_profile, Icons.Default.AccountBox),
 }
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
-        text = "Hello $name!",
+        text = stringResource(R.string.greeting_format, name),
         modifier = modifier
     )
 }

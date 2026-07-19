@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Fuzic</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_profile">Profile</string>
+    <string name="greeting_format">Hello %1$s!</string>
+    <string name="android_sample_name">Android</string>
 </resources>
