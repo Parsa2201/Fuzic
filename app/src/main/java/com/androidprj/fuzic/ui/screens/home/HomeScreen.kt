@@ -58,6 +58,7 @@ import com.androidprj.fuzic.model.HomeMusicSection
 import com.androidprj.fuzic.model.HomeQuickAction
 import com.androidprj.fuzic.model.HomeUiState
 import com.androidprj.fuzic.ui.components.SectionHeader
+import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
@@ -266,10 +267,32 @@ private fun DailyPickCard(
                         )
                     )
                 )
-                .padding(MaterialTheme.spacing.large),
-            contentAlignment = Alignment.BottomStart
         ) {
-            Column {
+            if (!item.artworkUrl.isNullOrBlank()) {
+                MusicArtwork(
+                    artworkUrl = item.artworkUrl,
+                    fallbackIcon = Icons.Default.Album,
+                    contentDescription = item.title,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.scrim.copy(alpha = 0f),
+                                    MaterialTheme.colorScheme.scrim.copy(alpha = 0.68f)
+                                )
+                            )
+                        )
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(MaterialTheme.spacing.large)
+            ) {
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.headlineMedium,
@@ -437,21 +460,14 @@ private fun MusicCard(
             .width(HomeSizes.MusicCardWidth)
             .clickable(onClick = onClick)
     ) {
-        Box(
+        MusicArtwork(
+            artworkUrl = item.artworkUrl,
+            fallbackIcon = Icons.Default.Album,
+            contentDescription = item.title,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Album,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(HomeSizes.MusicCardIconSize)
-            )
-        }
+        )
         Spacer(Modifier.height(MaterialTheme.spacing.small))
         Text(
             text = item.title,
@@ -818,22 +834,26 @@ private fun sampleHomeItems() = listOf(
     FeaturedMusicItem(
         id = "song-1",
         title = stringResource(R.string.preview_song_midnight_drive),
-        subtitle = stringResource(R.string.preview_artist_luna_ray)
+        subtitle = stringResource(R.string.preview_artist_luna_ray),
+        artworkUrl = previewArtworkUri(R.drawable.preview_artwork_midnight)
     ),
     FeaturedMusicItem(
         id = "song-2",
         title = stringResource(R.string.preview_song_tehran_nights),
-        subtitle = stringResource(R.string.preview_artist_raha_band)
+        subtitle = stringResource(R.string.preview_artist_raha_band),
+        artworkUrl = previewArtworkUri(R.drawable.preview_artwork_tehran)
     ),
     FeaturedMusicItem(
         id = "song-3",
         title = stringResource(R.string.preview_song_golden_echoes),
-        subtitle = stringResource(R.string.preview_artist_arman)
+        subtitle = stringResource(R.string.preview_artist_arman),
+        artworkUrl = previewArtworkUri(R.drawable.preview_artwork_echoes)
     ),
     FeaturedMusicItem(
         id = "song-4",
         title = stringResource(R.string.preview_song_electric_heart),
-        subtitle = stringResource(R.string.preview_artist_nika)
+        subtitle = stringResource(R.string.preview_artist_nika),
+        artworkUrl = previewArtworkUri(R.drawable.preview_artwork_pulse)
     )
 )
 
@@ -845,12 +865,14 @@ private fun sampleHomeUiState(): HomeUiState {
             FeaturedMusicItem(
                 id = "daily-1",
                 title = stringResource(R.string.preview_daily_midnight_vinyl),
-                subtitle = stringResource(R.string.preview_daily_midnight_vinyl_subtitle)
+                subtitle = stringResource(R.string.preview_daily_midnight_vinyl_subtitle),
+                artworkUrl = previewArtworkUri(R.drawable.preview_artwork_midnight)
             ),
             FeaturedMusicItem(
                 id = "daily-2",
                 title = stringResource(R.string.preview_daily_local_pulse),
-                subtitle = stringResource(R.string.preview_daily_local_pulse_subtitle)
+                subtitle = stringResource(R.string.preview_daily_local_pulse_subtitle),
+                artworkUrl = previewArtworkUri(R.drawable.preview_artwork_pulse)
             )
         ),
         sections = listOf(
@@ -860,4 +882,10 @@ private fun sampleHomeUiState(): HomeUiState {
             HomeMusicSection(R.string.home_section_local_playlists, items.reversed())
         )
     )
+}
+
+@Composable
+private fun previewArtworkUri(resourceId: Int): String {
+    val packageName = androidx.compose.ui.platform.LocalContext.current.packageName
+    return "android.resource://$packageName/$resourceId"
 }

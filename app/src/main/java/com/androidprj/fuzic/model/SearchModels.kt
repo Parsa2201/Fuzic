@@ -26,7 +26,8 @@ data class SearchResultItem(
     val id: String,
     val title: String,
     val subtitle: String,
-    val type: SearchFilter
+    val type: SearchFilter,
+    val artworkUrl: String? = null
 )
 
 enum class SearchFilter(@StringRes val labelRes: Int) {

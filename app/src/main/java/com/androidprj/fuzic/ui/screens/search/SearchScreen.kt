@@ -57,6 +57,7 @@ import com.androidprj.fuzic.R
 import com.androidprj.fuzic.model.SearchFilter
 import com.androidprj.fuzic.model.SearchResultItem
 import com.androidprj.fuzic.model.SearchUiState
+import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.SectionHeader
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
@@ -318,19 +319,13 @@ private fun SearchResultRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
         ) {
-            Box(
+            MusicArtwork(
+                artworkUrl = item.artworkUrl,
+                fallbackIcon = item.type.icon,
+                contentDescription = item.title,
                 modifier = Modifier
                     .size(SearchSizes.ResultArtworkSize)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = item.type.icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.title,
@@ -660,24 +655,34 @@ private fun sampleSearchResults() = listOf(
         id = "song-1",
         title = stringResource(R.string.preview_song_midnight_drive),
         subtitle = stringResource(R.string.preview_artist_luna_ray),
-        type = SearchFilter.Songs
+        type = SearchFilter.Songs,
+        artworkUrl = previewArtworkUri(R.drawable.preview_artwork_midnight)
     ),
     SearchResultItem(
         id = "artist-1",
         title = stringResource(R.string.preview_artist_raha_band),
         subtitle = stringResource(R.string.search_filter_artists),
-        type = SearchFilter.Artists
+        type = SearchFilter.Artists,
+        artworkUrl = previewArtworkUri(R.drawable.preview_artwork_tehran)
     ),
     SearchResultItem(
         id = "playlist-1",
         title = stringResource(R.string.preview_daily_local_pulse),
         subtitle = stringResource(R.string.search_filter_playlists),
-        type = SearchFilter.Playlists
+        type = SearchFilter.Playlists,
+        artworkUrl = previewArtworkUri(R.drawable.preview_artwork_pulse)
     ),
     SearchResultItem(
         id = "user-1",
         title = stringResource(R.string.preview_user_parsa),
         subtitle = stringResource(R.string.search_filter_users),
-        type = SearchFilter.Users
+        type = SearchFilter.Users,
+        artworkUrl = previewArtworkUri(R.drawable.preview_artwork_echoes)
     )
 )
+
+@Composable
+private fun previewArtworkUri(resourceId: Int): String {
+    val packageName = androidx.compose.ui.platform.LocalContext.current.packageName
+    return "android.resource://$packageName/$resourceId"
+}
