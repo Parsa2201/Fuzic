@@ -7,6 +7,7 @@
     <string name="android_sample_name">Android</string>
     <string name="action_retry">Retry</string>
     <string name="action_view_all">View all</string>
+    <string name="action_remove">Remove</string>
     <string name="home_daily_picks">Daily picks</string>
     <string name="home_quick_action_liked_songs">Liked songs</string>
     <string name="home_quick_action_recently_played">Recently played</string>
@@ -33,4 +34,23 @@
     <string name="preview_daily_midnight_vinyl_subtitle">Fresh tracks for your evening</string>
     <string name="preview_daily_local_pulse">Local Pulse</string>
     <string name="preview_daily_local_pulse_subtitle">Persian picks and new artists</string>
+    <string name="search_input_label">Search</string>
+    <string name="search_input_placeholder">Songs, artists, playlists, users</string>
+    <string name="search_filter_songs">Songs</string>
+    <string name="search_filter_artists">Artists</string>
+    <string name="search_filter_playlists">Playlists</string>
+    <string name="search_filter_users">Users</string>
+    <string name="search_history_title">Recent searches</string>
+    <string name="search_history_clear">Clear all</string>
+    <string name="search_empty_query_title">Find something to play</string>
+    <string name="search_empty_query_message">Search across songs, artists, playlists, and friends.</string>
+    <string name="search_no_results_title">No results found</string>
+    <string name="search_no_results_message">Try a different query or filter.</string>
+    <string name="search_error_title">Search is unavailable</string>
+    <string name="search_error_message">Check your connection and try searching again.</string>
+    <string name="preview_search_query">midnight</string>
+    <string name="preview_search_history_one">liked songs</string>
+    <string name="preview_search_history_two">new releases</string>
+    <string name="preview_search_history_three">top artists</string>
+    <string name="preview_user_parsa">Parsa</string>
 </resources>

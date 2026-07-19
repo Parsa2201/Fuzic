@@ -7,6 +7,7 @@
     <string name="android_sample_name">اندروید</string>
     <string name="action_retry">تلاش دوباره</string>
     <string name="action_view_all">مشاهده همه</string>
+    <string name="action_remove">حذف</string>
     <string name="home_daily_picks">پیشنهادهای امروز</string>
     <string name="home_quick_action_liked_songs">آهنگ های پسندیده</string>
     <string name="home_quick_action_recently_played">پخش شده های اخیر</string>
@@ -33,4 +34,23 @@
     <string name="preview_daily_midnight_vinyl_subtitle">آهنگ های تازه برای عصر تو</string>
     <string name="preview_daily_local_pulse">نبض محلی</string>
     <string name="preview_daily_local_pulse_subtitle">پیشنهادهای فارسی و هنرمندان تازه</string>
+    <string name="search_input_label">جستجو</string>
+    <string name="search_input_placeholder">آهنگ، هنرمند، پلی لیست، کاربر</string>
+    <string name="search_filter_songs">آهنگ ها</string>
+    <string name="search_filter_artists">هنرمندان</string>
+    <string name="search_filter_playlists">پلی لیست ها</string>
+    <string name="search_filter_users">کاربران</string>
+    <string name="search_history_title">جستجوهای اخیر</string>
+    <string name="search_history_clear">پاک کردن همه</string>
+    <string name="search_empty_query_title">چیزی برای پخش پیدا کن</string>
+    <string name="search_empty_query_message">میان آهنگ ها، هنرمندان، پلی لیست ها و دوستان جستجو کن.</string>
+    <string name="search_no_results_title">نتیجه ای پیدا نشد</string>
+    <string name="search_no_results_message">عبارت یا فیلتر دیگری را امتحان کن.</string>
+    <string name="search_error_title">جستجو در دسترس نیست</string>
+    <string name="search_error_message">اتصال خود را بررسی کن و دوباره جستجو کن.</string>
+    <string name="preview_search_query">نیمه شب</string>
+    <string name="preview_search_history_one">آهنگ های پسندیده</string>
+    <string name="preview_search_history_two">تازه منتشر شده ها</string>
+    <string name="preview_search_history_three">هنرمندان برتر</string>
+    <string name="preview_user_parsa">پارسا</string>
 </resources>
