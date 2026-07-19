@@ -80,7 +80,7 @@ private fun MusicArtworkFallbackPreview() {
 private fun MusicArtworkUrlPreview() {
     FuzicTheme {
         MusicArtwork(
-            artworkUrl = "https://example.com/artwork.jpg",
+            artworkUrl = "https://img.magnific.com/free-vector/elegant-musical-notes-music-chord-background_1017-20759.jpg?semt=ais_hybrid&w=740&q=80",
             fallbackIcon = Icons.Default.Album,
             modifier = Modifier.size(120.dp)
         )
