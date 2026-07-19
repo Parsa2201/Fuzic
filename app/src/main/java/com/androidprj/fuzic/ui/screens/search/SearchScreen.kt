@@ -1,5 +1,6 @@
 package com.androidprj.fuzic.ui.screens.search
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,7 +30,6 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -257,25 +257,46 @@ private fun SearchHistoryChip(
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    AssistChip(
-        modifier = modifier,
-        onClick = onClick,
-        label = {
+    Surface(
+        modifier = modifier.clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(
+            width = SearchSizes.HistoryChipBorderWidth,
+            color = MaterialTheme.colorScheme.outline
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .height(SearchSizes.HistoryChipHeight)
+                .padding(horizontal = MaterialTheme.spacing.medium),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
+        ) {
+            Icon(
+                imageVector = Icons.Default.History,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(SearchSizes.HistoryIconSize)
+            )
             Text(
                 text = query,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-        },
-        leadingIcon = {
-            Icon(Icons.Default.History, contentDescription = null)
-        },
-        trailingIcon = {
-            TextButton(onClick = onDeleteClick) {
-                Text(stringResource(R.string.action_remove))
-            }
+            Text(
+                text = stringResource(R.string.action_remove),
+                modifier = Modifier.clickable(onClick = onDeleteClick),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1
+            )
         }
-    )
+    }
 }
 
 @Composable
@@ -436,6 +457,9 @@ private val SearchFilter.icon: ImageVector
 
 private object SearchSizes {
     val FilterIconSize = 18.dp
+    val HistoryChipHeight = 64.dp
+    val HistoryChipBorderWidth = 1.dp
+    val HistoryIconSize = 32.dp
     val ResultArtworkSize = 56.dp
     val MessageIconContainerSize = 72.dp
     val TitleSkeletonWidth = 180.dp
