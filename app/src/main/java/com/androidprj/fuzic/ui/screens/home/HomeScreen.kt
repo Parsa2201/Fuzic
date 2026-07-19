@@ -23,9 +23,13 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -150,6 +154,22 @@ private fun HomeContent(
     }
 }
 
+@Preview(name = "Home content body", showBackground = true)
+@Composable
+private fun HomeContentPreview() {
+    FuzicTheme {
+        val uiState = sampleHomeUiState()
+        var selectedItem by remember { mutableStateOf(uiState.dailyPicks.first()) }
+        var selectedAction by remember { mutableStateOf(HomeQuickAction.LikedSongs) }
+        HomeContent(
+            uiState = uiState,
+            onDailyPickClick = { selectedItem = it },
+            onQuickActionClick = { selectedAction = it },
+            onMusicItemClick = { selectedItem = it }
+        )
+    }
+}
+
 @Composable
 private fun CachedContentBanner(modifier: Modifier = Modifier) {
     Surface(
@@ -163,6 +183,14 @@ private fun CachedContentBanner(modifier: Modifier = Modifier) {
             modifier = Modifier.padding(MaterialTheme.spacing.medium),
             style = MaterialTheme.typography.bodyMedium
         )
+    }
+}
+
+@Preview(name = "Cached content banner", showBackground = true)
+@Composable
+private fun CachedContentBannerPreview() {
+    FuzicTheme {
+        CachedContentBanner(modifier = Modifier.padding(MaterialTheme.spacing.medium))
     }
 }
 
@@ -197,6 +225,20 @@ private fun DailyPicksCarousel(
                 onClick = { onItemClick(items[page]) }
             )
         }
+    }
+}
+
+@Preview(name = "Daily picks carousel", showBackground = true)
+@Composable
+private fun DailyPicksCarouselPreview() {
+    FuzicTheme {
+        val picks = sampleHomeUiState().dailyPicks
+        var selectedItem by remember { mutableStateOf(picks.first()) }
+        DailyPicksCarousel(
+            items = picks,
+            onItemClick = { selectedItem = it },
+            modifier = Modifier.padding(MaterialTheme.spacing.medium)
+        )
     }
 }
 
@@ -247,6 +289,20 @@ private fun DailyPickCard(
     }
 }
 
+@Preview(name = "Daily pick card", showBackground = true)
+@Composable
+private fun DailyPickCardPreview() {
+    FuzicTheme {
+        val item = sampleHomeUiState().dailyPicks.first()
+        var selectedItem by remember { mutableStateOf(item) }
+        DailyPickCard(
+            item = item,
+            onClick = { selectedItem = item },
+            modifier = Modifier.padding(MaterialTheme.spacing.medium)
+        )
+    }
+}
+
 @Composable
 private fun QuickActionsGrid(
     actions: List<HomeQuickAction>,
@@ -271,6 +327,19 @@ private fun QuickActionsGrid(
                 }
             }
         }
+    }
+}
+
+@Preview(name = "Quick actions grid", showBackground = true)
+@Composable
+private fun QuickActionsGridPreview() {
+    FuzicTheme {
+        var selectedAction by remember { mutableStateOf(HomeQuickAction.LikedSongs) }
+        QuickActionsGrid(
+            actions = HomeQuickAction.defaults,
+            onActionClick = { selectedAction = it },
+            modifier = Modifier.padding(MaterialTheme.spacing.medium)
+        )
     }
 }
 
@@ -307,6 +376,19 @@ private fun QuickActionCard(
     }
 }
 
+@Preview(name = "Quick action card", showBackground = true)
+@Composable
+private fun QuickActionCardPreview() {
+    FuzicTheme {
+        var selectedAction by remember { mutableStateOf(HomeQuickAction.LikedSongs) }
+        QuickActionCard(
+            action = HomeQuickAction.MyPlaylists,
+            onClick = { selectedAction = HomeQuickAction.MyPlaylists },
+            modifier = Modifier.padding(MaterialTheme.spacing.medium)
+        )
+    }
+}
+
 @Composable
 private fun MusicCarouselSection(
     section: HomeMusicSection,
@@ -330,6 +412,20 @@ private fun MusicCarouselSection(
     }
 }
 
+@Preview(name = "Music carousel section", showBackground = true)
+@Composable
+private fun MusicCarouselSectionPreview() {
+    FuzicTheme {
+        val section = sampleHomeUiState().sections.first()
+        var selectedItem by remember { mutableStateOf(section.items.first()) }
+        MusicCarouselSection(
+            section = section,
+            onItemClick = { selectedItem = it },
+            modifier = Modifier.padding(MaterialTheme.spacing.medium)
+        )
+    }
+}
+
 @Composable
 private fun MusicCard(
     item: FeaturedMusicItem,
@@ -350,7 +446,7 @@ private fun MusicCard(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Default.Home,
+                imageVector = Icons.Default.Album,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(HomeSizes.MusicCardIconSize)
@@ -370,6 +466,20 @@ private fun MusicCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Preview(name = "Music card", showBackground = true)
+@Composable
+private fun MusicCardPreview() {
+    FuzicTheme {
+        val item = sampleHomeItems().first()
+        var selectedItem by remember { mutableStateOf(item) }
+        MusicCard(
+            item = item,
+            onClick = { selectedItem = item },
+            modifier = Modifier.padding(MaterialTheme.spacing.medium)
         )
     }
 }
@@ -400,6 +510,14 @@ private fun HomeLoadingContent(modifier: Modifier = Modifier) {
     }
 }
 
+@Preview(name = "Home loading content", showBackground = true)
+@Composable
+private fun HomeLoadingContentPreview() {
+    FuzicTheme {
+        HomeLoadingContent()
+    }
+}
+
 @Composable
 private fun QuickActionLoadingGrid() {
     Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
@@ -415,6 +533,14 @@ private fun QuickActionLoadingGrid() {
                 }
             }
         }
+    }
+}
+
+@Preview(name = "Quick action loading grid", showBackground = true)
+@Composable
+private fun QuickActionLoadingGridPreview() {
+    FuzicTheme {
+        QuickActionLoadingGrid()
     }
 }
 
@@ -449,6 +575,14 @@ private fun CarouselLoadingSection() {
     }
 }
 
+@Preview(name = "Carousel loading section", showBackground = true)
+@Composable
+private fun CarouselLoadingSectionPreview() {
+    FuzicTheme {
+        CarouselLoadingSection()
+    }
+}
+
 @Composable
 private fun HomeEmptyContent(modifier: Modifier = Modifier) {
     HomeMessageContent(
@@ -456,6 +590,14 @@ private fun HomeEmptyContent(modifier: Modifier = Modifier) {
         message = stringResource(R.string.home_empty_message),
         modifier = modifier
     )
+}
+
+@Preview(name = "Home empty content", showBackground = true)
+@Composable
+private fun HomeEmptyContentPreview() {
+    FuzicTheme {
+        HomeEmptyContent()
+    }
 }
 
 @Composable
@@ -469,13 +611,25 @@ private fun HomeErrorContent(
         message = message,
         action = {
             Button(onClick = onRetryClick) {
-                Icon(Icons.Default.Home, contentDescription = null)
+                Icon(Icons.Default.Refresh, contentDescription = null)
                 Spacer(Modifier.width(MaterialTheme.spacing.small))
                 Text(stringResource(R.string.action_retry))
             }
         },
         modifier = modifier
     )
+}
+
+@Preview(name = "Home error content", showBackground = true)
+@Composable
+private fun HomeErrorContentPreview() {
+    FuzicTheme {
+        var retryRequested by remember { mutableStateOf(false) }
+        HomeErrorContent(
+            message = stringResource(R.string.home_error_message),
+            onRetryClick = { retryRequested = true }
+        )
+    }
 }
 
 @Composable
@@ -504,7 +658,7 @@ private fun HomeMessageContent(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Home,
+                    imageVector = Icons.Default.LibraryMusic,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -524,12 +678,23 @@ private fun HomeMessageContent(
     }
 }
 
+@Preview(name = "Home message content", showBackground = true)
+@Composable
+private fun HomeMessageContentPreview() {
+    FuzicTheme {
+        HomeMessageContent(
+            title = stringResource(R.string.home_empty_title),
+            message = stringResource(R.string.home_empty_message)
+        )
+    }
+}
+
 private val HomeQuickAction.icon: ImageVector
     get() = when (this) {
         HomeQuickAction.LikedSongs -> Icons.Default.Favorite
-        HomeQuickAction.RecentlyPlayed -> Icons.Default.Home
-        HomeQuickAction.MyPlaylists -> Icons.Default.AccountBox
-        HomeQuickAction.TopArtists -> Icons.Default.AccountBox
+        HomeQuickAction.RecentlyPlayed -> Icons.Default.History
+        HomeQuickAction.MyPlaylists -> Icons.AutoMirrored.Filled.PlaylistPlay
+        HomeQuickAction.TopArtists -> Icons.Default.Groups
     }
 
 private object HomeSizes {
