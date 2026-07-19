@@ -47,7 +47,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,8 +57,10 @@ import com.androidprj.fuzic.model.SearchFilter
 import com.androidprj.fuzic.model.SearchResultItem
 import com.androidprj.fuzic.model.SearchUiState
 import com.androidprj.fuzic.ui.components.MusicArtwork
+import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.SectionHeader
 import com.androidprj.fuzic.ui.components.fuzicShimmer
+import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 
@@ -408,42 +409,14 @@ private fun SearchMessageContent(
     modifier: Modifier = Modifier,
     action: @Composable (() -> Unit)? = null
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = MaterialTheme.spacing.extraLarge),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(SearchSizes.MessageIconContainerSize)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            action?.invoke()
-        }
-    }
+    ScreenMessage(
+        icon = icon,
+        title = title,
+        message = message,
+        modifier = modifier,
+        fillMaxSize = false,
+        action = action
+    )
 }
 
 private val SearchFilter.icon: ImageVector
@@ -461,7 +434,6 @@ private object SearchSizes {
     val HistoryIconSize = 32.dp
     val ResultBadgeBorderWidth = 1.dp
     val ResultArtworkSize = 56.dp
-    val MessageIconContainerSize = 72.dp
     val TitleSkeletonWidth = 180.dp
     val SubtitleSkeletonWidth = 128.dp
     val TextSkeletonHeight = 16.dp
@@ -680,9 +652,3 @@ private fun sampleSearchResults() = listOf(
         artworkUrl = previewArtworkUri(R.drawable.preview_artwork_echoes)
     )
 )
-
-@Composable
-private fun previewArtworkUri(resourceId: Int): String {
-    val packageName = androidx.compose.ui.platform.LocalContext.current.packageName
-    return "android.resource://$packageName/$resourceId"
-}

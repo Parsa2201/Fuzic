@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Album
@@ -45,7 +44,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -57,9 +55,11 @@ import com.androidprj.fuzic.model.FeaturedMusicItem
 import com.androidprj.fuzic.model.HomeMusicSection
 import com.androidprj.fuzic.model.HomeQuickAction
 import com.androidprj.fuzic.model.HomeUiState
-import com.androidprj.fuzic.ui.components.SectionHeader
 import com.androidprj.fuzic.ui.components.MusicArtwork
+import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.SectionHeader
 import com.androidprj.fuzic.ui.components.fuzicShimmer
+import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 import kotlinx.coroutines.delay
@@ -601,7 +601,8 @@ private fun CarouselLoadingSectionPreview() {
 
 @Composable
 private fun HomeEmptyContent(modifier: Modifier = Modifier) {
-    HomeMessageContent(
+    ScreenMessage(
+        icon = Icons.Default.LibraryMusic,
         title = stringResource(R.string.home_empty_title),
         message = stringResource(R.string.home_empty_message),
         modifier = modifier
@@ -622,7 +623,8 @@ private fun HomeErrorContent(
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    HomeMessageContent(
+    ScreenMessage(
+        icon = Icons.Default.LibraryMusic,
         title = stringResource(R.string.home_error_title),
         message = message,
         action = {
@@ -648,57 +650,12 @@ private fun HomeErrorContentPreview() {
     }
 }
 
-@Composable
-private fun HomeMessageContent(
-    title: String,
-    message: String,
-    modifier: Modifier = Modifier,
-    action: @Composable (() -> Unit)? = null
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(MaterialTheme.spacing.extraLarge),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(HomeSizes.MessageIconContainerSize)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LibraryMusic,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            action?.invoke()
-        }
-    }
-}
-
 @Preview(name = "Home message content", showBackground = true)
 @Composable
 private fun HomeMessageContentPreview() {
     FuzicTheme {
-        HomeMessageContent(
+        ScreenMessage(
+            icon = Icons.Default.LibraryMusic,
             title = stringResource(R.string.home_empty_title),
             message = stringResource(R.string.home_empty_message)
         )
@@ -721,7 +678,6 @@ private object HomeSizes {
     val SectionTitleSkeletonHeight = 28.dp
     val MusicTitleSkeletonWidth = 120.dp
     val MusicTitleSkeletonHeight = 16.dp
-    val MessageIconContainerSize = 72.dp
 }
 
 @Preview(name = "Home content - English", showBackground = true)
@@ -882,10 +838,4 @@ private fun sampleHomeUiState(): HomeUiState {
             HomeMusicSection(R.string.home_section_local_playlists, items.reversed())
         )
     )
-}
-
-@Composable
-private fun previewArtworkUri(resourceId: Int): String {
-    val packageName = androidx.compose.ui.platform.LocalContext.current.packageName
-    return "android.resource://$packageName/$resourceId"
 }

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Delete
@@ -55,7 +54,9 @@ import com.androidprj.fuzic.model.DownloadSortOption
 import com.androidprj.fuzic.model.DownloadedSongItem
 import com.androidprj.fuzic.model.DownloadsUiState
 import com.androidprj.fuzic.ui.components.MusicArtwork
+import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.fuzicShimmer
+import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 
@@ -404,48 +405,17 @@ private fun DownloadsMessageContent(
     modifier: Modifier = Modifier,
     action: @Composable (() -> Unit)? = null
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(MaterialTheme.spacing.extraLarge),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(DownloadsSizes.MessageIconContainerSize)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            action?.invoke()
-        }
-    }
+    ScreenMessage(
+        icon = icon,
+        title = title,
+        message = message,
+        modifier = modifier,
+        action = action
+    )
 }
 
 private object DownloadsSizes {
     val ArtworkSize = 64.dp
-    val MessageIconContainerSize = 72.dp
     val TitleSkeletonWidth = 180.dp
     val TitleSkeletonHeight = 32.dp
     val RowTitleSkeletonWidth = 180.dp
@@ -646,9 +616,3 @@ private fun sampleDownloadedSongs() = listOf(
         progress = 0.58f
     )
 )
-
-@Composable
-private fun previewArtworkUri(resourceId: Int): String {
-    val packageName = androidx.compose.ui.platform.LocalContext.current.packageName
-    return "android.resource://$packageName/$resourceId"
-}
