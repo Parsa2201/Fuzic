@@ -53,4 +53,21 @@
     <string name="preview_search_history_two">تازه منتشر شده ها</string>
     <string name="preview_search_history_three">هنرمندان برتر</string>
     <string name="preview_user_parsa">پارسا</string>
+    <string name="downloads_title">دانلودها</string>
+    <string name="downloads_sort_date">تاریخ</string>
+    <string name="downloads_sort_title">عنوان</string>
+    <string name="downloads_sort_artist">هنرمند</string>
+    <string name="downloads_empty_title">برای پخش آفلاین آهنگ دانلود کن</string>
+    <string name="downloads_empty_message">دانلودهای پریمیوم اینجا نمایش داده می شوند و بدون اینترنت پخش می شوند.</string>
+    <string name="downloads_error_title">دانلودها در دسترس نیستند</string>
+    <string name="downloads_error_message">کتابخانه آفلاین تو بارگذاری نشد.</string>
+    <string name="downloads_storage_full_message">فضای ذخیره سازی پر است. برای دانلود آهنگ های بیشتر فضا آزاد کن.</string>
+    <string name="downloads_free_up_space">آزادسازی فضا</string>
+    <string name="downloads_song_metadata">%1$s • %2$s</string>
+    <string name="preview_download_size_large">۸.۲ مگابایت</string>
+    <string name="preview_download_size_medium">۶.۴ مگابایت</string>
+    <string name="preview_download_size_small">۴.۹ مگابایت</string>
+    <string name="preview_download_date_today">امروز</string>
+    <string name="preview_download_date_yesterday">دیروز</string>
+    <string name="preview_download_date_last_week">هفته پیش</string>
 </resources>
