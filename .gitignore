@@ -13,3 +13,7 @@
 .externalNativeBuild
 .cxx
 local.properties
+# CocoIndex Code (ccc)
+/.cocoindex_code/
+node_modules
+.supabase
