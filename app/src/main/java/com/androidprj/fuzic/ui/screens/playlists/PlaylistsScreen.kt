@@ -323,7 +323,7 @@ private fun PlaylistSectionGrid(
     ) {
         SectionHeader(titleRes = section.titleRes)
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+            columns = GridCells.Adaptive(minSize = 160.dp),
             modifier = Modifier.height(gridHeightFor(section.playlists.size)),
             userScrollEnabled = false,
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
