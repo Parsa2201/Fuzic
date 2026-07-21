@@ -63,7 +63,9 @@ class RemoteAuthRepository @Inject constructor(
                         ProfileUser(
                             id = it.id,
                             displayName = name,
-                            username = name.lowercase().replace(" ", "_"),
+                            username = it.userMetadata?.get("username")?.let { json ->
+                                if (json is kotlinx.serialization.json.JsonPrimitive) json.content else null
+                            } ?: name.lowercase().replace(" ", "_"),
                             avatarUrl = it.userMetadata?.get("avatar_url")?.let { json ->
                                 if (json is kotlinx.serialization.json.JsonPrimitive) json.content else null
                             }

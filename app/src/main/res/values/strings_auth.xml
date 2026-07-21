@@ -6,6 +6,7 @@
     <string name="auth_welcome_start">Get started</string>
     <string name="auth_sign_in_title">Welcome back</string>
     <string name="auth_sign_up_title">Create your account</string>
+    <string name="auth_name_label">Name</string>
     <string name="auth_email_label">Email</string>
     <string name="auth_password_label">Password</string>
     <string name="auth_confirm_password_label">Confirm password</string>
@@ -15,7 +16,10 @@
     <string name="auth_switch_to_sign_in">Already have an account? Sign in</string>
     <string name="auth_forgot_password">Forgot password?</string>
     <string name="auth_email_error">Enter a valid email address.</string>
+    <string name="auth_name_required">Enter your name.</string>
+    <string name="auth_email_required">Enter your email.</string>
     <string name="auth_password_error">Password must be at least 8 characters.</string>
+    <string name="auth_password_required">Enter your password.</string>
     <string name="auth_confirm_password_error">Passwords do not match.</string>
     <string name="auth_error_title">Sign in unavailable</string>
     <string name="auth_error_message">Check your connection and try again.</string>
