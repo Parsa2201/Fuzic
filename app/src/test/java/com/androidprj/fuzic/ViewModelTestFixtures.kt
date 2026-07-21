@@ -444,9 +444,19 @@ internal class FakeInteractionRepository(
 ) : InteractionRepository {
     var likeCalls = 0
     var unlikeCalls = 0
+    var likedResult: Result<List<SongItem>> = Result.success(listOf(testSong))
+    var recentlyPlayedResult: Result<List<SongItem>> = Result.success(listOf(testSong))
+    var likedCalls = 0
+    var recentlyCalls = 0
 
-    override suspend fun getRecentlyPlayed(userId: String, offset: Long, limit: Long) = Result.success(emptyList<SongItem>())
-    override suspend fun getLikedSongs(userId: String, offset: Long, limit: Long) = Result.success(emptyList<SongItem>())
+    override suspend fun getRecentlyPlayed(userId: String, offset: Long, limit: Long): Result<List<SongItem>> {
+        recentlyCalls++
+        return recentlyPlayedResult
+    }
+    override suspend fun getLikedSongs(userId: String, offset: Long, limit: Long): Result<List<SongItem>> {
+        likedCalls++
+        return likedResult
+    }
     override suspend fun recordPlay(songId: String) = Result.success(Unit)
     override suspend fun likeSong(songId: String): Result<Unit> {
         likeCalls++
