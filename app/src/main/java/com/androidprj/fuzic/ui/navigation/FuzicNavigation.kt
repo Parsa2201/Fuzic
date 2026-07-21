@@ -82,6 +82,8 @@ import com.androidprj.fuzic.ui.screens.chat.ChatListViewModel
 import com.androidprj.fuzic.ui.screens.chat.ChatDetailViewModel
 import com.androidprj.fuzic.ui.screens.chat.ChatListIntent
 import com.androidprj.fuzic.ui.screens.chat.ChatDetailIntent
+import com.androidprj.fuzic.ui.screens.chat.ChatPickerScreen
+import com.androidprj.fuzic.ui.screens.chat.ChatPickerViewModel
 import com.androidprj.fuzic.ui.screens.follow.FollowSearchScreen
 import com.androidprj.fuzic.ui.screens.follow.FollowListScreen
 import com.androidprj.fuzic.ui.screens.follow.FollowSearchViewModel
@@ -471,7 +473,7 @@ fun FuzicNavigation(
                     onPlayClick = { playerViewModel.onIntent(PlayerIntent.Play(it)) },
                     onLikeClick = { viewModel.toggleLike() },
                     onDownloadClick = { unavailableAction(unavailableMessage) },
-                    onShareClick = { unavailableAction(unavailableMessage) },
+                    onShareClick = { navController.navigate(ChatPickerDestination(it.id)) },
                     onAddToPlaylistClick = { navController.navigate(AddToPlaylistDestination(it.id)) },
                     onRetryClick = { viewModel.load(args.songId) },
                 )
@@ -510,6 +512,23 @@ fun FuzicNavigation(
                     errorMessage = uiState.errorMessage,
                     onBackClick = { navController.popBackStack() },
                     onPlaylistClick = { viewModel.addSong(it, args.songId) },
+                )
+            }
+            composable<ChatPickerDestination> { entry ->
+                val args = entry.toRoute<ChatPickerDestination>()
+                val viewModel: ChatPickerViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val shareSuccess = stringResource(R.string.share_to_chat_success)
+                LaunchedEffect(uiState.isComplete) {
+                    if (uiState.isComplete) {
+                        snackbarHostState.showSnackbar(shareSuccess)
+                        navController.popBackStack()
+                    }
+                }
+                ChatPickerScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onConversationClick = { viewModel.share(it, args.songId) },
                 )
             }
             composable<ArtistDestination> { entry ->
@@ -555,7 +574,7 @@ fun FuzicNavigation(
                     onShuffleClick = { playerViewModel.onIntent(PlayerIntent.ToggleShuffle) },
                     onRepeatClick = { playerViewModel.onIntent(PlayerIntent.CycleRepeatMode) },
                     onLikeClick = { playerViewModel.onIntent(PlayerIntent.ToggleLike) },
-                    onShareClick = { unavailableAction(unavailableMessage) },
+                    onShareClick = { playerUiState.currentSong?.let { navController.navigate(ChatPickerDestination(it.id)) } ?: unavailableAction(unavailableMessage) },
                     onAddToPlaylistClick = { playerUiState.currentSong?.let { navController.navigate(AddToPlaylistDestination(it.id)) } ?: unavailableAction(unavailableMessage) },
                     onQueueClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.Queue)) },
                     onSleepTimerClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.SleepTimer)) },

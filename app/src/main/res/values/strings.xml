@@ -242,4 +242,8 @@
     <string name="add_to_playlist_empty">You do not have any playlists yet.</string>
     <string name="add_to_playlist_error">Playlist could not be updated.</string>
     <string name="add_to_playlist_success">Song added to playlist.</string>
+    <string name="share_to_chat_title">Share to chat</string>
+    <string name="share_to_chat_empty">There are no conversations to share with.</string>
+    <string name="share_to_chat_error">Song could not be shared.</string>
+    <string name="share_to_chat_success">Song shared.</string>
 </resources>
