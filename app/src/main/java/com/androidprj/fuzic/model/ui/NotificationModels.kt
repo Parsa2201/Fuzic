@@ -1,19 +1,14 @@
 package com.androidprj.fuzic.model.ui
 
 import androidx.annotation.StringRes
+import androidx.paging.PagingData
 import com.androidprj.fuzic.R
 
 data class NotificationsUiState(
-    val notifications: List<NotificationItem> = emptyList(),
+    val notifications: PagingData<NotificationItem> = PagingData.empty(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-) {
-    val isEmpty: Boolean
-        get() = !isLoading && errorMessage == null && notifications.isEmpty()
-
-    val unreadCount: Int
-        get() = notifications.count { !it.isRead }
-}
+)
 
 data class NotificationItem(
     val id: String,

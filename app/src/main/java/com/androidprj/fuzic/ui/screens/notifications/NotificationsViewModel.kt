@@ -11,6 +11,7 @@ import com.androidprj.fuzic.util.StringProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.paging.PagingData
 
 sealed interface NotificationsIntent {
     data object Retry : NotificationsIntent
@@ -34,6 +36,7 @@ class NotificationsViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(NotificationsUiState(isLoading = true))
     val uiState: StateFlow<NotificationsUiState> = _uiState.asStateFlow()
+    private var observeJob: Job? = null
 
     init {
         observeNotifications()
@@ -49,7 +52,8 @@ class NotificationsViewModel @Inject constructor(
     }
 
     private fun observeNotifications() {
-        viewModelScope.launch {
+        observeJob?.cancel()
+        observeJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             notificationRepository.observeNotifications()
                 .catch { throwable ->
@@ -60,23 +64,25 @@ class NotificationsViewModel @Inject constructor(
                         )
                     }
                 }
-                .collect {
-                    _uiState.update { state -> state.copy(isLoading = false, errorMessage = null) }
+                .collect { notifications ->
+                    _uiState.update { state ->
+                        state.copy(
+                            notifications = notifications,
+                            isLoading = false,
+                            errorMessage = null,
+                        )
+                    }
                 }
         }
     }
 
     private fun markRead(item: NotificationItem) {
         if (item.isRead) return
-        _uiState.update { state ->
-            state.copy(notifications = state.notifications.map { if (it.id == item.id) it.copy(isRead = true) else it })
-        }
         viewModelScope.launch {
             val result = withContext(ioDispatcher) { notificationRepository.markNotificationAsRead(item.id) }
             if (result.isFailure) {
                 _uiState.update { state ->
                     state.copy(
-                        notifications = state.notifications.map { if (it.id == item.id) item else it },
                         errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.notifications_error_title),
                     )
                 }
@@ -85,14 +91,11 @@ class NotificationsViewModel @Inject constructor(
     }
 
     private fun markAllRead() {
-        val previous = _uiState.value.notifications
-        _uiState.update { state -> state.copy(notifications = state.notifications.map { it.copy(isRead = true) }) }
         viewModelScope.launch {
             val result = withContext(ioDispatcher) { notificationRepository.markAllNotificationsAsRead() }
             if (result.isFailure) {
                 _uiState.update {
                     it.copy(
-                        notifications = previous,
                         errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.notifications_error_title),
                     )
                 }
@@ -101,6 +104,6 @@ class NotificationsViewModel @Inject constructor(
     }
 
     fun setNotificationsForTesting(items: List<NotificationItem>) {
-        _uiState.value = NotificationsUiState(notifications = items)
+        _uiState.value = NotificationsUiState(notifications = PagingData.from(items))
     }
 }

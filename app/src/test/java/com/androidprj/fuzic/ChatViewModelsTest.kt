@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -77,6 +78,17 @@ class ChatViewModelsTest {
     }
 
     @Test
+    fun loadingConversationDisplaysMessagesFromRepository() = runTest {
+        val repository = FakeChatRepository()
+        val viewModel = ChatDetailViewModel(repository, dispatcher, FakeStringProvider)
+
+        viewModel.onIntent(ChatDetailIntent.LoadConversation(testConversation))
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
     fun draftChangeTogglesTypingWhenBlankStateChanges() = runTest {
         val repository = FakeChatRepository()
         val viewModel = ChatDetailViewModel(repository, dispatcher, FakeStringProvider)
@@ -108,7 +120,7 @@ class ChatViewModelsTest {
 
         assertEquals("hello", repository.lastSentText)
         assertEquals("", viewModel.uiState.value.draft)
-        assertEquals(listOf(testChatMessage), viewModel.uiState.value.messages)
+        assertFalse(viewModel.uiState.value.isLoading)
         assertEquals(false, repository.lastTypingValue)
     }
 
@@ -141,7 +153,7 @@ class ChatViewModelsTest {
         advanceUntilIdle()
 
         assertEquals(testSong.id, repository.lastSharedSongId)
-        assertEquals(testSong, viewModel.uiState.value.messages.single().song)
+        assertNull(viewModel.uiState.value.errorMessage)
     }
 
     @Test

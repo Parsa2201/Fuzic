@@ -15,6 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
+import androidx.paging.PagingData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -96,7 +97,7 @@ class ChatDetailViewModel @Inject constructor(
     }
 
     internal fun setMessagesForTesting(messages: List<ChatMessage>) {
-        _uiState.value = _uiState.value.copy(messages = messages, isLoading = false, errorMessage = null)
+        _uiState.value = _uiState.value.copy(messages = PagingData.from(messages), isLoading = false, errorMessage = null)
     }
 
     private fun loadConversation(conversation: ChatConversation) {
@@ -105,8 +106,14 @@ class ChatDetailViewModel @Inject constructor(
         typingJob?.cancel()
         messagesJob = viewModelScope.launch {
             runCatching {
-                chatRepository.observeMessages(conversation.id).collect {
-                    _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = null)
+                chatRepository.observeMessages(conversation.id).collect { messages ->
+                    _uiState.value = _uiState.value.copy(
+                        messages = messages,
+                        optimisticMessages = emptyList(),
+                        isLoading = false,
+                        isOffline = false,
+                        errorMessage = null,
+                    )
                 }
             }.onFailure { throwable ->
                 _uiState.value = _uiState.value.copy(
@@ -153,7 +160,7 @@ class ChatDetailViewModel @Inject constructor(
                 onSuccess = { message ->
                     _uiState.value = _uiState.value.copy(
                         draft = "",
-                        messages = _uiState.value.messages + message,
+                        optimisticMessages = _uiState.value.optimisticMessages + message,
                         errorMessage = null,
                     )
                     withContext(ioDispatcher) {
@@ -177,7 +184,10 @@ class ChatDetailViewModel @Inject constructor(
             }
             result.fold(
                 onSuccess = { message ->
-                    _uiState.value = _uiState.value.copy(messages = _uiState.value.messages + message, errorMessage = null)
+                    _uiState.value = _uiState.value.copy(
+                        optimisticMessages = _uiState.value.optimisticMessages + message,
+                        errorMessage = null,
+                    )
                 },
                 onFailure = { throwable ->
                     _uiState.value = _uiState.value.copy(
