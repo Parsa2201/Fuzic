@@ -32,7 +32,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.toRoute
 import com.androidprj.fuzic.ui.components.FuzicTopAppBar
 import com.androidprj.fuzic.ui.components.MiniPlayer
+import com.androidprj.fuzic.ui.components.SongActionSheet
 import com.androidprj.fuzic.model.ui.MiniPlayerUiState
+import com.androidprj.fuzic.model.ui.NotificationTarget
+import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.ui.screens.downloads.DownloadsIntent
 import com.androidprj.fuzic.ui.screens.downloads.DownloadsScreen
 import com.androidprj.fuzic.ui.screens.downloads.DownloadsViewModel
@@ -218,6 +221,7 @@ fun FuzicNavigation(
     val currentUser by sessionViewModel.currentUser.collectAsStateWithLifecycle()
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
+    var songActionTarget by remember { mutableStateOf<SongItem?>(null) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = currentBackStackEntry?.destination
     val selectedTab = topLevelDestinations.indexOfFirst { destination ->
@@ -491,7 +495,7 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onPlayAllClick = { viewModel.onIntent(PlaylistDetailsIntent.PlayAll(it)) },
                     onSongClick = { song -> navController.navigate(SongDestination(song.id)) },
-                    onSongMoreClick = { unavailableAction(unavailableMessage) },
+                    onSongMoreClick = { songActionTarget = it },
                     onRetryClick = { viewModel.onIntent(PlaylistDetailsIntent.Retry) },
                 )
             }
@@ -544,7 +548,7 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onFollowClick = { viewModel.onIntent(ArtistDetailsIntent.ToggleFollow) },
                     onPlaySongClick = { viewModel.onIntent(ArtistDetailsIntent.PlaySong(it)) },
-                    onSongMoreClick = { unavailableAction(unavailableMessage) },
+                    onSongMoreClick = { songActionTarget = it },
                     onRetryClick = { viewModel.onIntent(ArtistDetailsIntent.Retry) },
                 )
             }
@@ -581,7 +585,7 @@ fun FuzicNavigation(
                     onSleepTimerClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.SleepTimer)) },
                     onPlaybackSpeedClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.PlaybackSpeed)) },
                     onQueueSongClick = { playerViewModel.onIntent(PlayerIntent.QueueSongSelected(it)) },
-                    onSongMoreClick = { unavailableAction(unavailableMessage) },
+                    onSongMoreClick = { songActionTarget = it },
                     onOverlayDismiss = { playerViewModel.onIntent(PlayerIntent.DismissOverlay) },
                     onSleepTimerSelected = { playerViewModel.onIntent(PlayerIntent.SleepTimerSelected(it)) },
                     onPlaybackSpeedSelected = { playerViewModel.onIntent(PlayerIntent.PlaybackSpeedSelected(it)) },
@@ -594,7 +598,7 @@ fun FuzicNavigation(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
                     onSongClick = { navController.navigate(SongDestination(it.id)) },
-                    onSongMoreClick = { unavailableAction(unavailableMessage) },
+                    onSongMoreClick = { songActionTarget = it },
                     onRetryClick = { viewModel.onIntent(SongCollectionIntent.Retry) },
                 )
             }
@@ -605,7 +609,7 @@ fun FuzicNavigation(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
                     onSongClick = { navController.navigate(SongDestination(it.id)) },
-                    onSongMoreClick = { unavailableAction(unavailableMessage) },
+                    onSongMoreClick = { songActionTarget = it },
                     onRetryClick = { viewModel.onIntent(SongCollectionIntent.Retry) },
                 )
             }
@@ -624,9 +628,25 @@ fun FuzicNavigation(
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 NotificationsScreen(
                     uiState = uiState,
-                    onNotificationClick = {
-                        viewModel.onIntent(NotificationsIntent.NotificationSelected(it))
-                        unavailableAction(notificationTargetUnavailableMessage)
+                    onNotificationClick = { notification ->
+                        viewModel.onIntent(NotificationsIntent.NotificationSelected(notification))
+                        when (val target = notification.target) {
+                            is NotificationTarget.Song -> navController.navigate(SongDestination(target.songId))
+                            is NotificationTarget.Playlist -> navController.navigate(PlaylistDestination(target.playlistId))
+                            is NotificationTarget.Artist -> navController.navigate(ArtistDestination(target.artistId))
+                            is NotificationTarget.UserProfile -> navController.navigate(UserProfileDestination(target.userId))
+                            is NotificationTarget.Conversation -> navController.navigate(
+                                ChatDetailDestination(
+                                    conversationId = target.conversationId,
+                                    participantId = target.participantId,
+                                    participantUsername = target.participantUsername,
+                                    participantDisplayName = target.participantDisplayName,
+                                    participantAvatarUrl = target.participantAvatarUrl,
+                                ),
+                            )
+                            NotificationTarget.Premium -> navController.navigate(PremiumDestination)
+                            null -> unavailableAction(notificationTargetUnavailableMessage)
+                        }
                     },
                     onMarkAllReadClick = { viewModel.onIntent(NotificationsIntent.MarkAllRead) },
                     onRetryClick = { viewModel.onIntent(NotificationsIntent.Retry) },
@@ -720,6 +740,24 @@ fun FuzicNavigation(
                 )
             }
         }
+    }
+    songActionTarget?.let { song ->
+        SongActionSheet(
+            song = song,
+            onDismiss = { songActionTarget = null },
+            onPlayClick = {
+                playerViewModel.onIntent(PlayerIntent.Play(song))
+                songActionTarget = null
+            },
+            onAddToPlaylistClick = {
+                songActionTarget = null
+                navController.navigate(AddToPlaylistDestination(song.id))
+            },
+            onShareClick = {
+                songActionTarget = null
+                navController.navigate(ChatPickerDestination(song.id))
+            },
+        )
     }
     }
 }

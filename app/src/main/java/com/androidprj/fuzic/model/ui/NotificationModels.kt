@@ -23,7 +23,27 @@ data class NotificationItem(
     val type: NotificationType,
     val isRead: Boolean = false,
     val artworkUrl: String? = null,
+    val target: NotificationTarget? = null,
 )
+
+/**
+ * A UI navigation target supplied by notification data. Repository implementations map their
+ * transport payloads to this stable model instead of exposing backend route details to Compose.
+ */
+sealed interface NotificationTarget {
+    data class Song(val songId: String) : NotificationTarget
+    data class Playlist(val playlistId: String) : NotificationTarget
+    data class Artist(val artistId: String) : NotificationTarget
+    data class UserProfile(val userId: String) : NotificationTarget
+    data class Conversation(
+        val conversationId: String,
+        val participantId: String,
+        val participantUsername: String,
+        val participantDisplayName: String,
+        val participantAvatarUrl: String? = null,
+    ) : NotificationTarget
+    data object Premium : NotificationTarget
+}
 
 enum class NotificationType(@StringRes val fallbackLabelRes: Int) {
     NewRelease(R.string.notifications_type_new_release),
