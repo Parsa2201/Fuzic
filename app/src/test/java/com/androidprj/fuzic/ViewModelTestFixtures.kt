@@ -8,6 +8,7 @@ import com.androidprj.fuzic.model.ui.DownloadRequest
 import com.androidprj.fuzic.model.ui.DownloadSortOption
 import com.androidprj.fuzic.model.ui.DownloadedSongItem
 import com.androidprj.fuzic.model.ui.PlaylistItem
+import com.androidprj.fuzic.model.ui.PlaylistDetails
 import com.androidprj.fuzic.model.ui.PremiumPlan
 import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.model.ui.AudioVisualizerFrame
@@ -20,6 +21,7 @@ import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
 import com.androidprj.fuzic.repository.PlayerRepository
+import com.androidprj.fuzic.repository.PlaylistDetailsRepository
 import com.androidprj.fuzic.repository.PremiumRepository
 import com.androidprj.fuzic.repository.SettingsRepository
 import com.androidprj.fuzic.repository.UserRepository
@@ -41,6 +43,14 @@ internal val testPlaylist = PlaylistItem(
     title = "Evening Mix",
     subtitle = "Parsa",
     songCountLabel = "10 songs",
+)
+
+internal val testPlaylistDetails = PlaylistDetails(
+    id = "playlist-1",
+    title = "Evening Mix",
+    description = "Night tracks",
+    ownerName = "Parsa",
+    songs = listOf(testSong),
 )
 
 internal val testProfile = ProfileUser(
@@ -301,6 +311,19 @@ internal class FakePlaylistRepository(
     override suspend fun deletePlaylist(playlistId: String) = Result.success(Unit)
     override suspend fun addSongToPlaylist(playlistId: String, songId: String) = Result.success(Unit)
     override suspend fun removeSongFromPlaylist(playlistId: String, songId: String) = Result.success(Unit)
+}
+
+internal class FakePlaylistDetailsRepository(
+    var detailsResult: Result<PlaylistDetails> = Result.success(testPlaylistDetails),
+) : PlaylistDetailsRepository {
+    var loadCalls = 0
+    var lastPlaylistId: String? = null
+
+    override suspend fun getPlaylistDetails(playlistId: String): Result<PlaylistDetails> {
+        loadCalls++
+        lastPlaylistId = playlistId
+        return detailsResult
+    }
 }
 
 internal class FakeUserRepository(

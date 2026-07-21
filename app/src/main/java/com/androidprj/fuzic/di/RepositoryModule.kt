@@ -10,6 +10,7 @@ import com.androidprj.fuzic.data.remote.repository.RemoteMusicRepository
 import com.androidprj.fuzic.data.remote.repository.RemotePlaylistRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteUserRepository
 import com.androidprj.fuzic.data.remote.repository.InMemoryPremiumRepository
+import com.androidprj.fuzic.data.remote.repository.InMemoryPlaylistDetailsRepository
 import com.androidprj.fuzic.data.settings.InMemorySettingsRepository
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.ChatRepository
@@ -18,6 +19,7 @@ import com.androidprj.fuzic.repository.FollowRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
+import com.androidprj.fuzic.repository.PlaylistDetailsRepository
 import com.androidprj.fuzic.repository.PlayerRepository
 import com.androidprj.fuzic.repository.PremiumRepository
 import com.androidprj.fuzic.repository.SettingsRepository
@@ -97,4 +99,10 @@ abstract class RepositoryModule {
     abstract fun bindPlayerRepository(
         inMemoryPlayerRepository: InMemoryPlayerRepository
     ): PlayerRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPlaylistDetailsRepository(
+        inMemoryPlaylistDetailsRepository: InMemoryPlaylistDetailsRepository
+    ): PlaylistDetailsRepository
 }
