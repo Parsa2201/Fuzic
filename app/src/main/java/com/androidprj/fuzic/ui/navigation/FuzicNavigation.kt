@@ -3,6 +3,7 @@ package com.androidprj.fuzic.ui.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -10,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.NavigationBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -20,8 +22,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.toRoute
 import com.androidprj.fuzic.ui.components.FuzicTopAppBar
 import com.androidprj.fuzic.ui.components.MiniPlayer
+import com.androidprj.fuzic.model.ui.MiniPlayerUiState
 import com.androidprj.fuzic.ui.screens.downloads.DownloadsIntent
 import com.androidprj.fuzic.ui.screens.downloads.DownloadsScreen
 import com.androidprj.fuzic.ui.screens.downloads.DownloadsViewModel
@@ -32,6 +36,20 @@ import com.androidprj.fuzic.ui.screens.playlists.PlaylistsScreen
 import com.androidprj.fuzic.ui.screens.playlists.PlaylistsViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileScreen
 import com.androidprj.fuzic.ui.screens.profile.ProfileViewModel
+import com.androidprj.fuzic.ui.screens.song.SongDetailsScreen
+import com.androidprj.fuzic.ui.screens.song.SongDetailsViewModel
+import com.androidprj.fuzic.ui.screens.playlistdetail.PlaylistDetailsScreen
+import com.androidprj.fuzic.ui.screens.playlistdetail.PlaylistDetailsIntent
+import com.androidprj.fuzic.ui.screens.playlistdetail.PlaylistDetailsViewModel
+import com.androidprj.fuzic.ui.screens.artist.ArtistDetailsScreen
+import com.androidprj.fuzic.ui.screens.artist.ArtistDetailsIntent
+import com.androidprj.fuzic.ui.screens.artist.ArtistDetailsViewModel
+import com.androidprj.fuzic.ui.screens.settings.SettingsIntent
+import com.androidprj.fuzic.ui.screens.settings.SettingsScreen
+import com.androidprj.fuzic.ui.screens.settings.SettingsViewModel
+import com.androidprj.fuzic.ui.screens.player.PlayerIntent
+import com.androidprj.fuzic.ui.screens.player.PlayerScreen
+import com.androidprj.fuzic.ui.screens.player.PlayerViewModel
 import com.androidprj.fuzic.ui.screens.search.SearchIntent
 import com.androidprj.fuzic.ui.screens.search.SearchScreen
 import com.androidprj.fuzic.ui.screens.search.SearchViewModel
@@ -64,6 +82,9 @@ data class ArtistDestination(val artistId: String)
 @Serializable
 data object SettingsDestination
 
+@Serializable
+data object FullPlayerDestination
+
 private val topLevelDestinations = listOf(
     HomeDestination,
     SearchDestination,
@@ -77,6 +98,8 @@ fun FuzicNavigation(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
+    val playerViewModel: PlayerViewModel = hiltViewModel()
+    val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = currentBackStackEntry?.destination
     val selectedTab = topLevelDestinations.indexOfFirst { destination ->
@@ -93,22 +116,36 @@ fun FuzicNavigation(
             )
         },
         bottomBar = {
-            NavigationBar {
-                MainTab.entries.forEachIndexed { index, tab ->
-                    NavigationBarItem(
-                        selected = index == selectedTab.ordinal,
-                        onClick = {
-                            navController.navigate(topLevelDestinations[index]) {
-                                launchSingleTop = true
-                                restoreState = true
-                                popUpTo(HomeDestination) { saveState = true }
-                            }
-                        },
-                        icon = {
-                            Icon(tab.icon, contentDescription = stringResource(tab.labelRes))
-                        },
-                        label = { Text(stringResource(tab.labelRes)) },
+            Column {
+                playerUiState.currentSong?.let { song ->
+                    MiniPlayer(
+                        uiState = MiniPlayerUiState(
+                            title = song.title,
+                            artist = song.artist,
+                            artworkUrl = song.artworkUrl,
+                            isPlaying = playerUiState.isPlaying,
+                        ),
+                        onClick = { navController.navigate(FullPlayerDestination) },
+                        onPlayPauseClick = { playerViewModel.onIntent(PlayerIntent.TogglePlayPause) },
                     )
+                }
+                NavigationBar {
+                    MainTab.entries.forEachIndexed { index, tab ->
+                        NavigationBarItem(
+                            selected = index == selectedTab.ordinal,
+                            onClick = {
+                                navController.navigate(topLevelDestinations[index]) {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                    popUpTo(HomeDestination) { saveState = true }
+                                }
+                            },
+                            icon = {
+                                Icon(tab.icon, contentDescription = stringResource(tab.labelRes))
+                            },
+                            label = { Text(stringResource(tab.labelRes)) },
+                        )
+                    }
                 }
             }
         },
@@ -180,10 +217,93 @@ fun FuzicNavigation(
                     onRetryClick = viewModel::retry,
                 )
             }
-            composable<SongDestination> { }
-            composable<PlaylistDestination> { }
-            composable<ArtistDestination> { }
-            composable<SettingsDestination> { }
+            composable<SongDestination> { entry ->
+                val args = entry.toRoute<SongDestination>()
+                val viewModel: SongDetailsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(args.songId) { viewModel.load(args.songId) }
+                SongDetailsScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onPlayClick = { },
+                    onLikeClick = { viewModel.toggleLike() },
+                    onDownloadClick = { },
+                    onShareClick = { },
+                    onAddToPlaylistClick = { },
+                    onRetryClick = { viewModel.load(args.songId) },
+                )
+            }
+            composable<PlaylistDestination> { entry ->
+                val args = entry.toRoute<PlaylistDestination>()
+                val viewModel: PlaylistDetailsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(args.playlistId) {
+                    viewModel.onIntent(PlaylistDetailsIntent.Load(args.playlistId))
+                }
+                PlaylistDetailsScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onPlayAllClick = { viewModel.onIntent(PlaylistDetailsIntent.PlayAll(it)) },
+                    onSongClick = { song -> navController.navigate(SongDestination(song.id)) },
+                    onSongMoreClick = { },
+                    onRetryClick = { viewModel.onIntent(PlaylistDetailsIntent.Retry) },
+                )
+            }
+            composable<ArtistDestination> { entry ->
+                val args = entry.toRoute<ArtistDestination>()
+                val viewModel: ArtistDetailsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(args.artistId) {
+                    viewModel.onIntent(ArtistDetailsIntent.Load(args.artistId))
+                }
+                ArtistDetailsScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onFollowClick = { viewModel.onIntent(ArtistDetailsIntent.ToggleFollow) },
+                    onPlaySongClick = { viewModel.onIntent(ArtistDetailsIntent.PlaySong(it)) },
+                    onSongMoreClick = { },
+                    onRetryClick = { viewModel.onIntent(ArtistDetailsIntent.Retry) },
+                )
+            }
+            composable<SettingsDestination> {
+                val viewModel: SettingsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                SettingsScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onThemeClick = { viewModel.onIntent(SettingsIntent.ShowThemeOptions) },
+                    onLanguageClick = { viewModel.onIntent(SettingsIntent.ShowLanguageOptions) },
+                    onLogoutClick = { viewModel.onIntent(SettingsIntent.ShowLogoutConfirmation) },
+                    onLogoutConfirm = { viewModel.onIntent(SettingsIntent.ConfirmLogout) },
+                    onLogoutDismiss = { viewModel.onIntent(SettingsIntent.DismissLogoutConfirmation) },
+                    onThemeSelected = { viewModel.onIntent(SettingsIntent.ThemeSelected(it)) },
+                    onLanguageSelected = { viewModel.onIntent(SettingsIntent.LanguageSelected(it)) },
+                    onRetryClick = { viewModel.onIntent(SettingsIntent.Retry) },
+                )
+            }
+            composable<FullPlayerDestination> {
+                PlayerScreen(
+                    uiState = playerUiState,
+                    onCloseClick = { navController.popBackStack() },
+                    onPreviousClick = { playerViewModel.onIntent(PlayerIntent.Previous) },
+                    onPlayPauseClick = { playerViewModel.onIntent(PlayerIntent.TogglePlayPause) },
+                    onNextClick = { playerViewModel.onIntent(PlayerIntent.Next) },
+                    onSeek = { playerViewModel.onIntent(PlayerIntent.Seek(it)) },
+                    onShuffleClick = { playerViewModel.onIntent(PlayerIntent.ToggleShuffle) },
+                    onRepeatClick = { playerViewModel.onIntent(PlayerIntent.CycleRepeatMode) },
+                    onLikeClick = { playerViewModel.onIntent(PlayerIntent.ToggleLike) },
+                    onShareClick = { },
+                    onAddToPlaylistClick = { },
+                    onQueueClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.Queue)) },
+                    onSleepTimerClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.SleepTimer)) },
+                    onPlaybackSpeedClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.PlaybackSpeed)) },
+                    onQueueSongClick = { playerViewModel.onIntent(PlayerIntent.QueueSongSelected(it)) },
+                    onSongMoreClick = { },
+                    onOverlayDismiss = { playerViewModel.onIntent(PlayerIntent.DismissOverlay) },
+                    onSleepTimerSelected = { playerViewModel.onIntent(PlayerIntent.SleepTimerSelected(it)) },
+                    onPlaybackSpeedSelected = { playerViewModel.onIntent(PlayerIntent.PlaybackSpeedSelected(it)) },
+                )
+            }
         }
     }
 }
