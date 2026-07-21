@@ -1,0 +1,17 @@
+<resources>
+    <string name="follow_search_title">Find people</string>
+    <string name="follow_search_label">Search users</string>
+    <string name="follow_search_empty_title">No people found</string>
+    <string name="follow_search_empty_message">Try another name or username.</string>
+    <string name="follow_search_idle_title">Discover people</string>
+    <string name="follow_search_idle_message">Search for friends and artists to follow.</string>
+    <string name="follow_followers_title">Followers</string>
+    <string name="follow_following_title">Following</string>
+    <string name="follow_list_empty_followers">You do not have followers yet.</string>
+    <string name="follow_list_empty_following">You are not following anyone yet.</string>
+    <string name="follow_error_title">People could not load</string>
+    <string name="follow_button">Follow</string>
+    <string name="following_button">Following</string>
+    <string name="follow_self_label">You</string>
+    <string name="preview_followers_count">1.2K followers</string>
+</resources>

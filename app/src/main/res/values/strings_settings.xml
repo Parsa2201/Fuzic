@@ -1,0 +1,20 @@
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance_section">Appearance</string>
+    <string name="settings_language_section">Language</string>
+    <string name="settings_account_section">Account</string>
+    <string name="settings_theme_title">Theme</string>
+    <string name="settings_theme_system">System default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_language_title">Language</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_persian">Persian</string>
+    <string name="settings_logout">Log out</string>
+    <string name="settings_logout_title">Log out of Fuzic?</string>
+    <string name="settings_logout_message">You can sign in again anytime.</string>
+    <string name="settings_logout_confirm">Log out</string>
+    <string name="settings_error_title">Settings unavailable</string>
+    <string name="settings_error_message">Your settings could not be loaded.</string>
+</resources>

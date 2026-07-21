@@ -1,0 +1,17 @@
+<resources>
+    <string name="follow_search_title">پیدا کردن افراد</string>
+    <string name="follow_search_label">جستجوی کاربران</string>
+    <string name="follow_search_empty_title">فردی پیدا نشد</string>
+    <string name="follow_search_empty_message">نام یا نام کاربری دیگری را امتحان کن.</string>
+    <string name="follow_search_idle_title">کشف افراد</string>
+    <string name="follow_search_idle_message">دوستان و هنرمندان را برای دنبال کردن پیدا کن.</string>
+    <string name="follow_followers_title">دنبال کننده‌ها</string>
+    <string name="follow_following_title">دنبال شونده‌ها</string>
+    <string name="follow_list_empty_followers">هنوز دنبال کننده‌ای نداری.</string>
+    <string name="follow_list_empty_following">هنوز کسی را دنبال نمی‌کنی.</string>
+    <string name="follow_error_title">افراد بارگذاری نشدند</string>
+    <string name="follow_button">دنبال کردن</string>
+    <string name="following_button">دنبال می‌کنی</string>
+    <string name="follow_self_label">خودت</string>
+    <string name="preview_followers_count">۱.۲ هزار دنبال کننده</string>
+</resources>

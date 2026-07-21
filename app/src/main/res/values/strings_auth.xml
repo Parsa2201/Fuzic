@@ -1,0 +1,30 @@
+<resources>
+    <string name="auth_welcome_title">Music for every moment</string>
+    <string name="auth_welcome_message">Discover songs, build playlists, and share what you love.</string>
+    <string name="auth_welcome_next">Next</string>
+    <string name="auth_welcome_skip">Skip</string>
+    <string name="auth_welcome_start">Get started</string>
+    <string name="auth_sign_in_title">Welcome back</string>
+    <string name="auth_sign_up_title">Create your account</string>
+    <string name="auth_email_label">Email</string>
+    <string name="auth_password_label">Password</string>
+    <string name="auth_confirm_password_label">Confirm password</string>
+    <string name="auth_sign_in">Sign in</string>
+    <string name="auth_sign_up">Sign up</string>
+    <string name="auth_switch_to_sign_up">New to Fuzic? Create an account</string>
+    <string name="auth_switch_to_sign_in">Already have an account? Sign in</string>
+    <string name="auth_forgot_password">Forgot password?</string>
+    <string name="auth_email_error">Enter a valid email address.</string>
+    <string name="auth_password_error">Password must be at least 8 characters.</string>
+    <string name="auth_confirm_password_error">Passwords do not match.</string>
+    <string name="auth_error_title">Sign in unavailable</string>
+    <string name="auth_error_message">Check your connection and try again.</string>
+    <string name="auth_password_show">Show password</string>
+    <string name="auth_password_hide">Hide password</string>
+    <string name="auth_welcome_page_one_title">Find your sound</string>
+    <string name="auth_welcome_page_one_message">Explore recommendations made for your mood.</string>
+    <string name="auth_welcome_page_two_title">Make it yours</string>
+    <string name="auth_welcome_page_two_message">Save favorites and create playlists for every day.</string>
+    <string name="auth_welcome_page_three_title">Share the moment</string>
+    <string name="auth_welcome_page_three_message">Connect with friends and share songs in chat.</string>
+</resources>
