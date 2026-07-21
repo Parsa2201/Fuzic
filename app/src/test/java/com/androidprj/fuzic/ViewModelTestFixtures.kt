@@ -10,18 +10,24 @@ import com.androidprj.fuzic.model.ui.DownloadedSongItem
 import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.model.ui.PremiumPlan
 import com.androidprj.fuzic.model.ui.ProfileUser
+import com.androidprj.fuzic.model.ui.AudioVisualizerFrame
+import com.androidprj.fuzic.model.ui.PlayerUiState
+import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.DownloadRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
+import com.androidprj.fuzic.repository.PlayerRepository
 import com.androidprj.fuzic.repository.PremiumRepository
 import com.androidprj.fuzic.repository.SettingsRepository
 import com.androidprj.fuzic.repository.UserRepository
 import com.androidprj.fuzic.util.StringProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOf
 
 internal val testSong = SongItem(
@@ -181,6 +187,79 @@ internal class FakeDownloadRepository(
         removeFileCalls++
         return removeFileResult
     }
+}
+
+internal class FakePlayerRepository(
+    initialState: PlayerUiState = PlayerUiState(),
+) : PlayerRepository {
+    private val _playerState = MutableStateFlow(initialState)
+    override val playerState: StateFlow<PlayerUiState> = _playerState
+    override val visualizerFrames = MutableSharedFlow<AudioVisualizerFrame>()
+    var commandResult: Result<Unit> = Result.success(Unit)
+    var playCalls = 0
+    var toggleCalls = 0
+    var nextCalls = 0
+    var previousCalls = 0
+    var seekCalls = 0
+    var lastSeekProgress: Float? = null
+    var lastRepeatMode: RepeatMode? = null
+    var lastShuffleEnabled: Boolean? = null
+    var lastSleepTimer: Int? = null
+    var lastSpeed: Float? = null
+
+    override suspend fun play(song: SongItem): Result<Unit> {
+        playCalls++
+        return commandResult.onSuccess { _playerState.value = _playerState.value.copy(currentSong = song, isPlaying = true) }
+    }
+
+    override suspend fun playQueue(songs: List<SongItem>, startIndex: Int): Result<Unit> =
+        commandResult.onSuccess { _playerState.value = _playerState.value.copy(currentSong = songs.getOrNull(startIndex), queue = songs) }
+
+    override suspend fun togglePlayPause(): Result<Unit> {
+        toggleCalls++
+        return commandResult.onSuccess { _playerState.value = _playerState.value.copy(isPlaying = !_playerState.value.isPlaying) }
+    }
+
+    override suspend fun seekTo(progress: Float): Result<Unit> {
+        seekCalls++
+        lastSeekProgress = progress
+        return commandResult.onSuccess { _playerState.value = _playerState.value.copy(progress = progress) }
+    }
+
+    override suspend fun skipToPrevious(): Result<Unit> {
+        previousCalls++
+        return commandResult
+    }
+
+    override suspend fun skipToNext(): Result<Unit> {
+        nextCalls++
+        return commandResult
+    }
+
+    override suspend fun setShuffleEnabled(enabled: Boolean): Result<Unit> {
+        lastShuffleEnabled = enabled
+        return commandResult.onSuccess { _playerState.value = _playerState.value.copy(isShuffleEnabled = enabled) }
+    }
+
+    override suspend fun setRepeatMode(mode: RepeatMode): Result<Unit> {
+        lastRepeatMode = mode
+        return commandResult.onSuccess { _playerState.value = _playerState.value.copy(repeatMode = mode) }
+    }
+
+    override suspend fun setPlaybackSpeed(speed: Float): Result<Unit> {
+        lastSpeed = speed
+        return commandResult.onSuccess { _playerState.value = _playerState.value.copy(playbackSpeed = speed) }
+    }
+
+    override suspend fun setSleepTimer(minutes: Int?): Result<Unit> {
+        lastSleepTimer = minutes
+        return commandResult.onSuccess { _playerState.value = _playerState.value.copy(sleepTimerMinutes = minutes) }
+    }
+
+    override suspend fun addToQueue(song: SongItem): Result<Unit> = commandResult
+    override suspend fun removeFromQueue(songId: String): Result<Unit> = commandResult
+    override suspend fun clearQueue(): Result<Unit> = commandResult
+    override suspend fun stop(): Result<Unit> = commandResult.onSuccess { _playerState.value = PlayerUiState() }
 }
 
 internal class FakeMusicRepository(
