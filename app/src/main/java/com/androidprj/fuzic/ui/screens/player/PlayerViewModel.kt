@@ -13,9 +13,14 @@ import com.androidprj.fuzic.util.StringProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -40,6 +45,7 @@ sealed interface PlayerIntent {
     data object ClearError : PlayerIntent
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
@@ -56,14 +62,33 @@ class PlayerViewModel @Inject constructor(
                     repositoryState.copy(
                         selectedOverlay = current.selectedOverlay,
                         errorMessage = current.errorMessage ?: repositoryState.errorMessage,
+                        visualizerAmplitudes = if (
+                            repositoryState.isPlaying &&
+                            repositoryState.currentSong?.id == current.currentSong?.id
+                        ) {
+                            current.visualizerAmplitudes
+                        } else {
+                            emptyList()
+                        },
                     )
                 }
             }
         }
         viewModelScope.launch {
-            playerRepository.visualizerFrames.collect { frame ->
+            playerRepository.playerState
+                .map { state -> state.isPlaying && state.currentSong != null }
+                .distinctUntilChanged()
+                .flatMapLatest { isActive ->
+                    if (isActive) playerRepository.visualizerFrames else emptyFlow()
+                }
+                .collect { frame ->
                 _uiState.update { state ->
-                    state.copy(visualizerAmplitudes = normalizeAmplitudes(frame.amplitudes))
+                    state.copy(
+                        visualizerAmplitudes = smoothAmplitudes(
+                            previous = state.visualizerAmplitudes,
+                            next = normalizeAmplitudes(frame.amplitudes),
+                        ),
+                    )
                 }
             }
         }
@@ -110,13 +135,32 @@ class PlayerViewModel @Inject constructor(
     }
 }
 
-private fun normalizeAmplitudes(amplitudes: List<Float>): List<Float> = amplitudes
-    .asSequence()
-    .map { it.coerceIn(0f, 1f) }
-    .take(MAX_VISUALIZER_BARS)
-    .toList()
+internal fun normalizeAmplitudes(
+    amplitudes: List<Float>,
+    barCount: Int = MAX_VISUALIZER_BARS,
+): List<Float> {
+    if (barCount <= 0) return emptyList()
+    if (amplitudes.isEmpty()) return List(barCount) { 0f }
+
+    return List(barCount) { index ->
+        val sourceIndex = if (barCount == 1) 0 else {
+            (index * (amplitudes.lastIndex.toFloat() / (barCount - 1))).toInt()
+        }
+        amplitudes[sourceIndex].coerceIn(0f, 1f)
+    }
+}
+
+internal fun smoothAmplitudes(
+    previous: List<Float>,
+    next: List<Float>,
+    smoothing: Float = VISUALIZER_SMOOTHING,
+): List<Float> = next.mapIndexed { index, target ->
+    val prior = previous.getOrNull(index) ?: target
+    (prior + ((target - prior) * smoothing.coerceIn(0f, 1f))).coerceIn(0f, 1f)
+}
 
 private const val MAX_VISUALIZER_BARS = 32
+private const val VISUALIZER_SMOOTHING = 0.35f
 
 private fun RepeatMode.next(): RepeatMode = when (this) {
     RepeatMode.Off -> RepeatMode.All

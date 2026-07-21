@@ -6,6 +6,8 @@ import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.AudioVisualizerFrame
 import com.androidprj.fuzic.ui.screens.player.PlayerIntent
 import com.androidprj.fuzic.ui.screens.player.PlayerViewModel
+import com.androidprj.fuzic.ui.screens.player.normalizeAmplitudes
+import com.androidprj.fuzic.ui.screens.player.smoothAmplitudes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -121,7 +123,7 @@ class PlayerViewModelTest {
 
     @Test
     fun visualizerFramesAreClampedAndExposedInUiState() = runTest {
-        val repository = FakePlayerRepository(PlayerUiState(isPlaying = true))
+        val repository = FakePlayerRepository(PlayerUiState(currentSong = testSong, isPlaying = true))
         val viewModel = PlayerViewModel(repository, dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
@@ -133,6 +135,35 @@ class PlayerViewModelTest {
         )
         advanceUntilIdle()
 
-        assertEquals(listOf(0f, 0.25f, 1f), viewModel.uiState.value.visualizerAmplitudes)
+        assertEquals(32, viewModel.uiState.value.visualizerAmplitudes.size)
+        assertEquals(0f, viewModel.uiState.value.visualizerAmplitudes.first())
+        assertEquals(1f, viewModel.uiState.value.visualizerAmplitudes.last())
+    }
+
+    @Test
+    fun visualizerFramesAreIgnoredWhilePausedAndClearedOnPause() = runTest {
+        val repository = FakePlayerRepository(PlayerUiState(currentSong = testSong, isPlaying = false))
+        val viewModel = PlayerViewModel(repository, dispatcher, FakeStringProvider)
+        advanceUntilIdle()
+
+        repository.visualizerFrames.emit(AudioVisualizerFrame(listOf(1f), 1L))
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.visualizerAmplitudes.isEmpty())
+
+        repository.play(testSong)
+        advanceUntilIdle()
+        repository.visualizerFrames.emit(AudioVisualizerFrame(listOf(1f), 2L))
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.visualizerAmplitudes.isNotEmpty())
+
+        repository.togglePlayPause()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.visualizerAmplitudes.isEmpty())
+    }
+
+    @Test
+    fun visualizerNormalizationResamplesAndSmoothingBoundsValues() {
+        assertEquals(listOf(0f, 0.5f, 1f), normalizeAmplitudes(listOf(-1f, 0.5f, 2f), 3))
+        assertEquals(listOf(0.25f, 0.75f), smoothAmplitudes(listOf(0f, 1f), listOf(1f, 0f), 0.25f))
     }
 }
