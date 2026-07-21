@@ -22,7 +22,7 @@ Course context:
 - If required assets are missing, notify the developer and ask for them.
 - Keep features loosely coupled so teammates can work in parallel.
 - Follow SOLID and DRY principles.
-- Use Conventional Commits for commits.
+- Use the [gitmoji.dev](https://gitmoji.dev) standard as a commit-message prefix. Each commit subject must begin with a single gitmoji emoji drawn from the official cheat sheet, followed by a space, followed by a Conventional Commits subject: `<gitmoji> <type>(<scope>): <subject>`. Examples: `✨ feat(home): add daily picks carousel`, `🐛 fix(player): prevent null cover in mini-player`, `📝 docs(backend): switch to supabase`, `♻️ refactor(chat): extract SongShareCard composable`, `🧪 test(search): cover debounce edge cases`. The gitmoji is decoration only — the Conventional Commits `type` (feat, fix, docs, style, refactor, test, chore, build, ci, perf) is still what tooling should parse. Scope and body are optional but recommended for non-trivial changes.
 - After adding a feature, run relevant tests and make sure they pass.
 
 ## Required Setup
@@ -30,6 +30,7 @@ Course context:
 - Android Skills should be installed before AI agents code in the project.
 - AI agents must have access to project documentation before making code changes.
 - Eraser MCP must be available and authorized before agents update diagrams.
+- AI agents must have access to the project's diagrams in Eraser via the Eraser MCP before making code changes. The project lives in **parsa's Team 2** under the file **Android Project**. Use the Eraser MCP `list_files` tool on that team to locate the file by title — search-by-title alone may miss it.
 - Do not use Eraser AI credits. Create or update diagrams only through non-AI MCP APIs.
 
 ## Locked Tech Stack
@@ -44,12 +45,12 @@ Course context:
 | UI state | `StateFlow<UiState>` collected with `collectAsStateWithLifecycle()` |
 | One-time events | `SharedFlow` or `Channel` |
 | Dependency injection | Hilt |
-| Backend | PocketBase |
+| Backend | Supabase (self-hosted: Postgres + Auth + Storage + Realtime + Edge Functions) |
 | Local DB | Room |
 | Preferences | DataStore Preferences |
 | Media playback | ExoPlayer / Media3 |
 | Background work | WorkManager |
-| Realtime | TBD, likely PocketBase SSE if available |
+| Realtime | Supabase Realtime (Postgres changes via websocket) |
 | Networking | OkHttp or Ktor-client, TBD |
 | Image loading | Coil |
 | Paging | Paging 3 for all long lists |
@@ -201,9 +202,11 @@ All project diagrams must be maintained in Eraser.
 
 ## Phase 1 Responsibilities
 
-- Parsa: define project criteria, start base project code, draw planning diagrams, start UI development.
-- Bagher: work on PocketBase and define ERDs.
-- Sina: learn how to define the player service and define AI-related documentation.
+The split mirrors the "Phase 1" BPMN diagram in the Android Project Eraser file.
+
+- Parsa: set up the GitHub project, define the app UI, and integrate the chosen backend client in the Android app. (The Phase 1 BPMN originally sketched Firebase; the gateway result was "no — use an alternative backend", so Parsa's final Android-side step is "Use Alternative Backend in Android App".)
+- Bagher: own the backend. This includes evaluating the candidate (Firebase vs alternative), defining the App–Backend API, and developing the chosen backend. The alternative chosen for Fuzic is **Supabase** — Bagher's deliverable is a self-hosted Supabase project with schema, auth, storage, and realtime ready for the Android client.
+- Sina: prepare AI tooling and learn media playback well enough to define the player service. Media Playback Ready is Sina's Phase 1 exit event.
 
 The chat feature belongs in later phases.
 
@@ -221,7 +224,7 @@ Required sections:
 
 Implementation:
 
-- Pull data from PocketBase.
+- Pull data from Supabase.
 - Use `HorizontalPager` for daily picks with auto-scroll.
 - Use `LazyRow` for recommendation carousels.
 - Use a vertical `LazyColumn` to stack sections.
@@ -339,7 +342,7 @@ Rules:
 Implementation:
 
 - User has `isPremium: boolean`.
-- Store on PocketBase and cache in DataStore.
+- Store on Supabase and cache in DataStore.
 - Download button visibility is driven by premium status.
 - Free-user download attempt shows upgrade prompt.
 
@@ -447,13 +450,13 @@ Expected Room tables:
 
 Resolve these with the team before implementing affected areas:
 
-1. Is PocketBase SSE realtime enabled?
+1. Is Supabase Realtime enabled for the required tables (messages, conversations, follows)?
 2. Who owns the shared `MaterialTheme`?
 3. Who owns `UserService`, `AuthService`, `PlayerService`, and `ThemeManager`?
 4. Who owns the full Profile tab?
 5. Does logout clear offline chat cache?
 6. What happens to downloaded songs on logout?
-7. Which PocketBase collections and fields are searchable?
+7. Which Supabase tables/columns are searchable, and which Postgres full-text indexes do we need?
 8. Who curates the required minimum of 50 real songs, and where do audio files live?
 9. What exact git workflow, PR review rules, and sync time should the team use?
 10. Which formatter/linter should be used: ktlint, detekt, or Android Studio formatter?
@@ -484,4 +487,4 @@ Before finishing:
 - Run relevant tests.
 - Confirm preview coverage.
 - Confirm docs or diagrams are updated when needed.
-- Use Conventional Commits.
+- Use gitmoji.dev as a commit-message prefix on top of Conventional Commits `<type>(<scope>): <subject>` (see Required Agent Behavior).
