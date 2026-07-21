@@ -7,6 +7,7 @@ import com.androidprj.fuzic.model.ui.AppThemeOption
 import com.androidprj.fuzic.model.ui.DownloadRequest
 import com.androidprj.fuzic.model.ui.DownloadSortOption
 import com.androidprj.fuzic.model.ui.DownloadedSongItem
+import com.androidprj.fuzic.model.ui.ArtistCollectionItem
 import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.model.ui.PlaylistDetails
 import com.androidprj.fuzic.model.ui.PremiumPlan
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 
 internal val testSong = SongItem(
@@ -78,6 +80,12 @@ internal val testArtist = ArtistItem(
 internal val testArtistDetails = ArtistDetails(
     artist = testArtist,
     popularSongs = listOf(testSong),
+)
+
+internal val testArtistCollectionItem = ArtistCollectionItem(
+    artist = testArtist,
+    followersLabel = "1M followers",
+    isFollowing = false,
 )
 
 internal val testPremiumPlan = PremiumPlan(
@@ -374,6 +382,8 @@ internal class FakeArtistRepository(
     var artistDetailsResult: Result<ArtistDetails> = Result.success(testArtistDetails),
 ) : ArtistRepository {
     var detailsCalls = 0
+    var observeCalls = 0
+    var observeFailure: Throwable? = null
     var lastArtistId: String? = null
 
     override suspend fun getArtist(artistId: String): Result<ArtistItem> = artistDetailsResult.map { it.artist }
@@ -385,6 +395,10 @@ internal class FakeArtistRepository(
     }
 
     override fun observeArtists(): kotlinx.coroutines.flow.Flow<androidx.paging.PagingData<com.androidprj.fuzic.model.ui.ArtistCollectionItem>> {
+        observeCalls++
+        observeFailure?.let { throwable ->
+            return flow { throw throwable }
+        }
         return flowOf(androidx.paging.PagingData.empty())
     }
 }
