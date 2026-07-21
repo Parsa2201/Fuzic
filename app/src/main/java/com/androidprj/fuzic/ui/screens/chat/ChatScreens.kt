@@ -1,0 +1,627 @@
+package com.androidprj.fuzic.ui.screens.chat
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.androidprj.fuzic.R
+import com.androidprj.fuzic.model.ChatConversation
+import com.androidprj.fuzic.model.ChatDetailUiState
+import com.androidprj.fuzic.model.ChatListUiState
+import com.androidprj.fuzic.model.ChatMessage
+import com.androidprj.fuzic.model.ChatMessageStatus
+import com.androidprj.fuzic.model.ChatMessageType
+import com.androidprj.fuzic.model.FollowUser
+import com.androidprj.fuzic.model.SongItem
+import com.androidprj.fuzic.ui.components.DetailTopAppBar
+import com.androidprj.fuzic.ui.components.MusicArtwork
+import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.previewArtworkUri
+import com.androidprj.fuzic.ui.theme.FuzicTheme
+import com.androidprj.fuzic.ui.theme.spacing
+
+@Composable
+fun ChatListRoute(
+    uiState: ChatListUiState,
+    onBackClick: () -> Unit,
+    onConversationClick: (ChatConversation) -> Unit,
+    onRetryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ChatListScreen(uiState, onBackClick, onConversationClick, onRetryClick, modifier)
+}
+
+@Composable
+fun ChatListScreen(
+    uiState: ChatListUiState,
+    onBackClick: () -> Unit,
+    onConversationClick: (ChatConversation) -> Unit,
+    onRetryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    ) {
+        DetailTopAppBar(stringResource(R.string.chat_title), onBackClick)
+        when {
+            uiState.isLoading -> ChatLoading()
+            uiState.errorMessage != null -> ChatStateMessage(
+                icon = Icons.Default.ErrorOutline,
+                title = stringResource(R.string.chat_error_title),
+                message = uiState.errorMessage,
+                onRetryClick = onRetryClick,
+            )
+            uiState.isEmpty -> ChatStateMessage(
+                icon = Icons.Default.Person,
+                title = stringResource(R.string.chat_empty_title),
+                message = stringResource(R.string.chat_empty_message),
+            )
+            else -> LazyColumn(
+                contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.medium),
+            ) {
+                items(uiState.conversations, key = { it.id }) { conversation ->
+                    ConversationRow(
+                        conversation = conversation,
+                        onClick = { onConversationClick(conversation) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ChatDetailRoute(
+    uiState: ChatDetailUiState,
+    onBackClick: () -> Unit,
+    onDraftChange: (String) -> Unit,
+    onSendClick: () -> Unit,
+    onShareSongClick: () -> Unit,
+    onSongClick: (SongItem) -> Unit,
+    onRetryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ChatDetailScreen(
+        uiState = uiState,
+        onBackClick = onBackClick,
+        onDraftChange = onDraftChange,
+        onSendClick = onSendClick,
+        onShareSongClick = onShareSongClick,
+        onSongClick = onSongClick,
+        onRetryClick = onRetryClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun ChatDetailScreen(
+    uiState: ChatDetailUiState,
+    onBackClick: () -> Unit,
+    onDraftChange: (String) -> Unit,
+    onSendClick: () -> Unit,
+    onShareSongClick: () -> Unit,
+    onSongClick: (SongItem) -> Unit,
+    onRetryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val conversation = uiState.conversation
+    if (conversation == null) {
+        ChatStateMessage(
+            icon = Icons.Default.ErrorOutline,
+            title = stringResource(R.string.chat_error_title),
+            message = uiState.errorMessage ?: stringResource(R.string.chat_empty_message),
+            onRetryClick = onRetryClick,
+        )
+        return
+    }
+    Column(
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    ) {
+        ChatHeader(conversation = conversation, onBackClick = onBackClick)
+        if (uiState.isOffline) {
+            OfflineBanner()
+        }
+        when {
+            uiState.isLoading -> ChatLoading()
+            uiState.errorMessage != null -> ChatStateMessage(
+                icon = Icons.Default.ErrorOutline,
+                title = stringResource(R.string.chat_error_title),
+                message = uiState.errorMessage,
+                onRetryClick = onRetryClick,
+            )
+            else -> {
+                val listState = rememberLazyListState()
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    state = listState,
+                    contentPadding = PaddingValues(MaterialTheme.spacing.medium),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+                ) {
+                    if (uiState.isEmpty) {
+                        item {
+                            ChatStateMessage(
+                                icon = Icons.Default.MusicNote,
+                                title = stringResource(R.string.chat_no_messages_title),
+                                message = stringResource(R.string.chat_no_messages_message),
+                            )
+                        }
+                    } else {
+                        items(uiState.messages, key = { it.id }) { message ->
+                            ChatMessageBubble(
+                                message = message,
+                                onSongClick = onSongClick,
+                            )
+                        }
+                    }
+                    if (uiState.isOtherUserTyping) {
+                        item {
+                            TypingIndicator()
+                        }
+                    }
+                }
+                ChatComposer(
+                    draft = uiState.draft,
+                    onDraftChange = onDraftChange,
+                    onSendClick = onSendClick,
+                    onShareSongClick = onShareSongClick,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConversationRow(
+    conversation: ChatConversation,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = MaterialTheme.spacing.small),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+    ) {
+        Box {
+            MusicArtwork(
+                artworkUrl = conversation.participant.avatarUrl,
+                fallbackIcon = Icons.Default.Person,
+                contentDescription = conversation.participant.displayName,
+                modifier = Modifier.size(56.dp).clip(CircleShape),
+            )
+            if (conversation.isOnline) {
+                Box(
+                    modifier = Modifier.size(14.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary)
+                        .align(Alignment.BottomEnd),
+                )
+            }
+        }
+        Column(Modifier.weight(1f)) {
+            Text(conversation.participant.displayName, style = MaterialTheme.typography.titleMedium)
+            Text(
+                conversation.lastMessagePreview,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(conversation.lastMessageTimeLabel, style = MaterialTheme.typography.labelSmall)
+            if (conversation.unreadCount > 0) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
+                    Text(
+                        text = conversation.unreadCount.toString(),
+                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChatHeader(
+    conversation: ChatConversation,
+    onBackClick: () -> Unit,
+) {
+    Surface(color = MaterialTheme.colorScheme.background) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(MaterialTheme.spacing.small),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+            }
+            MusicArtwork(
+                artworkUrl = conversation.participant.avatarUrl,
+                fallbackIcon = Icons.Default.Person,
+                contentDescription = conversation.participant.displayName,
+                modifier = Modifier.size(44.dp).clip(CircleShape),
+            )
+            Column {
+                Text(conversation.participant.displayName, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    if (conversation.isOnline) stringResource(R.string.follow_search_title) else "@${conversation.participant.username}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OfflineBanner() {
+    Row(
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.tertiaryContainer).padding(MaterialTheme.spacing.small),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Default.WifiOff, contentDescription = null)
+        Spacer(Modifier.size(MaterialTheme.spacing.small))
+        Text(stringResource(R.string.chat_offline), style = MaterialTheme.typography.labelMedium)
+    }
+}
+
+@Composable
+private fun ChatMessageBubble(
+    message: ChatMessage,
+    onSongClick: (SongItem) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = if (message.isMine) Arrangement.End else Arrangement.Start,
+    ) {
+        Column(
+            horizontalAlignment = if (message.isMine) Alignment.End else Alignment.Start,
+        ) {
+            when (message.type) {
+                ChatMessageType.Text -> Surface(
+                    color = if (message.isMine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(18.dp),
+                ) {
+                    Text(
+                        text = message.text.orEmpty(),
+                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
+                        color = if (message.isMine) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                ChatMessageType.SongShare -> message.song?.let { song ->
+                    SongShareCard(song = song, onClick = { onSongClick(song) })
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(message.timeLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (message.isMine) {
+                    Spacer(Modifier.size(MaterialTheme.spacing.extraSmall))
+                    MessageStatusIcon(message.status)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessageStatusIcon(status: ChatMessageStatus) {
+    val icon = when (status) {
+        ChatMessageStatus.Sending -> Icons.Default.History
+        ChatMessageStatus.Sent -> Icons.Default.Check
+        ChatMessageStatus.Delivered,
+        ChatMessageStatus.Read -> Icons.Default.DoneAll
+    }
+    Icon(
+        imageVector = icon,
+        contentDescription = when (status) {
+            ChatMessageStatus.Sending -> stringResource(R.string.chat_status_sending)
+            ChatMessageStatus.Sent -> stringResource(R.string.chat_status_sent)
+            ChatMessageStatus.Delivered -> stringResource(R.string.chat_status_delivered)
+            ChatMessageStatus.Read -> stringResource(R.string.chat_status_read)
+        },
+        modifier = Modifier.size(14.dp),
+        tint = if (status == ChatMessageStatus.Read) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun SongShareCard(
+    song: SongItem,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.width(260.dp).clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Row(
+            modifier = Modifier.padding(MaterialTheme.spacing.small),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+        ) {
+            MusicArtwork(
+                artworkUrl = song.artworkUrl,
+                fallbackIcon = Icons.Default.MusicNote,
+                contentDescription = song.title,
+                modifier = Modifier.size(52.dp),
+            )
+            Column(Modifier.weight(1f)) {
+                Text(song.title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(song.artist, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Icon(Icons.Default.PlayArrow, contentDescription = null)
+        }
+    }
+}
+
+@Composable
+private fun TypingIndicator() {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(18.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.chat_typing),
+            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
+            style = MaterialTheme.typography.bodySmall,
+        )
+    }
+}
+
+@Composable
+private fun ChatComposer(
+    draft: String,
+    onDraftChange: (String) -> Unit,
+    onSendClick: () -> Unit,
+    onShareSongClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(MaterialTheme.spacing.small),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+    ) {
+        IconButton(onClick = onShareSongClick) {
+            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.chat_share_song))
+        }
+        OutlinedTextField(
+            value = draft,
+            onValueChange = onDraftChange,
+            modifier = Modifier.weight(1f),
+            placeholder = { Text(stringResource(R.string.chat_message_placeholder)) },
+            maxLines = 4,
+        )
+        IconButton(
+            onClick = onSendClick,
+            enabled = draft.isNotBlank(),
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        ) {
+            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.chat_send))
+        }
+    }
+}
+
+@Composable
+private fun ChatLoading() {
+    Column(Modifier.fillMaxWidth().padding(MaterialTheme.spacing.medium), verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
+        repeat(5) {
+            Spacer(Modifier.fillMaxWidth().size(width = 1.dp, height = 64.dp).background(MaterialTheme.colorScheme.surfaceVariant))
+        }
+    }
+}
+
+@Composable
+private fun ChatStateMessage(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    message: String,
+    onRetryClick: (() -> Unit)? = null,
+) {
+    ScreenMessage(
+        icon = icon,
+        title = title,
+        message = message,
+        action = onRetryClick?.let {
+            {
+                Button(onClick = it) {
+                    Icon(Icons.Default.Refresh, contentDescription = null)
+                    Text(stringResource(R.string.action_retry))
+                }
+            }
+        },
+    )
+}
+
+@Preview(name = "Chat list", showBackground = true)
+@Composable
+private fun ChatListPreview() {
+    FuzicTheme {
+        ChatListScreen(ChatListUiState(sampleConversations()), {}, {}, {})
+    }
+}
+
+@Preview(name = "Chat list empty Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ChatListEmptyPreview() {
+    FuzicTheme {
+        ChatListScreen(ChatListUiState(), {}, {}, {})
+    }
+}
+
+@Preview(name = "Chat list loading Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ChatListLoadingPreview() {
+    FuzicTheme {
+        ChatListScreen(ChatListUiState(isLoading = true), {}, {}, {})
+    }
+}
+
+@Preview(name = "Chat detail read messages", showBackground = true)
+@Composable
+private fun ChatDetailPreview() {
+    FuzicTheme {
+        ChatDetailScreen(sampleChatDetailState(), {}, {}, {}, {}, {}, {})
+    }
+}
+
+@Preview(name = "Chat detail offline typing Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ChatDetailOfflinePreview() {
+    FuzicTheme {
+        ChatDetailScreen(
+            sampleChatDetailState().copy(isOffline = true, isOtherUserTyping = true),
+            {}, {}, {}, {}, {}, {},
+        )
+    }
+}
+
+@Preview(name = "Chat detail empty Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ChatDetailEmptyPreview() {
+    FuzicTheme {
+        ChatDetailScreen(sampleChatDetailState().copy(messages = emptyList()), {}, {}, {}, {}, {}, {})
+    }
+}
+
+@Preview(name = "Chat detail sending song share", showBackground = true)
+@Composable
+private fun ChatDetailSendingPreview() {
+    FuzicTheme {
+        ChatDetailScreen(
+            sampleChatDetailState().copy(
+                messages = listOf(
+                    ChatMessage(
+                        id = "sending",
+                        senderId = "me",
+                        text = "Check this out",
+                        status = ChatMessageStatus.Sending,
+                        timeLabel = "10:32",
+                        isMine = true,
+                    ),
+                    ChatMessage(
+                        id = "share",
+                        senderId = "me",
+                        type = ChatMessageType.SongShare,
+                        song = sampleSong(),
+                        status = ChatMessageStatus.Sent,
+                        timeLabel = "10:33",
+                        isMine = true,
+                    ),
+                ),
+            ),
+            {}, {}, {}, {}, {}, {},
+        )
+    }
+}
+
+@Preview(name = "Chat error Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ChatErrorPreview() {
+    FuzicTheme {
+        ChatListScreen(
+            ChatListUiState(errorMessage = stringResource(R.string.chat_error_title)),
+            {}, {}, {},
+        )
+    }
+}
+
+@Composable
+private fun sampleConversations() = listOf(
+    ChatConversation(
+        id = "conversation-raha",
+        participant = FollowUser(
+            id = "raha",
+            username = "raha_band",
+            displayName = stringResource(R.string.preview_artist_raha_band),
+            avatarUrl = previewArtworkUri(R.drawable.preview_artwork_tehran),
+        ),
+        lastMessagePreview = stringResource(R.string.preview_chat_last_message),
+        lastMessageTimeLabel = "10:32",
+        unreadCount = 2,
+        isOnline = true,
+    ),
+)
+
+@Composable
+private fun sampleChatDetailState() = ChatDetailUiState(
+    conversation = sampleConversations().first(),
+    messages = listOf(
+        ChatMessage(
+            id = "one",
+            senderId = "raha",
+            text = "I found a new playlist for you.",
+            timeLabel = "10:30",
+            isMine = false,
+        ),
+        ChatMessage(
+            id = "two",
+            senderId = "me",
+            text = "Nice, send it over!",
+            status = ChatMessageStatus.Read,
+            timeLabel = "10:31",
+            isMine = true,
+        ),
+    ),
+    draft = "",
+)
+
+@Composable
+private fun sampleSong() = SongItem(
+    id = "song-midnight-drive",
+    title = stringResource(R.string.preview_song_midnight_drive),
+    artist = stringResource(R.string.preview_artist_luna_ray),
+    artworkUrl = previewArtworkUri(R.drawable.preview_artwork_midnight),
+)
