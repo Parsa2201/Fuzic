@@ -298,25 +298,25 @@ private fun NotificationsLoadingContent(modifier: Modifier = Modifier) {
 private fun sampleNotificationsState() = NotificationsUiState(
     notifications = listOf(
         NotificationItem(
-            id = "release",
-            title = "New release from Raha Band",
-            message = "Midnight Echoes is now available to play.",
-            timeLabel = "5 minutes ago",
+        id = "release",
+            title = stringResource(R.string.preview_notification_release_title),
+            message = stringResource(R.string.preview_notification_release_message),
+            timeLabel = stringResource(R.string.preview_notification_five_minutes),
             type = NotificationType.NewRelease,
             artworkUrl = previewArtworkUri(1),
         ),
         NotificationItem(
             id = "follow",
-            title = "Nika started following you",
-            message = "Follow back to share music with Nika.",
-            timeLabel = "Yesterday",
+            title = stringResource(R.string.preview_notification_follow_title),
+            message = stringResource(R.string.preview_notification_follow_message),
+            timeLabel = stringResource(R.string.preview_notification_yesterday),
             type = NotificationType.Follow,
         ),
         NotificationItem(
             id = "playlist",
-            title = "Your playlist is ready",
-            message = "The songs you saved were added to Late Night.",
-            timeLabel = "2 days ago",
+            title = stringResource(R.string.preview_notification_playlist_title),
+            message = stringResource(R.string.preview_notification_playlist_message),
+            timeLabel = stringResource(R.string.preview_notification_two_days),
             type = NotificationType.Playlist,
             isRead = true,
         ),
@@ -381,7 +381,7 @@ private fun NotificationsErrorPreview() {
     FuzicTheme {
         NotificationsScreen(
             uiState = NotificationsUiState(
-                errorMessage = "Notifications could not be loaded.",
+                errorMessage = stringResource(R.string.preview_notifications_error_message),
             ),
             onNotificationClick = {},
             onMarkAllReadClick = {},

@@ -205,4 +205,22 @@
     <string name="player_share_to_chat_description">این آهنگ را برای یک گفت‌وگو بفرست.</string>
     <string name="player_copy_song_link">کپی لینک آهنگ</string>
     <string name="player_copy_song_link_description">یک لینک قابل اشتراک‌گذاری برای آهنگ کپی کن.</string>
+    <string name="preview_premium_monthly">ماهانه</string>
+    <string name="preview_premium_monthly_price">۴.۹۹ دلار</string>
+    <string name="preview_premium_monthly_billing">صورتحساب ماهانه</string>
+    <string name="preview_premium_yearly">سالانه</string>
+    <string name="preview_premium_yearly_price">۳۹.۹۹ دلار</string>
+    <string name="preview_premium_yearly_billing">بهترین ارزش · صورتحساب سالانه</string>
+    <string name="preview_premium_error_message">پلن‌ها بارگذاری نشدند.</string>
+    <string name="preview_artists_error_message">هنرمندان بارگذاری نشدند.</string>
+    <string name="preview_notification_release_title">انتشار جدید از گروه رها</string>
+    <string name="preview_notification_release_message">میدنایت اکو اکنون آماده پخش است.</string>
+    <string name="preview_notification_five_minutes">۵ دقیقه پیش</string>
+    <string name="preview_notification_follow_title">نیکا تو را دنبال کرد</string>
+    <string name="preview_notification_follow_message">برای اشتراک موسیقی، او را هم دنبال کن.</string>
+    <string name="preview_notification_yesterday">دیروز</string>
+    <string name="preview_notification_playlist_title">پلی‌لیستت آماده است</string>
+    <string name="preview_notification_playlist_message">آهنگ‌های ذخیره‌شده به پلی‌لیست شبانه اضافه شدند.</string>
+    <string name="preview_notification_two_days">۲ روز پیش</string>
+    <string name="preview_notifications_error_message">اعلان‌ها بارگذاری نشدند.</string>
 </resources>
