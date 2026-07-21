@@ -22,3 +22,6 @@ local.properties
 /.cocoindex_code/
 node_modules
 .supabase
+# Android Studio and Kotlin IDE state
+.idea/
+.kotlin/
