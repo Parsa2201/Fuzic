@@ -6,9 +6,7 @@ import com.androidprj.fuzic.repository.FollowRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.realtime.PostgresAction
-import io.github.jan.supabase.realtime.channel
-import io.github.jan.supabase.realtime.postgresChangeFlow
+
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -75,13 +73,27 @@ class RemoteFollowRepository @Inject constructor(
     }
 
     override fun observeFollowersCount(userId: String): Flow<Int> {
-        // Fallback for realtime counts using standard count queries
-        // A complete implementation would combine initial count + realtime deltas
-        throw NotImplementedError("To be implemented with complex realtime flow")
+        return kotlinx.coroutines.flow.flow {
+            val count = try {
+                supabaseClient.postgrest["follows"]
+                    .select {
+                        filter { eq("followee_id", userId) }
+                    }.decodeList<Follow>().size
+            } catch (e: Exception) { 0 }
+            emit(count)
+        }
     }
 
     override fun observeFollowingCount(userId: String): Flow<Int> {
-        throw NotImplementedError("To be implemented with complex realtime flow")
+        return kotlinx.coroutines.flow.flow {
+            val count = try {
+                supabaseClient.postgrest["follows"]
+                    .select {
+                        filter { eq("follower_id", userId) }
+                    }.decodeList<Follow>().size
+            } catch (e: Exception) { 0 }
+            emit(count)
+        }
     }
 
     @kotlinx.serialization.Serializable

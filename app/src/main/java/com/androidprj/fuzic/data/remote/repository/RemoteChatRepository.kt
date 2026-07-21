@@ -11,6 +11,7 @@ import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.decodeRecord
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import java.util.UUID
@@ -86,5 +87,9 @@ class RemoteChatRepository @Inject constructor(
         return channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
             table = "messages"
         }.map { it.decodeRecord<Message>() }
+         .filter { message ->
+             (message.senderId == currentUserId && message.receiverId == userId) ||
+             (message.senderId == userId && message.receiverId == currentUserId)
+         }
     }
 }
