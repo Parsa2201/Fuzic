@@ -202,11 +202,24 @@ All project diagrams must be maintained in Eraser.
 
 ## Phase 1 Responsibilities
 
-The split mirrors the "Phase 1" BPMN diagram in the Android Project Eraser file.
+The split mirrors the "Phase 1" BPMN diagram (id `Red6oOEXmFYVPX0JqS1F4`), the "Top Level Feature Dependency Graph" (`Mg2Kl94tyskrxALF1uR8q`), and the "Development Dependency Graph" (`8S2o9G02vd3fg6vSr5Po`) in the Android Project Eraser file. The diagrams are the source of truth; this section mirrors them.
 
 - Parsa: set up the GitHub project, define the app UI, and integrate the chosen backend client in the Android app. (The Phase 1 BPMN originally sketched Firebase; the gateway result was "no — use an alternative backend", so Parsa's final Android-side step is "Use Alternative Backend in Android App".)
 - Bagher: own the backend. This includes evaluating the candidate (Firebase vs alternative), defining the App–Backend API, and developing the chosen backend. The alternative chosen for Fuzic is **Supabase** — Bagher's deliverable is a self-hosted Supabase project with schema, auth, storage, and realtime ready for the Android client.
 - Sina: prepare AI tooling and learn media playback well enough to define the player service. Media Playback Ready is Sina's Phase 1 exit event.
+
+### Service-lane split (post Phase 1)
+
+The team's working split is by service/logic, not by feature screen. The lanes below come from the Development Dependency Graph diagram; they override any earlier feature-based ownership notes in this file:
+
+- **UI Track (green)** — Screen UI components, all screen UIs (Home, Search, Downloads, Playlists, Profile, Settings, Player UI). Owned across the team; coordinate in PRs.
+- **Backend Track (purple)** — Supabase schema, remote API client, Room cache, paging sources, repository implementations. Owned by Bagher.
+- **Playback Track (orange)** — Media3 Controller, Playback State, Mini Player Logic, Full Player Logic, Notification Controls. Owned by Sina. `PlayerService` / `PlayerController` is part of this track.
+- **Chat Track (pink)** — Chat Contracts, Chat UI, Chat Repository interface + implementation, Chat ViewModel, Chat Integration. Out of Sina's lane; reassigned after Phase 1. The chat feature is a later-phase deliverable.
+- **ViewModel Track (yellow)** — Screen ViewModels for every tab.
+- **Screen Integration Track (teal)** — Integrated screens; pairs UI Track with ViewModel Track.
+
+When a later-phase feature (Real-Time Chat, Follow System, Settings screen, premium sign-up flow) needs code from the Playback Track, it calls the public PlayerController API; it does not edit player internals.
 
 The chat feature belongs in later phases.
 
@@ -427,17 +440,17 @@ Acceptance:
 
 ## Local Data
 
-Expected Room tables:
+Expected Room tables. Use this list as the planned storage surface; final column-by-column ownership is decided in PRs. Owner column will be re-populated when each table ships in its lane.
 
-| Table | Used for | Owner |
+| Table | Used for | Lane |
 |---|---|---|
-| `messages` | Offline chat history cache | Sina |
-| `search_history` | Saved music/user search queries | TBD |
-| `downloads` | Downloaded song metadata and file path | TBD |
-| `liked_songs` | Liked songs | TBD |
-| `recently_played` | Recently played songs | TBD |
-| `playlists` | Local playlist cache | TBD |
-| `chat_search_history` | Saved user search queries for follow system | Sina |
+| `messages` | Offline chat history cache | Chat Track (later phase) |
+| `search_history` | Saved music/user search queries | Search Track (TBD) |
+| `downloads` | Downloaded song metadata + file path | Playback Track (Sina — playback owns local file accounting) |
+| `liked_songs` | Liked songs | Playback Track (Sina — playback owns the like flag for the queue) |
+| `recently_played` | Recently played songs | Playback Track (Sina — playback owns the play-history list) |
+| `playlists` | Local playlist cache | Backend Track (Bagher) |
+| `chat_search_history` | Saved user search queries for follow system | Chat Track (later phase) |
 
 ## Navigation
 
@@ -461,7 +474,7 @@ Resolve these with the team before implementing affected areas:
 9. What exact git workflow, PR review rules, and sync time should the team use?
 10. Which formatter/linter should be used: ktlint, detekt, or Android Studio formatter?
 11. Can Paging 3 in chat history v1 be deferred if time-constrained?
-12. Who owns the Canvas-drawn full-player visualizer?
+12. ~~Who owns the Canvas-drawn full-player visualizer?~~ Resolved: Playback Track (Sina) — the visualizer is part of the Full Player Logic node in the Development Dependency Graph.
 
 ## Agent Checklist
 
