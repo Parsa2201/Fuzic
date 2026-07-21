@@ -1,0 +1,32 @@
+<resources>
+    <string name="player_title">Now playing</string>
+    <string name="player_reconnecting">Reconnecting…</string>
+    <string name="player_queue">Queue</string>
+    <string name="player_sleep_timer">Sleep timer</string>
+    <string name="player_playback_speed">Playback speed</string>
+    <string name="player_speed_format">%1$.1fx</string>
+    <string name="player_timer_minutes">%1$d minutes</string>
+    <string name="player_timer_off">Off</string>
+    <string name="player_timer_remaining">%1$d min remaining</string>
+    <string name="player_repeat_off">Repeat off</string>
+    <string name="player_repeat_all">Repeat all</string>
+    <string name="player_repeat_one">Repeat one</string>
+    <string name="player_shuffle_on">Shuffle on</string>
+    <string name="player_shuffle_off">Shuffle off</string>
+    <string name="player_previous">Previous</string>
+    <string name="player_next">Next</string>
+    <string name="player_like">Like</string>
+    <string name="player_unlike">Unlike</string>
+    <string name="player_share">Share to chat</string>
+    <string name="player_add_to_playlist">Add to playlist</string>
+    <string name="player_close">Close player</string>
+    <string name="player_empty_title">Nothing is playing</string>
+    <string name="player_empty_message">Choose a song to start listening.</string>
+    <string name="player_error_title">Player unavailable</string>
+    <string name="player_queue_empty_title">Queue is empty</string>
+    <string name="player_queue_empty_message">Add songs to keep listening.</string>
+    <string name="player_visualizer_description">Animated audio visualizer</string>
+    <string name="preview_player_elapsed">1:24</string>
+    <string name="preview_player_duration">3:42</string>
+    <string name="preview_player_timer">30 min remaining</string>
+</resources>
