@@ -1,0 +1,32 @@
+<resources>
+    <string name="player_title">در حال پخش</string>
+    <string name="player_reconnecting">در حال اتصال دوباره…</string>
+    <string name="player_queue">صف پخش</string>
+    <string name="player_sleep_timer">تایمر خواب</string>
+    <string name="player_playback_speed">سرعت پخش</string>
+    <string name="player_speed_format">%1$.1fx</string>
+    <string name="player_timer_minutes">%1$d دقیقه</string>
+    <string name="player_timer_off">خاموش</string>
+    <string name="player_timer_remaining">%1$d دقیقه باقی مانده</string>
+    <string name="player_repeat_off">تکرار خاموش</string>
+    <string name="player_repeat_all">تکرار همه</string>
+    <string name="player_repeat_one">تکرار یک آهنگ</string>
+    <string name="player_shuffle_on">پخش تصادفی روشن</string>
+    <string name="player_shuffle_off">پخش تصادفی خاموش</string>
+    <string name="player_previous">قبلی</string>
+    <string name="player_next">بعدی</string>
+    <string name="player_like">پسندیدن</string>
+    <string name="player_unlike">نپسندیدن</string>
+    <string name="player_share">اشتراک گذاری در چت</string>
+    <string name="player_add_to_playlist">افزودن به پلی لیست</string>
+    <string name="player_close">بستن پخش کننده</string>
+    <string name="player_empty_title">آهنگی در حال پخش نیست</string>
+    <string name="player_empty_message">برای شروع شنیدن یک آهنگ انتخاب کن.</string>
+    <string name="player_error_title">پخش کننده در دسترس نیست</string>
+    <string name="player_queue_empty_title">صف پخش خالی است</string>
+    <string name="player_queue_empty_message">برای ادامه شنیدن آهنگ اضافه کن.</string>
+    <string name="player_visualizer_description">نمایشگر متحرک صدا</string>
+    <string name="preview_player_elapsed">۱:۲۴</string>
+    <string name="preview_player_duration">۳:۴۲</string>
+    <string name="preview_player_timer">۳۰ دقیقه باقی مانده</string>
+</resources>
