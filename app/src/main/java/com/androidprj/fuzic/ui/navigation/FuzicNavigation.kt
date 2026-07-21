@@ -3,14 +3,12 @@ package com.androidprj.fuzic.ui.navigation
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -26,6 +24,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -238,8 +237,30 @@ fun FuzicNavigation(
         }
     }
 
-    Scaffold(
+    NavigationSuiteScaffold(
         modifier = modifier.fillMaxSize(),
+        navigationSuiteItems = {
+            if (showShell) {
+                MainTab.entries.forEachIndexed { index, tab ->
+                    item(
+                        selected = index == selectedTab.ordinal,
+                        onClick = {
+                            navController.navigate(topLevelDestinations[index]) {
+                                launchSingleTop = true
+                                restoreState = true
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                            }
+                        },
+                        icon = { Icon(tab.icon, contentDescription = stringResource(tab.labelRes)) },
+                        label = { Text(stringResource(tab.labelRes)) },
+                    )
+                }
+            }
+        },
+    ) {
+    Scaffold(
         topBar = {
             if (showShell) {
                 FuzicTopAppBar(
@@ -251,7 +272,6 @@ fun FuzicNavigation(
         },
         bottomBar = {
             if (showShell) {
-                Column {
                 playerUiState.currentSong?.let { song ->
                     MiniPlayer(
                         uiState = MiniPlayerUiState(
@@ -263,25 +283,6 @@ fun FuzicNavigation(
                         onClick = { navController.navigate(FullPlayerDestination) },
                         onPlayPauseClick = { playerViewModel.onIntent(PlayerIntent.TogglePlayPause) },
                     )
-                }
-                NavigationBar {
-                    MainTab.entries.forEachIndexed { index, tab ->
-                        NavigationBarItem(
-                            selected = index == selectedTab.ordinal,
-                            onClick = {
-                                navController.navigate(topLevelDestinations[index]) {
-                                    launchSingleTop = true
-                                    restoreState = true
-                                    popUpTo(HomeDestination) { saveState = true }
-                                }
-                            },
-                            icon = {
-                                Icon(tab.icon, contentDescription = stringResource(tab.labelRes))
-                            },
-                            label = { Text(stringResource(tab.labelRes)) },
-                        )
-                    }
-                }
                 }
             }
         },
@@ -719,6 +720,7 @@ fun FuzicNavigation(
                 )
             }
         }
+    }
     }
 }
 
