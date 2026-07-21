@@ -53,8 +53,7 @@ class RemoteChatRepository @Inject constructor(
     override suspend fun sendMessage(receiverId: String, content: String?, sharedSongId: String?): Result<ChatMessage> {
         return try {
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
-            val message = MessageDto(
-                id = UUID.randomUUID().toString(),
+            val message = InsertMessageDto(
                 senderId = currentUserId,
                 receiverId = receiverId,
                 content = content,
@@ -96,4 +95,12 @@ class RemoteChatRepository @Inject constructor(
          }
          .map { it.toChatMessage(currentUserId) }
     }
+
+    @kotlinx.serialization.Serializable
+    private data class InsertMessageDto(
+        @kotlinx.serialization.SerialName("sender_id") val senderId: String,
+        @kotlinx.serialization.SerialName("receiver_id") val receiverId: String,
+        val content: String? = null,
+        @kotlinx.serialization.SerialName("shared_song_id") val sharedSongId: String? = null
+    )
 }

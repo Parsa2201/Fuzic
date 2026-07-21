@@ -27,6 +27,7 @@ class RemoteUserRepository @Inject constructor(
         return try {
             val updateDto = UpdateProfileDto(
                 name = user.displayName,
+                username = user.username,
                 avatarUrl = user.avatarUrl
             )
             val updatedUser = supabaseClient.postgrest["users"]
@@ -44,7 +45,14 @@ class RemoteUserRepository @Inject constructor(
     override suspend fun searchUsers(query: String): Result<List<ProfileUser>> {
         return try {
             val users = supabaseClient.postgrest["users"]
-                .select { filter { ilike("name", "%$query%") } }
+                .select { 
+                    filter { 
+                        or {
+                            ilike("name", "%$query%")
+                            ilike("username", "%$query%")
+                        }
+                    } 
+                }
                 .decodeList<UserDto>()
                 .map { it.toProfileUser() }
             Result.success(users)
@@ -56,6 +64,7 @@ class RemoteUserRepository @Inject constructor(
     @kotlinx.serialization.Serializable
     private data class UpdateProfileDto(
         val name: String,
+        val username: String,
         @kotlinx.serialization.SerialName("avatar_url") val avatarUrl: String?
     )
 }

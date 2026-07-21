@@ -81,8 +81,7 @@ class RemoteInteractionRepository @Inject constructor(
     private suspend fun insertInteraction(songId: String, type: String): Result<Unit> {
         return try {
             val userId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
-            val interaction = InteractionDto(
-                id = UUID.randomUUID().toString(),
+            val interaction = InsertInteractionDto(
                 userId = userId,
                 songId = songId,
                 interactionType = type
@@ -98,5 +97,12 @@ class RemoteInteractionRepository @Inject constructor(
     @kotlinx.serialization.Serializable
     private data class SongWrapper(
         @kotlinx.serialization.SerialName("songs") val song: SongDto
+    )
+
+    @kotlinx.serialization.Serializable
+    private data class InsertInteractionDto(
+        @kotlinx.serialization.SerialName("user_id") val userId: String,
+        @kotlinx.serialization.SerialName("song_id") val songId: String,
+        @kotlinx.serialization.SerialName("interaction_type") val interactionType: String
     )
 }
