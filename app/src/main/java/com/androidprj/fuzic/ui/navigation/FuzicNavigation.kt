@@ -189,6 +189,14 @@ fun FuzicNavigation(
         currentDestination?.hasRoute(PlaylistsDestination::class) == true ||
         currentDestination?.hasRoute(ProfileDestination::class) == true
 
+    LaunchedEffect(currentUser, showShell) {
+        if (currentUser == null && showShell) {
+            navController.navigate(WelcomeDestination) {
+                popUpTo(HomeDestination) { inclusive = true }
+            }
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
