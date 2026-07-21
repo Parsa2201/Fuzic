@@ -9,7 +9,7 @@ interface PlaylistRepository {
     suspend fun getUserPlaylists(userId: String, offset: Long = 0, limit: Long = 20): Result<List<PlaylistItem>>
     suspend fun getPlaylistSongs(playlistId: String, offset: Long = 0, limit: Long = 20): Result<List<SongItem>>
     
-    suspend fun createPlaylist(title: String, type: String?, isPublic: Boolean): Result<PlaylistItem>
+    suspend fun createPlaylist(title: String, type: String?, isPublic: Boolean, coverImageUrl: String? = null): Result<PlaylistItem>
     suspend fun deletePlaylist(playlistId: String): Result<Unit>
     
     suspend fun addSongToPlaylist(playlistId: String, songId: String): Result<Unit>

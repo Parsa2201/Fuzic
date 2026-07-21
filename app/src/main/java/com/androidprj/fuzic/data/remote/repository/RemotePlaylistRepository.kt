@@ -69,14 +69,15 @@ class RemotePlaylistRepository @Inject constructor(
         }
     }
 
-    override suspend fun createPlaylist(title: String, type: String?, isPublic: Boolean): Result<PlaylistItem> {
+    override suspend fun createPlaylist(title: String, type: String?, isPublic: Boolean, coverImageUrl: String?): Result<PlaylistItem> {
         return try {
             val userId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
             val newPlaylist = InsertPlaylistDto(
                 title = title,
                 ownerId = userId,
                 type = type,
-                isPublic = isPublic
+                isPublic = isPublic,
+                coverImageUrl = coverImageUrl
             )
             val result = supabaseClient.postgrest["playlists"]
                 .insert(newPlaylist) { select() }
@@ -131,6 +132,7 @@ class RemotePlaylistRepository @Inject constructor(
         val title: String,
         @kotlinx.serialization.SerialName("owner_id") val ownerId: String,
         val type: String?,
-        @kotlinx.serialization.SerialName("is_public") val isPublic: Boolean
+        @kotlinx.serialization.SerialName("is_public") val isPublic: Boolean,
+        @kotlinx.serialization.SerialName("cover_image_url") val coverImageUrl: String? = null
     )
 }
