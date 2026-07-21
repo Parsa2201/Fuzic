@@ -643,22 +643,35 @@ Per the course spec:
 
 ---
 
-## 21. Open Questions (carried from the original planning pass)
+## 21. Open Questions (proposed answers)
 
-> Status note: the answers below are populated against the current Eraser diagrams. Anything still genuinely unresolved stays below as an Open Question.
+> Status note: items below are **proposals** the team should accept or override at the next sync. Items with a decisive lane owner already chosen are marked **RESOLVED**. Items that block implementation are still **OPEN** and pinned to whoever owns the action.
 
-1. **Supabase Realtime:** Are the `messages`, `conversations`, and `typing` tables added to the `supabase_realtime` publication? Who confirms with Bagher? *(still open — needed by the Chat Track owner, not by Sina)*
-2. **Shared `MaterialTheme`:** Which teammate owns the design system file? *(open)*
-3. **Shared services (UserService, AuthService, PlayerService, ThemeManager):** Who owns each? *(partly resolved: `PlayerService` / `PlayerController` is Sina, per §12.4.1; the other three still open)*
-4. ~~**Profile tab ownership:** Sina planned to own the follow lists + settings entry, but not the rest of the Profile tab. Confirm split.~~ **Resolved:** Profile tab UI and the follow-lists / Settings entry are no longer in Sina's lane (Chat Track / later phase). See §11.4.
-5. **Logout policy:** Does logging out clear offline chat cache? *(open — Chat Track territory)*
-6. **Logout behavior on cached songs:** What happens to downloads on logout? *(open; the download-row lifecycle in §17 is Sina's since downloads are in his lane, but the logout decision is a product call)*
-7. **Search endpoint:** Backend owner (Bagher) to confirm which Supabase tables/columns are searchable and which Postgres full-text indexes exist (or need to be added). *(open)*
-8. **Song catalog minimum:** Spec requires at least 50 real songs. Who curates the list? Where do audio files live? *(open; playback consumes the URLs regardless of who curates)*
-9. **Git workflow:** Branch strategy (trunk-based? feature branches?), PR review rules, daily sync time. *(open)*
-10. **Code style / formatter:** ktlint? detekt? Standard Android Studio formatter? *(open)*
-11. **Paging 3 in chat history v1:** Spec requires it for long lists; chat can defer to a v1.5 if time-constrained. *(open — Chat Track call)*
-12. ~~**Visualizer:** Canvas-drawn waveform in the full player. Who owns this?~~ **Resolved:** Playback Track (Sina) owns it, as part of Full Player Logic (§12.4.1).
+1. **Supabase Realtime publication for `messages`, `conversations`, `typing`.** **OPEN · owner: Bagher (backend).** Decisive answer requires Bagher to publish those tables in the `supabase_realtime` publication when he lands the messaging schema. Until then, the Chat Track cannot start. Implementation can begin on contracts and Room cache in parallel. Playback Track does not depend on this.
+2. **Shared `MaterialTheme` ownership.** **PROPOSED · UI Track owner.** Most natural home is whoever owns the **App Foundation → Design System** node in the Top Level Feature Dependency Graph (Parsa today, unless re-assigned). Propose Parsa owns `ui/theme/` and the color palette discussion; the whole team consumes theme tokens. **OPEN until Parsa confirms.**
+3. **Shared services ownership.** **PROPOSED · splits as follows.**
+   - `PlayerService` / `PlayerController` → **Playback Track (Sina)** — already RESOLVED in §12.4.1.
+   - `ThemeManager` (live theme + locale switching through DataStore) → **UI Track** (proposed Parsa as Design System owner).
+   - `AuthService` (Supabase auth + session + sign-out) → **Backend Track (Bagher)** — auth surfaces come from Supabase; UI consumes the injected service.
+   - `UserService` (profile + premium status) → **Backend Track (Bagher)** — same reason: backed by the `profiles` table and the cache wrapper.
+4. ~~**Profile tab ownership. (RESOLVED)** Profile tab UI and follow lists / Settings entry left Sina's lane in PR #2 (see §11.4).~~
+5. **Logout clears offline chat cache?** **PROPOSED · yes, on logout.** Rationale: chat belongs to a different user by definition; cached messages from another account leaking into a fresh login is a privacy bug. The clear runs in the `AuthService.signOut()` path so it is not optional per call site. **OPEN until Bagher (AuthService owner) and the Chat Track assignee agree.**
+6. **Downloads on logout?** **PROPOSED · keep unless user explicitly asks to free space.** Lifecycle: an `isOfflineCopy` boolean on the `downloads` row is added by Playback Track (Sina); on logout, `AuthService` does not delete files by default, but exposes `clearLocalDownloads()` that the Settings screen can call (Settings lives outside Sina's lane — Settings owner calls into `PlayerRepository` which already exposes the file list). Free users get the same behavior; premium users get a "Keep downloads after logout?" toggle in Settings → Storage. **OPEN until Playback Track (Sina) confirms the API and Settings owner agrees.**
+7. **Search endpoint / Postgres full-text indexes.** **OPEN · owner: Bagher (backend).** Required minimums: `to_tsvector('simple', title)` GIN indexes on `songs`, `artists`, `playlists`, `users`. Bagher should ship a SQL migration and an `rpc search_catalog(query text, types text[])` function with prefix-match and ts_rank sorting. UI just calls the RPC. Until that lands, Search UI ships against a stub.
+8. **Minimum 50 songs + audio hosting.** **PROPOSED · Supabase Storage bucket `songs`, public-read, folder `tracks/{songId}.mp3`.** Curated list lives in `assets/seed/songs.json` (song metadata) and `assets/seed/audio-manifest.json` (which songId maps to which Supabase Storage path). Curators: Parsa + Bagher (Bagher because Storage is his). Playback Track (Sina) only consumes URLs from `songs` table — doesn't care who curated or where audio lives. **OPEN until Parsa/Bagher confirm.**
+9. **Git workflow + sync time.** **PROPOSED.**
+   - Branch model: feature branches off `master`, named `feature/...` for app code, `docs/...` for docs, `fix/...` for bug fixes. Subfeature branches off the parent feature branch.
+   - PR review: ≥1 teammate approval (not the author) + green CI before merge. Squash-merge by default unless commit history matters (the case for docs).
+   - Sync: async via PR comments, daily stand-up at 18:00 IRST (current Default Era). Branch protection on `master` blocks direct push.
+   - **OPEN until team confirms.**
+10. **Formatter / linter.** **PROPOSED.**
+    - `ktlint` with the Android Studio formatter (default rules) for code style.
+    - `detekt` disabled — ktlint catches the same ground at this codebase size and adds fewer CI minutes.
+    - A single `gradle check` runs ktlint + unit tests in CI.
+    - Hook: pre-commit via `lefthook` so authors fix lint before pushing.
+    - **OPEN until team confirms.**
+11. **Paging 3 in chat history v1.** **PROPOSED · defer to v1.5.** Reasoning: Paging 3 in chat requires a remote keyset, which requires Bagher's `messages_by_room` RPC and the realtime/insert ordering decisions. Ship v1 with a Room-backed `PagingSource` keyed by `(roomId, createdAt)` against a 200-message window; v1.5 swaps to infinite paging once the contract is fixed. Spec requirement is preserved for shipping. **OPEN until Chat Track owner and Bagher agree.**
+12. ~~**Visualizer. (RESOLVED)** Playback Track (Sina) owns it as part of Full Player Logic (§12.4.1).~~
 
 ---
 
