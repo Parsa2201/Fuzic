@@ -13,18 +13,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlaylistPlay
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.androidprj.fuzic.di.IoDispatcher
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
 import com.androidprj.fuzic.util.StringProvider
+import com.androidprj.fuzic.ui.theme.FuzicTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -74,6 +76,37 @@ class AddToPlaylistViewModel @Inject constructor(
     }
 }
 
+@Preview(name = "Add to playlist - English", showBackground = true)
+@Composable
+private fun AddToPlaylistEnglishPreview() {
+    FuzicTheme {
+        AddToPlaylistScreen(
+            playlists = listOf(
+                PlaylistItem("night-drive", "Night Drive", "Parsa", "18 songs"),
+                PlaylistItem("focus", "Focus", "Parsa", "24 songs"),
+            ),
+            isLoading = false,
+            errorMessage = null,
+            onBackClick = {},
+            onPlaylistClick = {},
+        )
+    }
+}
+
+@Preview(name = "Add to playlist empty - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun AddToPlaylistEmptyPersianPreview() {
+    FuzicTheme {
+        AddToPlaylistScreen(
+            playlists = emptyList(),
+            isLoading = false,
+            errorMessage = null,
+            onBackClick = {},
+            onPlaylistClick = {},
+        )
+    }
+}
+
 @Composable
 fun AddToPlaylistScreen(
     playlists: List<PlaylistItem>,
@@ -86,8 +119,8 @@ fun AddToPlaylistScreen(
     Column(modifier.fillMaxSize()) {
         DetailTopAppBar(stringResource(R.string.add_to_playlist_title), onBackClick)
         when {
-            errorMessage != null -> ScreenMessage(Icons.Default.PlaylistPlay, stringResource(R.string.add_to_playlist_title), errorMessage)
-            !isLoading && playlists.isEmpty() -> ScreenMessage(Icons.Default.PlaylistPlay, stringResource(R.string.add_to_playlist_title), stringResource(R.string.add_to_playlist_empty))
+            errorMessage != null -> ScreenMessage(Icons.AutoMirrored.Filled.PlaylistPlay, stringResource(R.string.add_to_playlist_title), errorMessage)
+            !isLoading && playlists.isEmpty() -> ScreenMessage(Icons.AutoMirrored.Filled.PlaylistPlay, stringResource(R.string.add_to_playlist_title), stringResource(R.string.add_to_playlist_empty))
             else -> LazyColumn {
                 items(playlists, key = { it.id }) { playlist ->
                     ListItem(

@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.androidprj.fuzic.R
@@ -21,6 +22,7 @@ import com.androidprj.fuzic.repository.UserRepository
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.theme.spacing
+import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.util.StringProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -60,6 +62,38 @@ class UserProfileViewModel @Inject constructor(
     }
 
     fun retry() { userId?.let(::load) }
+}
+
+@Preview(name = "User profile - English", showBackground = true)
+@Composable
+private fun UserProfileEnglishPreview() {
+    FuzicTheme {
+        UserProfileScreen(
+            uiState = UserProfileUiState(
+                user = ProfileUser(
+                    id = "user-preview",
+                    username = "parsa",
+                    displayName = "Parsa",
+                    isPremium = true,
+                ),
+                isLoading = false,
+            ),
+            onBackClick = {},
+            onRetryClick = {},
+        )
+    }
+}
+
+@Preview(name = "User profile error - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun UserProfileErrorPersianPreview() {
+    FuzicTheme {
+        UserProfileScreen(
+            uiState = UserProfileUiState(isLoading = false, errorMessage = "Profile could not be loaded."),
+            onBackClick = {},
+            onRetryClick = {},
+        )
+    }
 }
 
 @Composable

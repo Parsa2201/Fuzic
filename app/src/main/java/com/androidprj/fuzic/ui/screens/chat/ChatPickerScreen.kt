@@ -17,11 +17,14 @@ import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.androidprj.fuzic.di.IoDispatcher
 import com.androidprj.fuzic.repository.ChatRepository
 import com.androidprj.fuzic.util.StringProvider
+import com.androidprj.fuzic.model.ui.FollowUser
+import com.androidprj.fuzic.ui.theme.FuzicTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -55,5 +58,39 @@ fun ChatPickerScreen(uiState: ChatPickerUiState, onBackClick: () -> Unit, onConv
             !uiState.isLoading && uiState.conversations.isEmpty() -> ScreenMessage(Icons.Default.Share, stringResource(R.string.share_to_chat_title), stringResource(R.string.share_to_chat_empty))
             else -> LazyColumn { items(uiState.conversations, key = { it.id }) { conversation -> ListItem(headlineContent = { Text(conversation.participant.displayName) }, supportingContent = { Text(conversation.lastMessagePreview) }, modifier = Modifier.fillMaxWidth().clickable { onConversationClick(conversation) }) } }
         }
+    }
+}
+
+@Preview(name = "Share to chat - English", showBackground = true)
+@Composable
+private fun ChatPickerEnglishPreview() {
+    FuzicTheme {
+        ChatPickerScreen(
+            uiState = ChatPickerUiState(
+                conversations = listOf(
+                    ChatConversation(
+                        id = "conversation-preview",
+                        participant = FollowUser("user-preview", "nika", "Nika"),
+                        lastMessagePreview = "That new release is excellent.",
+                        lastMessageTimeLabel = "Now",
+                    ),
+                ),
+                isLoading = false,
+            ),
+            onBackClick = {},
+            onConversationClick = {},
+        )
+    }
+}
+
+@Preview(name = "Share to chat empty - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ChatPickerEmptyPersianPreview() {
+    FuzicTheme {
+        ChatPickerScreen(
+            uiState = ChatPickerUiState(isLoading = false),
+            onBackClick = {},
+            onConversationClick = {},
+        )
     }
 }
