@@ -61,9 +61,30 @@ import com.androidprj.fuzic.ui.screens.notifications.NotificationsViewModel
 import com.androidprj.fuzic.ui.screens.premium.PremiumScreen
 import com.androidprj.fuzic.ui.screens.premium.PremiumIntent
 import com.androidprj.fuzic.ui.screens.premium.PremiumViewModel
+import com.androidprj.fuzic.ui.screens.chat.ChatListScreen
+import com.androidprj.fuzic.ui.screens.chat.ChatDetailScreen
+import com.androidprj.fuzic.ui.screens.chat.ChatListViewModel
+import com.androidprj.fuzic.ui.screens.chat.ChatDetailViewModel
+import com.androidprj.fuzic.ui.screens.chat.ChatListIntent
+import com.androidprj.fuzic.ui.screens.chat.ChatDetailIntent
+import com.androidprj.fuzic.ui.screens.follow.FollowSearchScreen
+import com.androidprj.fuzic.ui.screens.follow.FollowListScreen
+import com.androidprj.fuzic.ui.screens.follow.FollowSearchViewModel
+import com.androidprj.fuzic.ui.screens.follow.FollowListViewModel
+import com.androidprj.fuzic.ui.screens.follow.FollowSearchIntent
+import com.androidprj.fuzic.ui.screens.follow.FollowListIntent
+import com.androidprj.fuzic.model.ui.ChatConversation
+import com.androidprj.fuzic.model.ui.FollowListType
+import com.androidprj.fuzic.model.ui.FollowUser
 import com.androidprj.fuzic.ui.screens.player.PlayerIntent
 import com.androidprj.fuzic.ui.screens.player.PlayerScreen
 import com.androidprj.fuzic.ui.screens.player.PlayerViewModel
+import com.androidprj.fuzic.ui.screens.auth.AuthScreen
+import com.androidprj.fuzic.ui.screens.auth.AuthViewModel
+import com.androidprj.fuzic.ui.screens.auth.AuthIntent
+import com.androidprj.fuzic.ui.screens.auth.WelcomeScreen
+import com.androidprj.fuzic.model.ui.AuthUiState
+import com.androidprj.fuzic.model.ui.WelcomeUiState
 import com.androidprj.fuzic.ui.screens.search.SearchIntent
 import com.androidprj.fuzic.ui.screens.search.SearchScreen
 import com.androidprj.fuzic.ui.screens.search.SearchViewModel
@@ -71,6 +92,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data object HomeDestination
+
+@Serializable
+data object WelcomeDestination
+
+@Serializable
+data object AuthDestination
 
 @Serializable
 data object SearchDestination
@@ -114,6 +141,24 @@ data object NotificationsDestination
 @Serializable
 data object PremiumDestination
 
+@Serializable
+data object ChatListDestination
+
+@Serializable
+data class ChatDetailDestination(
+    val conversationId: String,
+    val participantId: String,
+    val participantUsername: String,
+    val participantDisplayName: String,
+    val participantAvatarUrl: String? = null,
+)
+
+@Serializable
+data object FollowSearchDestination
+
+@Serializable
+data class FollowListDestination(val userId: String, val type: String)
+
 private val topLevelDestinations = listOf(
     HomeDestination,
     SearchDestination,
@@ -127,6 +172,8 @@ fun FuzicNavigation(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
+    val sessionViewModel: SessionViewModel = hiltViewModel()
+    val currentUser by sessionViewModel.currentUser.collectAsStateWithLifecycle()
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -134,18 +181,26 @@ fun FuzicNavigation(
     val selectedTab = topLevelDestinations.indexOfFirst { destination ->
         currentDestination?.hasRoute(destination::class) == true
     }.takeIf { it >= 0 }?.let(MainTab.entries::get) ?: MainTab.Home
+    val showShell = currentDestination?.hasRoute(HomeDestination::class) == true ||
+        currentDestination?.hasRoute(SearchDestination::class) == true ||
+        currentDestination?.hasRoute(DownloadsDestination::class) == true ||
+        currentDestination?.hasRoute(PlaylistsDestination::class) == true ||
+        currentDestination?.hasRoute(ProfileDestination::class) == true
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            FuzicTopAppBar(
-                onProfileClick = { navController.navigate(ProfileDestination) },
-                onNotificationsClick = { },
-                onSettingsClick = { navController.navigate(SettingsDestination) },
-            )
+            if (showShell) {
+                FuzicTopAppBar(
+                    onProfileClick = { navController.navigate(ProfileDestination) },
+                    onNotificationsClick = { },
+                    onSettingsClick = { navController.navigate(SettingsDestination) },
+                )
+            }
         },
         bottomBar = {
-            Column {
+            if (showShell) {
+                Column {
                 playerUiState.currentSong?.let { song ->
                     MiniPlayer(
                         uiState = MiniPlayerUiState(
@@ -176,14 +231,56 @@ fun FuzicNavigation(
                         )
                     }
                 }
+                }
             }
         },
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = HomeDestination,
+            startDestination = WelcomeDestination,
             modifier = Modifier.padding(paddingValues),
         ) {
+            composable<WelcomeDestination> {
+                LaunchedEffect(currentUser) {
+                    if (currentUser != null) {
+                        navController.navigate(HomeDestination) {
+                            popUpTo(WelcomeDestination) { inclusive = true }
+                        }
+                    }
+                }
+                WelcomeScreen(
+                    uiState = WelcomeUiState(),
+                    onPageChanged = { },
+                    onSkipClick = { navController.navigate(AuthDestination) },
+                    onNextClick = { },
+                    onStartClick = { navController.navigate(AuthDestination) },
+                )
+            }
+            composable<AuthDestination> {
+                val viewModel: AuthViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(currentUser) {
+                    if (currentUser != null) {
+                        navController.navigate(HomeDestination) {
+                            popUpTo(WelcomeDestination) { inclusive = true }
+                            popUpTo(AuthDestination) { inclusive = true }
+                        }
+                    }
+                }
+                AuthScreen(
+                    uiState = uiState,
+                    onNameChange = { viewModel.onIntent(AuthIntent.NameChanged(it)) },
+                    onEmailChange = { viewModel.onIntent(AuthIntent.EmailChanged(it)) },
+                    onPasswordChange = { viewModel.onIntent(AuthIntent.PasswordChanged(it)) },
+                    onConfirmPasswordChange = { viewModel.onIntent(AuthIntent.ConfirmPasswordChanged(it)) },
+                    onPasswordVisibilityClick = { viewModel.onIntent(AuthIntent.TogglePasswordVisibility) },
+                    onConfirmPasswordVisibilityClick = { viewModel.onIntent(AuthIntent.ToggleConfirmPasswordVisibility) },
+                    onSubmitClick = { viewModel.onIntent(AuthIntent.Submit) },
+                    onForgotPasswordClick = { },
+                    onSwitchModeClick = { viewModel.onIntent(AuthIntent.ToggleMode) },
+                    onRetryClick = { viewModel.onIntent(AuthIntent.Retry) },
+                )
+            }
             composable<HomeDestination> {
                 val viewModel: HomeViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -384,6 +481,82 @@ fun FuzicNavigation(
                     onUpgradeClick = { viewModel.onIntent(PremiumIntent.Upgrade) },
                     onRestoreClick = { viewModel.onIntent(PremiumIntent.RestorePurchase) },
                     onRetryClick = { viewModel.onIntent(PremiumIntent.Retry) },
+                )
+            }
+            composable<ChatListDestination> {
+                val viewModel: ChatListViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                ChatListScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onConversationClick = { conversation ->
+                        navController.navigate(
+                            ChatDetailDestination(
+                                conversationId = conversation.id,
+                                participantId = conversation.participant.id,
+                                participantUsername = conversation.participant.username,
+                                participantDisplayName = conversation.participant.displayName,
+                                participantAvatarUrl = conversation.participant.avatarUrl,
+                            ),
+                        )
+                    },
+                    onRetryClick = { viewModel.onIntent(ChatListIntent.Retry) },
+                )
+            }
+            composable<ChatDetailDestination> { entry ->
+                val args = entry.toRoute<ChatDetailDestination>()
+                val viewModel: ChatDetailViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val conversation = ChatConversation(
+                    id = args.conversationId,
+                    participant = FollowUser(
+                        id = args.participantId,
+                        username = args.participantUsername,
+                        displayName = args.participantDisplayName,
+                        avatarUrl = args.participantAvatarUrl,
+                    ),
+                    lastMessagePreview = "",
+                    lastMessageTimeLabel = "",
+                )
+                LaunchedEffect(conversation.id) {
+                    viewModel.onIntent(ChatDetailIntent.LoadConversation(conversation))
+                }
+                ChatDetailScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onDraftChange = { viewModel.onIntent(ChatDetailIntent.DraftChanged(it)) },
+                    onSendClick = { viewModel.onIntent(ChatDetailIntent.SendDraft) },
+                    onShareSongClick = { },
+                    onSongClick = { navController.navigate(SongDestination(it.id)) },
+                    onRetryClick = { viewModel.onIntent(ChatDetailIntent.Retry) },
+                )
+            }
+            composable<FollowSearchDestination> {
+                val viewModel: FollowSearchViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                FollowSearchScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onQueryChange = { viewModel.onIntent(FollowSearchIntent.QueryChanged(it)) },
+                    onUserClick = { },
+                    onFollowClick = { viewModel.onIntent(FollowSearchIntent.ToggleFollow(it)) },
+                    onRetryClick = { viewModel.onIntent(FollowSearchIntent.Retry) },
+                )
+            }
+            composable<FollowListDestination> { entry ->
+                val args = entry.toRoute<FollowListDestination>()
+                val viewModel: FollowListViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val type = runCatching { FollowListType.valueOf(args.type) }.getOrDefault(FollowListType.Followers)
+                LaunchedEffect(args.userId, type) {
+                    viewModel.onIntent(FollowListIntent.Load(args.userId, type))
+                }
+                FollowListScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onUserClick = { },
+                    onFollowClick = { viewModel.onIntent(FollowListIntent.ToggleFollow(it)) },
+                    onRetryClick = { viewModel.onIntent(FollowListIntent.Retry) },
                 )
             }
         }
