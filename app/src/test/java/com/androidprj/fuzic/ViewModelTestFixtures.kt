@@ -15,6 +15,8 @@ import com.androidprj.fuzic.model.ui.AudioVisualizerFrame
 import com.androidprj.fuzic.model.ui.ArtistDetails
 import com.androidprj.fuzic.model.ui.ArtistItem
 import com.androidprj.fuzic.model.ui.PlayerUiState
+import com.androidprj.fuzic.model.ui.NotificationItem
+import com.androidprj.fuzic.model.ui.NotificationType
 import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SearchFilter
 import com.androidprj.fuzic.model.ui.SearchResultItem
@@ -24,6 +26,7 @@ import com.androidprj.fuzic.repository.DownloadRepository
 import com.androidprj.fuzic.repository.ArtistRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
+import com.androidprj.fuzic.repository.NotificationRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
 import com.androidprj.fuzic.repository.PlayerRepository
 import com.androidprj.fuzic.repository.PlaylistDetailsRepository
@@ -97,6 +100,15 @@ internal val testSearchResult = SearchResultItem(
     title = "Midnight Drive",
     subtitle = "Luna Ray",
     type = SearchFilter.Songs,
+)
+
+internal val testNotification = NotificationItem(
+    id = "notification-1",
+    title = "New follower",
+    message = "Nika followed you",
+    timeLabel = "Now",
+    type = NotificationType.Follow,
+    isRead = false,
 )
 
 internal object FakeStringProvider : StringProvider {
@@ -455,5 +467,26 @@ internal class FakeSearchRepository(
 
     override suspend fun clearSearchHistory(): Result<Unit> {
         return clearResult.onSuccess { history.value = emptyList() }
+    }
+}
+
+internal class FakeNotificationRepository : NotificationRepository {
+    var markResult: Result<Unit> = Result.success(Unit)
+    var markAllResult: Result<Unit> = Result.success(Unit)
+    var markCalls = 0
+    var markAllCalls = 0
+
+    override fun observeNotifications(): Flow<androidx.paging.PagingData<NotificationItem>> {
+        return flowOf(androidx.paging.PagingData.empty())
+    }
+
+    override suspend fun markNotificationAsRead(notificationId: String): Result<Unit> {
+        markCalls++
+        return markResult
+    }
+
+    override suspend fun markAllNotificationsAsRead(): Result<Unit> {
+        markAllCalls++
+        return markAllResult
     }
 }

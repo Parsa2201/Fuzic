@@ -13,6 +13,7 @@ import com.androidprj.fuzic.data.remote.repository.InMemoryPremiumRepository
 import com.androidprj.fuzic.data.remote.repository.InMemoryPlaylistDetailsRepository
 import com.androidprj.fuzic.data.remote.repository.InMemoryArtistRepository
 import com.androidprj.fuzic.data.remote.repository.InMemorySearchRepository
+import com.androidprj.fuzic.data.remote.repository.InMemoryNotificationRepository
 import com.androidprj.fuzic.data.settings.InMemorySettingsRepository
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.ArtistRepository
@@ -21,6 +22,7 @@ import com.androidprj.fuzic.repository.DownloadRepository
 import com.androidprj.fuzic.repository.FollowRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
+import com.androidprj.fuzic.repository.NotificationRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
 import com.androidprj.fuzic.repository.PlaylistDetailsRepository
 import com.androidprj.fuzic.repository.PlayerRepository
@@ -121,4 +123,10 @@ abstract class RepositoryModule {
     abstract fun bindSearchRepository(
         inMemorySearchRepository: InMemorySearchRepository
     ): SearchRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNotificationRepository(
+        inMemoryNotificationRepository: InMemoryNotificationRepository
+    ): NotificationRepository
 }
