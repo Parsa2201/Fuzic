@@ -106,6 +106,7 @@ import com.androidprj.fuzic.ui.screens.auth.AuthViewModel
 import com.androidprj.fuzic.ui.screens.auth.AuthIntent
 import com.androidprj.fuzic.ui.screens.auth.WelcomeScreen
 import com.androidprj.fuzic.ui.screens.auth.PasswordRecoveryScreen
+import com.androidprj.fuzic.ui.screens.auth.PasswordRecoveryViewModel
 import com.androidprj.fuzic.model.ui.AuthUiState
 import com.androidprj.fuzic.model.ui.WelcomeUiState
 import com.androidprj.fuzic.ui.screens.search.SearchIntent
@@ -438,17 +439,16 @@ fun FuzicNavigation(
                 )
             }
             composable<PasswordRecoveryDestination> {
-                var email by rememberSaveable { mutableStateOf("") }
-                var isSubmitted by rememberSaveable { mutableStateOf(false) }
+                val viewModel: PasswordRecoveryViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 PasswordRecoveryScreen(
-                    email = email,
-                    isSubmitted = isSubmitted,
+                    email = uiState.email,
+                    isSubmitted = uiState.isSubmitted,
+                    isLoading = uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
                     onBackClick = { navController.popBackStack() },
-                    onEmailChange = {
-                        email = it
-                        isSubmitted = false
-                    },
-                    onSubmitClick = { isSubmitted = true },
+                    onEmailChange = viewModel::updateEmail,
+                    onSubmitClick = viewModel::submit,
                 )
             }
             composable<EditProfileDestination> {

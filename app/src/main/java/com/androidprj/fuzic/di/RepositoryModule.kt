@@ -16,6 +16,7 @@ import com.androidprj.fuzic.data.remote.repository.InMemorySearchRepository
 import com.androidprj.fuzic.data.remote.repository.InMemoryNotificationRepository
 import com.androidprj.fuzic.data.settings.InMemorySettingsRepository
 import com.androidprj.fuzic.repository.AuthRepository
+import com.androidprj.fuzic.repository.PasswordRecoveryRepository
 import com.androidprj.fuzic.repository.ArtistRepository
 import com.androidprj.fuzic.repository.ChatRepository
 import com.androidprj.fuzic.repository.DownloadRepository
@@ -45,6 +46,12 @@ abstract class RepositoryModule {
     abstract fun bindAuthRepository(
         remoteAuthRepository: RemoteAuthRepository
     ): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPasswordRecoveryRepository(
+        remoteAuthRepository: RemoteAuthRepository,
+    ): PasswordRecoveryRepository
 
     @Binds
     @Singleton

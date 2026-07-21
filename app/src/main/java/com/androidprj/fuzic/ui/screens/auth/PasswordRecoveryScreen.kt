@@ -27,6 +27,8 @@ import com.androidprj.fuzic.ui.theme.FuzicTheme
 fun PasswordRecoveryScreen(
     email: String,
     isSubmitted: Boolean,
+    isLoading: Boolean = false,
+    errorMessage: String? = null,
     onBackClick: () -> Unit,
     onEmailChange: (String) -> Unit,
     onSubmitClick: () -> Unit,
@@ -54,11 +56,12 @@ fun PasswordRecoveryScreen(
                 )
                 Button(
                     onClick = onSubmitClick,
-                    enabled = email.contains('@'),
+                    enabled = email.contains('@') && !isLoading,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(stringResource(R.string.password_recovery_submit))
+                    Text(if (isLoading) stringResource(R.string.loading) else stringResource(R.string.password_recovery_submit))
                 }
+                errorMessage?.let { Text(it, color = androidx.compose.material3.MaterialTheme.colorScheme.error) }
             }
         }
     }
@@ -84,6 +87,7 @@ private fun PasswordRecoveryPreview() {
         PasswordRecoveryScreen(
             email = email,
             isSubmitted = submitted,
+            isLoading = false,
             onBackClick = { submitted = false },
             onEmailChange = { email = it },
             onSubmitClick = { submitted = true },
