@@ -1,0 +1,20 @@
+package com.androidprj.fuzic.model
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class Playlist(
+    val id: String,
+    val title: String,
+    @SerialName("cover_image_url") val coverImageUrl: String? = null,
+    @SerialName("owner_id") val ownerId: String,
+    val type: String? = null,
+    @SerialName("is_public") val isPublic: Boolean = false
+)
+
+@Serializable
+data class PlaylistSong(
+    @SerialName("playlist_id") val playlistId: String,
+    @SerialName("song_id") val songId: String
+)
