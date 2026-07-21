@@ -1,0 +1,30 @@
+<resources>
+    <string name="auth_welcome_title">موسیقی برای هر لحظه</string>
+    <string name="auth_welcome_message">آهنگ پیدا کن، پلی لیست بساز و چیزهایی را که دوست داری به اشتراک بگذار.</string>
+    <string name="auth_welcome_next">بعدی</string>
+    <string name="auth_welcome_skip">رد کردن</string>
+    <string name="auth_welcome_start">شروع کنید</string>
+    <string name="auth_sign_in_title">خوش برگشتی</string>
+    <string name="auth_sign_up_title">حساب کاربری بساز</string>
+    <string name="auth_email_label">ایمیل</string>
+    <string name="auth_password_label">رمز عبور</string>
+    <string name="auth_confirm_password_label">تکرار رمز عبور</string>
+    <string name="auth_sign_in">ورود</string>
+    <string name="auth_sign_up">ثبت نام</string>
+    <string name="auth_switch_to_sign_up">تازه به فوزیک پیوستی؟ حساب بساز</string>
+    <string name="auth_switch_to_sign_in">حساب داری؟ وارد شو</string>
+    <string name="auth_forgot_password">رمز عبورت را فراموش کردی؟</string>
+    <string name="auth_email_error">یک ایمیل معتبر وارد کن.</string>
+    <string name="auth_password_error">رمز عبور باید حداقل ۸ کاراکتر باشد.</string>
+    <string name="auth_confirm_password_error">رمزهای عبور یکسان نیستند.</string>
+    <string name="auth_error_title">ورود در دسترس نیست</string>
+    <string name="auth_error_message">اتصال را بررسی و دوباره تلاش کن.</string>
+    <string name="auth_password_show">نمایش رمز عبور</string>
+    <string name="auth_password_hide">پنهان کردن رمز عبور</string>
+    <string name="auth_welcome_page_one_title">صدای خودت را پیدا کن</string>
+    <string name="auth_welcome_page_one_message">پیشنهادهایی متناسب با حال و هوایت کشف کن.</string>
+    <string name="auth_welcome_page_two_title">شخصی‌سازی کن</string>
+    <string name="auth_welcome_page_two_message">علاقه‌مندی‌ها را ذخیره و برای هر روز پلی لیست بساز.</string>
+    <string name="auth_welcome_page_three_title">لحظه را به اشتراک بگذار</string>
+    <string name="auth_welcome_page_three_message">با دوستان ارتباط بگیر و آهنگ‌ها را در چت به اشتراک بگذار.</string>
+</resources>
