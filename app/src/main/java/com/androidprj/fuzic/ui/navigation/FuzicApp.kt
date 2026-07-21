@@ -50,15 +50,7 @@ import com.androidprj.fuzic.ui.theme.FuzicTheme
 
 @Composable
 fun FuzicApp(modifier: Modifier = Modifier) {
-    var selectedTab by rememberSaveable { mutableStateOf(MainTab.Home) }
-
-    FuzicAppShell(
-        selectedTab = selectedTab,
-        onTabSelected = { selectedTab = it },
-        onProfileClick = { selectedTab = MainTab.Profile },
-        onSettingsClick = { selectedTab = MainTab.Profile },
-        modifier = modifier
-    )
+    FuzicNavigation(modifier = modifier)
 }
 
 @Composable
