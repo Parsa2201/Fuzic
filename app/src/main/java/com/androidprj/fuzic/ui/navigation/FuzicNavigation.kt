@@ -485,7 +485,9 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onPlayClick = { playerViewModel.onIntent(PlayerIntent.Play(it)) },
                     onLikeClick = { viewModel.toggleLike() },
-                    onDownloadClick = { unavailableAction(unavailableMessage) },
+                    onDownloadClick = {
+                        if (uiState.isPremiumUser) viewModel.download() else navController.navigate(PremiumDestination)
+                    },
                     onShareClick = { navController.navigate(ChatPickerDestination(it.id)) },
                     onAddToPlaylistClick = { navController.navigate(AddToPlaylistDestination(it.id)) },
                     onRetryClick = { viewModel.load(args.songId) },

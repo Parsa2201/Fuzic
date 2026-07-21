@@ -8,6 +8,9 @@ import com.androidprj.fuzic.R
 import com.androidprj.fuzic.util.StringProvider
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
+import com.androidprj.fuzic.repository.PremiumRepository
+import com.androidprj.fuzic.repository.DownloadRepository
+import com.androidprj.fuzic.model.ui.DownloadRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -21,11 +24,21 @@ import kotlinx.coroutines.withContext
 class SongDetailsViewModel @Inject constructor(
     private val musicRepository: MusicRepository,
     private val interactionRepository: InteractionRepository,
+    private val premiumRepository: PremiumRepository,
+    private val downloadRepository: DownloadRepository,
     @IoDispatcher private val ioDispatcher: kotlinx.coroutines.CoroutineDispatcher,
     private val stringProvider: StringProvider,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SongDetailsUiState())
     val uiState: StateFlow<SongDetailsUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            premiumRepository.observePremiumStatus().collect { isPremium ->
+                _uiState.value = _uiState.value.copy(isPremiumUser = isPremium)
+            }
+        }
+    }
 
     fun load(songId: String) {
         viewModelScope.launch {
@@ -58,6 +71,18 @@ class SongDetailsViewModel @Inject constructor(
                         ?: stringProvider.get(R.string.song_details_error_title),
                 )
             }
+        }
+    }
+
+    fun download() {
+        val song = _uiState.value.song ?: return
+        val url = song.audioUrl ?: run {
+            _uiState.value = _uiState.value.copy(errorMessage = stringProvider.get(R.string.song_details_error_title))
+            return
+        }
+        viewModelScope.launch {
+            val result = withContext(ioDispatcher) { downloadRepository.enqueueDownload(DownloadRequest(song, url)) }
+            if (result.isFailure) _uiState.value = _uiState.value.copy(errorMessage = result.exceptionOrNull()?.message)
         }
     }
 }
