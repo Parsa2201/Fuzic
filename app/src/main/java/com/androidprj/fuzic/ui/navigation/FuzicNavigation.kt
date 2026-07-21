@@ -181,7 +181,7 @@ data class ChatDetailDestination(
 data object FollowSearchDestination
 
 @Serializable
-data class FollowListDestination(val userId: String, val type: String)
+data class FollowListDestination(val userId: String, val type: FollowListType)
 
 @Serializable
 data class UserProfileDestination(val userId: String)
@@ -422,10 +422,10 @@ fun FuzicNavigation(
                     onEntryClick = { entry ->
                         when (entry) {
                             ProfileEntry.Followers -> uiState.profile?.id?.let { id ->
-                                navController.navigate(FollowListDestination(id, FollowListType.Followers.name))
+                                navController.navigate(FollowListDestination(id, FollowListType.Followers))
                             }
                             ProfileEntry.Following -> uiState.profile?.id?.let { id ->
-                                navController.navigate(FollowListDestination(id, FollowListType.Following.name))
+                                navController.navigate(FollowListDestination(id, FollowListType.Following))
                             }
                             ProfileEntry.LikedSongs -> navController.navigate(LikedSongsDestination)
                             ProfileEntry.RecentlyPlayed -> navController.navigate(RecentlyPlayedDestination)
@@ -739,9 +739,8 @@ fun FuzicNavigation(
                 val args = entry.toRoute<FollowListDestination>()
                 val viewModel: FollowListViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                val type = runCatching { FollowListType.valueOf(args.type) }.getOrDefault(FollowListType.Followers)
-                LaunchedEffect(args.userId, type) {
-                    viewModel.onIntent(FollowListIntent.Load(args.userId, type))
+                LaunchedEffect(args.userId, args.type) {
+                    viewModel.onIntent(FollowListIntent.Load(args.userId, args.type))
                 }
                 FollowListScreen(
                     uiState = uiState,
