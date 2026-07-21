@@ -145,7 +145,7 @@ data class PlaylistDestination(val playlistId: String)
 data class ArtistDestination(val artistId: String)
 
 @Serializable
-data object SettingsDestination
+data class SettingsDestination(val showLogoutConfirmation: Boolean = false)
 
 @Serializable
 data object FullPlayerDestination
@@ -431,7 +431,7 @@ fun FuzicNavigation(
                             ProfileEntry.RecentlyPlayed -> navController.navigate(RecentlyPlayedDestination)
                             ProfileEntry.Settings -> navController.navigate(SettingsDestination)
                             ProfileEntry.Chat -> navController.navigate(ChatListDestination)
-                            ProfileEntry.Logout -> navController.navigate(SettingsDestination)
+                            ProfileEntry.Logout -> navController.navigate(SettingsDestination(showLogoutConfirmation = true))
                         }
                     },
                     onRetryClick = viewModel::retry,
@@ -560,9 +560,15 @@ fun FuzicNavigation(
                     onRetryClick = { viewModel.onIntent(ArtistDetailsIntent.Retry) },
                 )
             }
-            composable<SettingsDestination> {
+            composable<SettingsDestination> { entry ->
+                val args = entry.toRoute<SettingsDestination>()
                 val viewModel: SettingsViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(args.showLogoutConfirmation) {
+                    if (args.showLogoutConfirmation) {
+                        viewModel.onIntent(SettingsIntent.ShowLogoutConfirmation)
+                    }
+                }
                 SettingsScreen(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
