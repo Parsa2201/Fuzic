@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -32,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -67,6 +69,7 @@ fun PlaylistsRoute(
     onPlaylistClick: (PlaylistItem) -> Unit,
     onNewPlaylistClick: () -> Unit,
     onCreateNameChange: (String) -> Unit,
+    onCreateCoverSelected: (String?) -> Unit,
     onCreateConfirmClick: () -> Unit,
     onCreateDismissClick: () -> Unit,
     onRetryClick: () -> Unit,
@@ -77,6 +80,7 @@ fun PlaylistsRoute(
         onPlaylistClick = onPlaylistClick,
         onNewPlaylistClick = onNewPlaylistClick,
         onCreateNameChange = onCreateNameChange,
+        onCreateCoverSelected = onCreateCoverSelected,
         onCreateConfirmClick = onCreateConfirmClick,
         onCreateDismissClick = onCreateDismissClick,
         onRetryClick = onRetryClick,
@@ -90,6 +94,7 @@ fun PlaylistsScreen(
     onPlaylistClick: (PlaylistItem) -> Unit,
     onNewPlaylistClick: () -> Unit,
     onCreateNameChange: (String) -> Unit,
+    onCreateCoverSelected: (String?) -> Unit,
     onCreateConfirmClick: () -> Unit,
     onCreateDismissClick: () -> Unit,
     onRetryClick: () -> Unit,
@@ -128,6 +133,7 @@ fun PlaylistsScreen(
             onPlaylistClick = onPlaylistClick,
             onNewPlaylistClick = onNewPlaylistClick,
             onCreateNameChange = onCreateNameChange,
+            onCreateCoverSelected = onCreateCoverSelected,
             onCreateConfirmClick = onCreateConfirmClick,
             onCreateDismissClick = onCreateDismissClick,
             modifier = modifier
@@ -141,6 +147,7 @@ private fun PlaylistsContent(
     onPlaylistClick: (PlaylistItem) -> Unit,
     onNewPlaylistClick: () -> Unit,
     onCreateNameChange: (String) -> Unit,
+    onCreateCoverSelected: (String?) -> Unit,
     onCreateConfirmClick: () -> Unit,
     onCreateDismissClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -160,6 +167,7 @@ private fun PlaylistsContent(
                 CreatePlaylistForm(
                     state = uiState.createPlaylistState,
                     onNameChange = onCreateNameChange,
+                    onCoverSelected = onCreateCoverSelected,
                     onConfirmClick = onCreateConfirmClick,
                     onDismissClick = onCreateDismissClick
                 )
@@ -203,6 +211,7 @@ private fun PlaylistsHeader(
 private fun CreatePlaylistForm(
     state: CreatePlaylistUiState,
     onNameChange: (String) -> Unit,
+    onCoverSelected: (String?) -> Unit,
     onConfirmClick: () -> Unit,
     onDismissClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -233,6 +242,26 @@ private fun CreatePlaylistForm(
                     }
                 }
             )
+            Text(
+                text = stringResource(R.string.playlists_cover_label),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+            ) {
+                CoverOption(
+                    uri = null,
+                    selected = state.selectedCoverUri == null,
+                    onClick = { onCoverSelected(null) },
+                )
+                state.availableCoverUris.take(4).forEach { uri ->
+                    CoverOption(
+                        uri = uri,
+                        selected = state.selectedCoverUri == uri,
+                        onClick = { onCoverSelected(uri) },
+                    )
+                }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
                 OutlinedButton(onClick = onDismissClick) {
                     Text(stringResource(R.string.action_cancel))
@@ -241,6 +270,43 @@ private fun CreatePlaylistForm(
                     Text(stringResource(R.string.action_create))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CoverOption(
+    uri: String?,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.size(56.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            },
+        ),
+    ) {
+        if (uri == null) {
+            Icon(
+                Icons.Default.Image,
+                contentDescription = stringResource(R.string.playlists_cover_default),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(MaterialTheme.spacing.small),
+            )
+        } else {
+            MusicArtwork(
+                artworkUrl = uri,
+                fallbackIcon = Icons.AutoMirrored.Filled.PlaylistPlay,
+                contentDescription = stringResource(R.string.playlists_cover_option),
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 }
@@ -468,7 +534,14 @@ private fun PlaylistsScreenCreatePreview() {
             uiState = samplePlaylistsUiState().copy(
                 createPlaylistState = CreatePlaylistUiState(
                     isVisible = true,
-                    name = stringResource(R.string.preview_playlist_new_name)
+                    name = stringResource(R.string.preview_playlist_new_name),
+                    selectedCoverUri = previewArtworkUri(11),
+                    availableCoverUris = listOf(
+                        previewArtworkUri(10),
+                        previewArtworkUri(11),
+                        previewArtworkUri(12),
+                        previewArtworkUri(13),
+                    ),
                 )
             )
         )
@@ -520,8 +593,16 @@ private fun CreatePlaylistFormPreview() {
             mutableStateOf(CreatePlaylistUiState(isVisible = true, name = ""))
         }
         CreatePlaylistForm(
-            state = state,
+            state = state.copy(
+                availableCoverUris = listOf(
+                    previewArtworkUri(10),
+                    previewArtworkUri(11),
+                    previewArtworkUri(12),
+                    previewArtworkUri(13),
+                ),
+            ),
             onNameChange = { state = state.copy(name = it) },
+            onCoverSelected = { state = state.copy(selectedCoverUri = it) },
             onConfirmClick = { },
             onDismissClick = { },
             modifier = Modifier.padding(MaterialTheme.spacing.medium)
@@ -589,6 +670,11 @@ private fun PlaylistsPreviewState(uiState: PlaylistsUiState) {
         onPlaylistClick = { selectedPlaylist = it },
         onNewPlaylistClick = { state = state.copy(createPlaylistState = state.createPlaylistState.copy(isVisible = true)) },
         onCreateNameChange = { state = state.copy(createPlaylistState = state.createPlaylistState.copy(name = it)) },
+        onCreateCoverSelected = { uri ->
+            state = state.copy(
+                createPlaylistState = state.createPlaylistState.copy(selectedCoverUri = uri),
+            )
+        },
         onCreateConfirmClick = { state = state.copy(createPlaylistState = CreatePlaylistUiState()) },
         onCreateDismissClick = { state = state.copy(createPlaylistState = CreatePlaylistUiState()) },
         onRetryClick = { state = state.copy(errorMessage = null) }

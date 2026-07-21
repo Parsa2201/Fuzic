@@ -114,6 +114,7 @@ fun PlayerRoute(
     onOverlayDismiss: () -> Unit,
     onSleepTimerSelected: (Int?) -> Unit,
     onPlaybackSpeedSelected: (Float) -> Unit,
+    onPlaylistSelected: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     PlayerScreen(
@@ -136,6 +137,7 @@ fun PlayerRoute(
         onOverlayDismiss = onOverlayDismiss,
         onSleepTimerSelected = onSleepTimerSelected,
         onPlaybackSpeedSelected = onPlaybackSpeedSelected,
+        onPlaylistSelected = onPlaylistSelected,
         modifier = modifier,
     )
 }
@@ -162,6 +164,7 @@ fun PlayerScreen(
     onOverlayDismiss: () -> Unit,
     onSleepTimerSelected: (Int?) -> Unit,
     onPlaybackSpeedSelected: (Float) -> Unit,
+    onPlaylistSelected: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -214,6 +217,11 @@ fun PlayerScreen(
                 selectedSpeed = uiState.playbackSpeed,
                 onDismiss = onOverlayDismiss,
                 onSelected = onPlaybackSpeedSelected,
+            )
+            PlayerOverlay.Share -> ShareSheet(onDismiss = onOverlayDismiss)
+            PlayerOverlay.AddToPlaylist -> AddToPlaylistSheet(
+                onDismiss = onOverlayDismiss,
+                onPlaylistSelected = onPlaylistSelected,
             )
             PlayerOverlay.None -> Unit
         }
@@ -652,6 +660,96 @@ private fun PlaybackSpeedSheet(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ShareSheet(
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = MaterialTheme.spacing.medium,
+                vertical = MaterialTheme.spacing.small,
+            ),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+        ) {
+            Text(
+                text = stringResource(R.string.player_share),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+            ListItem(
+                leadingContent = { Icon(Icons.Default.Share, contentDescription = null) },
+                headlineContent = { Text(stringResource(R.string.player_share_to_chat)) },
+                supportingContent = {
+                    Text(stringResource(R.string.player_share_to_chat_description))
+                },
+                modifier = Modifier.clickable(onClick = onDismiss),
+            )
+            ListItem(
+                leadingContent = { Icon(Icons.Default.Add, contentDescription = null) },
+                headlineContent = { Text(stringResource(R.string.player_copy_song_link)) },
+                supportingContent = {
+                    Text(stringResource(R.string.player_copy_song_link_description))
+                },
+                modifier = Modifier.clickable(onClick = onDismiss),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddToPlaylistSheet(
+    onDismiss: () -> Unit,
+    onPlaylistSelected: (String) -> Unit,
+) {
+    val playlists = listOf(
+        stringResource(R.string.preview_playlist_my_night),
+        stringResource(R.string.preview_playlist_evening_mix),
+        stringResource(R.string.preview_playlist_persian_pulse),
+    )
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = MaterialTheme.spacing.medium,
+                vertical = MaterialTheme.spacing.small,
+            ),
+        ) {
+            Text(
+                text = stringResource(R.string.player_add_to_playlist),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+            playlists.forEach { playlist ->
+                ListItem(
+                    leadingContent = {
+                        Icon(
+                            Icons.AutoMirrored.Filled.QueueMusic,
+                            contentDescription = null,
+                        )
+                    },
+                    headlineContent = { Text(playlist) },
+                    modifier = Modifier.clickable {
+                        onPlaylistSelected(playlist)
+                        onDismiss()
+                    },
+                )
+            }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        }
+    }
+}
+
 @Composable
 private fun PlayerMessage(
     title: String,
@@ -810,6 +908,33 @@ private fun PlaybackSpeedSheetPreview() {
             selectedSpeed = 1.5f,
             onDismiss = {},
             onSelected = {},
+        )
+    }
+}
+
+@Preview(name = "Share sheet - English", showBackground = true)
+@Composable
+private fun ShareSheetPreview() {
+    FuzicTheme {
+        ShareSheet(onDismiss = {})
+    }
+}
+
+@Preview(name = "Share sheet - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ShareSheetPersianPreview() {
+    FuzicTheme {
+        ShareSheet(onDismiss = {})
+    }
+}
+
+@Preview(name = "Add to playlist sheet - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun AddToPlaylistSheetPreview() {
+    FuzicTheme {
+        AddToPlaylistSheet(
+            onDismiss = {},
+            onPlaylistSelected = {},
         )
     }
 }

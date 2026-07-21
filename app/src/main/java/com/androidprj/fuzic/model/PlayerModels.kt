@@ -11,6 +11,8 @@ enum class PlayerOverlay {
     Queue,
     SleepTimer,
     PlaybackSpeed,
+    Share,
+    AddToPlaylist,
 }
 
 data class PlayerUiState(

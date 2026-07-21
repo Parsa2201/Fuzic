@@ -198,4 +198,11 @@
     <string name="preview_artist_followers_large">248K followers</string>
     <string name="preview_artist_followers_medium">94K followers</string>
     <string name="preview_artist_followers_small">18K followers</string>
+    <string name="playlists_cover_label">Playlist cover</string>
+    <string name="playlists_cover_default">Use generated cover</string>
+    <string name="playlists_cover_option">Choose cover</string>
+    <string name="player_share_to_chat">Share to chat</string>
+    <string name="player_share_to_chat_description">Send this song to a conversation.</string>
+    <string name="player_copy_song_link">Copy song link</string>
+    <string name="player_copy_song_link_description">Copy a shareable link for this song.</string>
 </resources>

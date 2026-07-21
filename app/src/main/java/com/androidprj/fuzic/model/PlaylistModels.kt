@@ -30,7 +30,9 @@ data class PlaylistItem(
 data class CreatePlaylistUiState(
     val isVisible: Boolean = false,
     val name: String = "",
-    val hasNameConflict: Boolean = false
+    val hasNameConflict: Boolean = false,
+    val selectedCoverUri: String? = null,
+    val availableCoverUris: List<String> = emptyList(),
 )
 
 enum class PlaylistSectionType {

@@ -198,4 +198,11 @@
     <string name="preview_artist_followers_large">۲۴۸ هزار دنبال‌کننده</string>
     <string name="preview_artist_followers_medium">۹۴ هزار دنبال‌کننده</string>
     <string name="preview_artist_followers_small">۱۸ هزار دنبال‌کننده</string>
+    <string name="playlists_cover_label">کاور پلی‌لیست</string>
+    <string name="playlists_cover_default">استفاده از کاور تولیدشده</string>
+    <string name="playlists_cover_option">انتخاب کاور</string>
+    <string name="player_share_to_chat">اشتراک‌گذاری در چت</string>
+    <string name="player_share_to_chat_description">این آهنگ را برای یک گفت‌وگو بفرست.</string>
+    <string name="player_copy_song_link">کپی لینک آهنگ</string>
+    <string name="player_copy_song_link_description">یک لینک قابل اشتراک‌گذاری برای آهنگ کپی کن.</string>
 </resources>
