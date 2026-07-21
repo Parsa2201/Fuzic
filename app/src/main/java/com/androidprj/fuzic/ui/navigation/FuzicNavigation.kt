@@ -96,6 +96,7 @@ import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.model.ui.FollowListType
 import com.androidprj.fuzic.model.ui.FollowUser
 import com.androidprj.fuzic.model.ui.HomeQuickAction
+import com.androidprj.fuzic.model.ui.MusicItemType
 import com.androidprj.fuzic.model.ui.ProfileEntry
 import com.androidprj.fuzic.ui.screens.player.PlayerIntent
 import com.androidprj.fuzic.ui.screens.player.PlayerScreen
@@ -350,7 +351,7 @@ fun FuzicNavigation(
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 HomeScreen(
                     uiState = uiState,
-                    onDailyPickClick = { item -> navigateForItem(navController, item.id, item.type.name) },
+                    onDailyPickClick = { item -> navigateForItem(navController, item.id, item.type) },
                     onQuickActionClick = { action ->
                         when (action) {
                             HomeQuickAction.LikedSongs -> navController.navigate(LikedSongsDestination)
@@ -359,7 +360,7 @@ fun FuzicNavigation(
                             HomeQuickAction.TopArtists -> navController.navigate(ArtistsDestination)
                         }
                     },
-                    onMusicItemClick = { item -> navigateForItem(navController, item.id, item.type.name) },
+                    onMusicItemClick = { item -> navigateForItem(navController, item.id, item.type) },
                     onRetryClick = viewModel::retry,
                 )
             }
@@ -773,10 +774,12 @@ fun FuzicNavigation(
     }
 }
 
-private fun navigateForItem(controller: NavHostController, id: String, type: String) {
+private fun navigateForItem(controller: NavHostController, id: String, type: MusicItemType) {
     when (type) {
-        "Playlist" -> controller.navigate(PlaylistDestination(id))
-        "Artist" -> controller.navigate(ArtistDestination(id))
-        else -> controller.navigate(SongDestination(id))
+        MusicItemType.Playlist -> controller.navigate(PlaylistDestination(id))
+        MusicItemType.Artist -> controller.navigate(ArtistDestination(id))
+        MusicItemType.Song -> controller.navigate(SongDestination(id))
+        // Album details are not yet a product destination. Do not misroute the card to a song.
+        MusicItemType.Album -> Unit
     }
 }
