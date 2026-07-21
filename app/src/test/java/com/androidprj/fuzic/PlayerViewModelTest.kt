@@ -3,6 +3,7 @@ package com.androidprj.fuzic
 import com.androidprj.fuzic.model.ui.PlayerOverlay
 import com.androidprj.fuzic.model.ui.PlayerUiState
 import com.androidprj.fuzic.model.ui.RepeatMode
+import com.androidprj.fuzic.model.ui.AudioVisualizerFrame
 import com.androidprj.fuzic.ui.screens.player.PlayerIntent
 import com.androidprj.fuzic.ui.screens.player.PlayerViewModel
 import kotlinx.coroutines.Dispatchers
@@ -116,5 +117,22 @@ class PlayerViewModelTest {
         assertEquals("player failed", viewModel.uiState.value.errorMessage)
         viewModel.onIntent(PlayerIntent.ClearError)
         assertNull(viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun visualizerFramesAreClampedAndExposedInUiState() = runTest {
+        val repository = FakePlayerRepository(PlayerUiState(isPlaying = true))
+        val viewModel = PlayerViewModel(repository, dispatcher, FakeStringProvider)
+        advanceUntilIdle()
+
+        repository.visualizerFrames.emit(
+            AudioVisualizerFrame(
+                amplitudes = listOf(-1f, 0.25f, 2f),
+                timestampEpochMillis = 1L,
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf(0f, 0.25f, 1f), viewModel.uiState.value.visualizerAmplitudes)
     }
 }

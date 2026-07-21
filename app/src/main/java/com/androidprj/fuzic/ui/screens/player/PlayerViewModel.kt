@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -57,6 +58,13 @@ class PlayerViewModel @Inject constructor(
                         selectedOverlay = current.selectedOverlay,
                         errorMessage = current.errorMessage ?: repositoryState.errorMessage,
                     )
+                }
+            }
+        }
+        viewModelScope.launch {
+            playerRepository.visualizerFrames.collect { frame ->
+                _uiState.update { state ->
+                    state.copy(visualizerAmplitudes = normalizeAmplitudes(frame.amplitudes))
                 }
             }
         }
@@ -102,6 +110,14 @@ class PlayerViewModel @Inject constructor(
         }
     }
 }
+
+private fun normalizeAmplitudes(amplitudes: List<Float>): List<Float> = amplitudes
+    .asSequence()
+    .map { it.coerceIn(0f, 1f) }
+    .take(MAX_VISUALIZER_BARS)
+    .toList()
+
+private const val MAX_VISUALIZER_BARS = 32
 
 private fun RepeatMode.next(): RepeatMode = when (this) {
     RepeatMode.Off -> RepeatMode.All

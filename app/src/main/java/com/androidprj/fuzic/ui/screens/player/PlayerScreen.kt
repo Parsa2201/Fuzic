@@ -302,6 +302,7 @@ private fun PlayerContent(
         Spacer(Modifier.height(MaterialTheme.spacing.medium))
         AudioVisualizer(
             isPlaying = uiState.isPlaying,
+            amplitudes = uiState.visualizerAmplitudes,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(PlayerSizes.VisualizerHeight),
@@ -543,6 +544,7 @@ private fun PlayerActionButton(
 @Composable
 fun AudioVisualizer(
     isPlaying: Boolean,
+    amplitudes: List<Float> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     val transition = rememberInfiniteTransition(label = "playerVisualizer")
@@ -565,6 +567,7 @@ fun AudioVisualizer(
     ) {
         drawVisualizer(
             phase = if (isPlaying) phase else 0.15f,
+            amplitudes = amplitudes,
             color = primaryColor,
             secondaryColor = secondaryColor,
         )
@@ -573,6 +576,7 @@ fun AudioVisualizer(
 
 private fun DrawScope.drawVisualizer(
     phase: Float,
+    amplitudes: List<Float>,
     color: Color,
     secondaryColor: Color,
 ) {
@@ -582,7 +586,8 @@ private fun DrawScope.drawVisualizer(
     val centerY = size.height / 2f
     repeat(barCount) { index ->
         val normalized = index.toFloat() / barCount
-        val wave = abs(sin((normalized * 9f) + phase * 6.28f))
+        val signal = amplitudes.getOrNull(index)
+        val wave = signal ?: abs(sin((normalized * 9f) + phase * 6.28f))
         val envelope = 0.25f + (1f - abs(normalized - 0.5f) * 1.6f).coerceIn(0f, 1f)
         val barHeight = size.height * (0.18f + wave * envelope * 0.72f)
         val x = gap + index * (barWidth + gap)
