@@ -1,6 +1,9 @@
 package com.androidprj.fuzic
 
 import com.androidprj.fuzic.model.ui.CreatePlaylistRequest
+import com.androidprj.fuzic.model.ui.AppLanguageOption
+import com.androidprj.fuzic.model.ui.AppSettings
+import com.androidprj.fuzic.model.ui.AppThemeOption
 import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.model.ui.SongItem
@@ -8,9 +11,11 @@ import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
+import com.androidprj.fuzic.repository.SettingsRepository
 import com.androidprj.fuzic.repository.UserRepository
 import com.androidprj.fuzic.util.StringProvider
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 
 internal val testSong = SongItem(
@@ -43,6 +48,7 @@ internal class FakeAuthRepository(
 ) : AuthRepository {
     var loginCalls = 0
     var signUpCalls = 0
+    var logoutCalls = 0
     var lastSignUpName: String? = null
 
     override suspend fun login(email: String, password: String): Result<Unit> {
@@ -56,11 +62,41 @@ internal class FakeAuthRepository(
         return signUpResult
     }
 
-    override suspend fun logout(): Result<Unit> = Result.success(Unit)
+    var logoutResult: Result<Unit> = Result.success(Unit)
+
+    override suspend fun logout(): Result<Unit> {
+        logoutCalls++
+        return logoutResult
+    }
 
     override fun getCurrentUserFlow(): Flow<ProfileUser?> = flowOf(testProfile)
 
     override suspend fun getCurrentUserId(): String? = currentUserId
+}
+
+internal class FakeSettingsRepository(
+    initialSettings: AppSettings = AppSettings(),
+) : SettingsRepository {
+    val settings = MutableStateFlow(initialSettings)
+    var themeResult: Result<Unit> = Result.success(Unit)
+    var languageResult: Result<Unit> = Result.success(Unit)
+    var clearResult: Result<Unit> = Result.success(Unit)
+    var setThemeCalls = 0
+    var setLanguageCalls = 0
+
+    override fun observeSettings(): Flow<AppSettings> = settings
+
+    override suspend fun setTheme(theme: AppThemeOption): Result<Unit> {
+        setThemeCalls++
+        return themeResult.onSuccess { settings.value = settings.value.copy(theme = theme) }
+    }
+
+    override suspend fun setLanguage(language: AppLanguageOption): Result<Unit> {
+        setLanguageCalls++
+        return languageResult.onSuccess { settings.value = settings.value.copy(language = language) }
+    }
+
+    override suspend fun clearSettings(): Result<Unit> = clearResult
 }
 
 internal class FakeMusicRepository(
