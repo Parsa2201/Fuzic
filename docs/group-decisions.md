@@ -168,6 +168,8 @@ Diagrams are for human understanding and may change over time. They are not guar
 
 The split mirrors the "Phase 1" BPMN diagram in the Android Project Eraser file.
 
+The diagrams are the source of truth for ownership. Use the Development Dependency Graph (`8S2o9G02vd3fg6vSr5Po`) for the post-Phase 1 service-lane split (see "Service-Lane Split" below).
+
 ### Parsa
 
 - Set up the GitHub project.
@@ -184,6 +186,19 @@ The split mirrors the "Phase 1" BPMN diagram in the Android Project Eraser file.
 - Prepare AI tooling.
 - Learn media playback well enough to define the player service.
 - Exit event: Media Playback Ready.
+
+## Service-Lane Split (post Phase 1)
+
+After Phase 1, the team works in service/logic lanes taken from the Development Dependency Graph, not feature screens. These lanes override any earlier feature-based ownership listed in this document:
+
+- **UI Track (green)** — Screen UI components and the per-screen UIs (Home, Search, Downloads, Playlists, Profile, Settings, Player UI). Owned across the team; coordinate in PRs.
+- **Backend Track (purple)** — Supabase schema, remote API client, Room cache, paging sources, repository implementations. Owned by Bagher.
+- **Playback Track (orange)** — Media3 Controller, Playback State, Mini Player Logic, Full Player Logic, Notification Controls. **Owned by Sina.** `PlayerService` / `PlayerController` lives here.
+- **Chat Track (pink)** — Chat Contracts, Chat UI, Chat Repository interface + implementation, Chat ViewModel, Chat Integration. **Out of Sina's lane** for Fuzic. Real-Time Chat, Follow System, and the Settings screen are reassigned to the Chat Track (later phase) since they are not part of the Playback Track.
+- **ViewModel Track (yellow)** — per-screen ViewModels.
+- **Screen Integration Track (teal)** — integrated screens.
+
+Any feature that needs the public PlayerController API calls into it; no feature edits player internals.
 
 ## Known Product Planning Notes
 
