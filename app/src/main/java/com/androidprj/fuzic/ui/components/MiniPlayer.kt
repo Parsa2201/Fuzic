@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.MiniPlayerUiState
+import com.androidprj.fuzic.model.ui.MiniPlayerUiState
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 

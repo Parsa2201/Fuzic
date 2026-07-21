@@ -1,6 +1,8 @@
 package com.androidprj.fuzic.data.remote.repository
 
-import com.androidprj.fuzic.model.Message
+import com.androidprj.fuzic.model.remote.MessageDto
+import com.androidprj.fuzic.model.ui.ChatMessage
+import com.androidprj.fuzic.model.mapper.toChatMessage
 import com.androidprj.fuzic.repository.ChatRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -20,7 +22,7 @@ class RemoteChatRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) : ChatRepository {
 
-    override suspend fun getChatHistory(userId: String, offset: Long, limit: Long): Result<List<Message>> {
+    override suspend fun getChatHistory(userId: String, offset: Long, limit: Long): Result<List<ChatMessage>> {
         return try {
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
             val messages = supabaseClient.postgrest["messages"]
@@ -40,17 +42,18 @@ class RemoteChatRepository @Inject constructor(
                     order("created_at", order = Order.ASCENDING)
                     range(offset, offset + limit - 1)
                 }
-                .decodeList<Message>()
+                .decodeList<MessageDto>()
+                .map { it.toChatMessage(currentUserId) }
             Result.success(messages)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun sendMessage(receiverId: String, content: String?, sharedSongId: String?): Result<Message> {
+    override suspend fun sendMessage(receiverId: String, content: String?, sharedSongId: String?): Result<ChatMessage> {
         return try {
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
-            val message = Message(
+            val message = MessageDto(
                 id = UUID.randomUUID().toString(),
                 senderId = currentUserId,
                 receiverId = receiverId,
@@ -59,8 +62,8 @@ class RemoteChatRepository @Inject constructor(
             )
             val insertedMessage = supabaseClient.postgrest["messages"]
                 .insert(message) { select() }
-                .decodeSingle<Message>()
-            Result.success(insertedMessage)
+                .decodeSingle<MessageDto>()
+            Result.success(insertedMessage.toChatMessage(currentUserId))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -79,17 +82,18 @@ class RemoteChatRepository @Inject constructor(
         }
     }
 
-    override fun observeMessages(userId: String): Flow<Message> {
+    override fun observeMessages(userId: String): Flow<ChatMessage> {
         val currentUserId = supabaseClient.auth.currentUserOrNull()?.id 
             ?: throw Exception("Not logged in")
             
         val channel = supabaseClient.channel("public:messages")
         return channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
             table = "messages"
-        }.map { it.decodeRecord<Message>() }
+        }.map { it.decodeRecord<MessageDto>() }
          .filter { message ->
              (message.senderId == currentUserId && message.receiverId == userId) ||
              (message.senderId == userId && message.receiverId == currentUserId)
          }
+         .map { it.toChatMessage(currentUserId) }
     }
 }

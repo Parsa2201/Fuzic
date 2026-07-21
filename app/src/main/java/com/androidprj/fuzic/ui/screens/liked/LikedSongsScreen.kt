@@ -9,8 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.SongCollectionUiState
-import com.androidprj.fuzic.model.SongItem
+import com.androidprj.fuzic.model.ui.SongCollectionUiState
+import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.screens.songcollection.SongCollectionScreen

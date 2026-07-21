@@ -20,8 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.SongCollectionUiState
-import com.androidprj.fuzic.model.SongItem
+import com.androidprj.fuzic.model.ui.SongCollectionUiState
+import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.ui.components.DetailLoadingContent
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage

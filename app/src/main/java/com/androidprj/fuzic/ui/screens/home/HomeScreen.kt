@@ -51,10 +51,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.FeaturedMusicItem
-import com.androidprj.fuzic.model.HomeMusicSection
-import com.androidprj.fuzic.model.HomeQuickAction
-import com.androidprj.fuzic.model.HomeUiState
+import com.androidprj.fuzic.model.ui.FeaturedMusicItem
+import com.androidprj.fuzic.model.ui.HomeMusicSection
+import com.androidprj.fuzic.model.ui.HomeQuickAction
+import com.androidprj.fuzic.model.ui.HomeUiState
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.SectionHeader

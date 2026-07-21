@@ -1,6 +1,6 @@
 package com.androidprj.fuzic.data.remote.repository
 
-import com.androidprj.fuzic.model.User
+import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.repository.AuthRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -51,16 +51,22 @@ class RemoteAuthRepository @Inject constructor(
         }
     }
 
-    override fun getCurrentUserFlow(): Flow<User?> {
+    override fun getCurrentUserFlow(): Flow<ProfileUser?> {
         return supabaseClient.auth.sessionStatus.map { status ->
             when (status) {
                 is io.github.jan.supabase.auth.status.SessionStatus.Authenticated -> {
                     val user = status.session.user
                     user?.let {
-                        User(
+                        val name = it.userMetadata?.get("full_name")?.let { json -> 
+                            if (json is kotlinx.serialization.json.JsonPrimitive) json.content else null
+                        } ?: "Unknown"
+                        ProfileUser(
                             id = it.id,
-                            name = it.userMetadata?.get("full_name")?.kotlinx.serialization.json.jsonPrimitive?.content,
-                            avatarUrl = it.userMetadata?.get("avatar_url")?.kotlinx.serialization.json.jsonPrimitive?.content
+                            displayName = name,
+                            username = name.lowercase().replace(" ", "_"),
+                            avatarUrl = it.userMetadata?.get("avatar_url")?.let { json ->
+                                if (json is kotlinx.serialization.json.JsonPrimitive) json.content else null
+                            }
                         )
                     }
                 }

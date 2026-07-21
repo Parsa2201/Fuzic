@@ -40,10 +40,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.AppLanguageOption
-import com.androidprj.fuzic.model.AppThemeOption
-import com.androidprj.fuzic.model.SettingsOverlay
-import com.androidprj.fuzic.model.SettingsUiState
+import com.androidprj.fuzic.model.ui.AppLanguageOption
+import com.androidprj.fuzic.model.ui.AppThemeOption
+import com.androidprj.fuzic.model.ui.SettingsOverlay
+import com.androidprj.fuzic.model.ui.SettingsUiState
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.theme.FuzicTheme

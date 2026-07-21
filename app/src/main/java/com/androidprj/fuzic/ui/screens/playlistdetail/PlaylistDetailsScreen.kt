@@ -27,9 +27,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.PlaylistDetails
-import com.androidprj.fuzic.model.PlaylistDetailsUiState
-import com.androidprj.fuzic.model.SongItem
+import com.androidprj.fuzic.model.ui.PlaylistDetails
+import com.androidprj.fuzic.model.ui.PlaylistDetailsUiState
+import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.ui.components.DetailArtwork
 import com.androidprj.fuzic.ui.components.DetailLoadingContent
 import com.androidprj.fuzic.ui.components.DetailTopAppBar

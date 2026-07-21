@@ -42,8 +42,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.AuthUiState
-import com.androidprj.fuzic.model.WelcomeUiState
+import com.androidprj.fuzic.model.ui.AuthUiState
+import com.androidprj.fuzic.model.ui.WelcomeUiState
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing

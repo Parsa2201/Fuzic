@@ -80,10 +80,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.PlayerOverlay
-import com.androidprj.fuzic.model.PlayerUiState
-import com.androidprj.fuzic.model.RepeatMode
-import com.androidprj.fuzic.model.SongItem
+import com.androidprj.fuzic.model.ui.PlayerOverlay
+import com.androidprj.fuzic.model.ui.PlayerUiState
+import com.androidprj.fuzic.model.ui.RepeatMode
+import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.ui.components.DetailArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.SongListItem
@@ -971,7 +971,7 @@ private fun samplePlayerState(
     elapsedLabel = stringResource(R.string.preview_player_elapsed),
     durationLabel = stringResource(R.string.preview_player_duration),
     isShuffleEnabled = true,
-    repeatMode = com.androidprj.fuzic.model.RepeatMode.All,
+    repeatMode = com.androidprj.fuzic.model.ui.RepeatMode.All,
     playbackSpeed = 1.5f,
     queue = listOf(
         SongItem(

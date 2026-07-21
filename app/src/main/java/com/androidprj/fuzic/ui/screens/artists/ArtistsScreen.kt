@@ -35,9 +35,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.ArtistCollectionItem
-import com.androidprj.fuzic.model.ArtistCollectionUiState
-import com.androidprj.fuzic.model.ArtistItem
+import com.androidprj.fuzic.model.ui.ArtistCollectionItem
+import com.androidprj.fuzic.model.ui.ArtistCollectionUiState
+import com.androidprj.fuzic.model.ui.ArtistItem
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.fuzicShimmer

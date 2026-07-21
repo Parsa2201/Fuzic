@@ -1,6 +1,8 @@
 package com.androidprj.fuzic.data.remote.repository
 
-import com.androidprj.fuzic.model.User
+import com.androidprj.fuzic.model.remote.UserDto
+import com.androidprj.fuzic.model.ui.ProfileUser
+import com.androidprj.fuzic.model.mapper.toProfileUser
 import com.androidprj.fuzic.repository.UserRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
@@ -10,36 +12,50 @@ class RemoteUserRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) : UserRepository {
 
-    override suspend fun getUserProfile(userId: String): Result<User> {
+    override suspend fun getUserProfile(userId: String): Result<ProfileUser> {
         return try {
             val user = supabaseClient.postgrest["users"]
                 .select { filter { eq("id", userId) } }
-                .decodeSingle<User>()
-            Result.success(user)
+                .decodeSingle<UserDto>()
+            Result.success(user.toProfileUser())
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun updateProfile(user: User): Result<User> {
+    override suspend fun updateProfile(user: ProfileUser): Result<ProfileUser> {
         return try {
+            val updateDto = UpdateProfileDto(
+                name = user.displayName,
+                avatarUrl = user.avatarUrl
+            )
             val updatedUser = supabaseClient.postgrest["users"]
-                .update(user) { filter { eq("id", user.id) } }
-                .decodeSingle<User>()
-            Result.success(updatedUser)
+                .update(updateDto) { 
+                    filter { eq("id", user.id) } 
+                    select() // Make sure to return updated row
+                }
+                .decodeSingle<UserDto>()
+            Result.success(updatedUser.toProfileUser())
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun searchUsers(query: String): Result<List<User>> {
+    override suspend fun searchUsers(query: String): Result<List<ProfileUser>> {
         return try {
             val users = supabaseClient.postgrest["users"]
                 .select { filter { ilike("name", "%$query%") } }
-                .decodeList<User>()
+                .decodeList<UserDto>()
+                .map { it.toProfileUser() }
             Result.success(users)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
+    
+    @kotlinx.serialization.Serializable
+    private data class UpdateProfileDto(
+        val name: String,
+        @kotlinx.serialization.SerialName("avatar_url") val avatarUrl: String?
+    )
 }

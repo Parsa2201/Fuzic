@@ -30,9 +30,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.ArtistDetailsUiState
-import com.androidprj.fuzic.model.ArtistItem
-import com.androidprj.fuzic.model.SongItem
+import com.androidprj.fuzic.model.ui.ArtistDetailsUiState
+import com.androidprj.fuzic.model.ui.ArtistItem
+import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.ui.components.DetailLoadingContent
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.MusicArtwork

@@ -44,10 +44,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.PremiumDialogMode
-import com.androidprj.fuzic.model.PremiumFeature
-import com.androidprj.fuzic.model.PremiumPlan
-import com.androidprj.fuzic.model.PremiumUiState
+import com.androidprj.fuzic.model.ui.PremiumDialogMode
+import com.androidprj.fuzic.model.ui.PremiumFeature
+import com.androidprj.fuzic.model.ui.PremiumPlan
+import com.androidprj.fuzic.model.ui.PremiumUiState
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing

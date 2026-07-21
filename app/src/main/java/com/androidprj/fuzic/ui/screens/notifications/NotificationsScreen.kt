@@ -47,9 +47,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.NotificationItem
-import com.androidprj.fuzic.model.NotificationType
-import com.androidprj.fuzic.model.NotificationsUiState
+import com.androidprj.fuzic.model.ui.NotificationItem
+import com.androidprj.fuzic.model.ui.NotificationType
+import com.androidprj.fuzic.model.ui.NotificationsUiState
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.previewArtworkUri

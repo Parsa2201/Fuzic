@@ -37,10 +37,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.FollowListType
-import com.androidprj.fuzic.model.FollowListUiState
-import com.androidprj.fuzic.model.FollowSearchUiState
-import com.androidprj.fuzic.model.FollowUser
+import com.androidprj.fuzic.model.ui.FollowListType
+import com.androidprj.fuzic.model.ui.FollowListUiState
+import com.androidprj.fuzic.model.ui.FollowSearchUiState
+import com.androidprj.fuzic.model.ui.FollowUser
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage

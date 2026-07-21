@@ -53,9 +53,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.SearchFilter
-import com.androidprj.fuzic.model.SearchResultItem
-import com.androidprj.fuzic.model.SearchUiState
+import com.androidprj.fuzic.model.ui.SearchFilter
+import com.androidprj.fuzic.model.ui.SearchResultItem
+import com.androidprj.fuzic.model.ui.SearchUiState
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.SectionHeader

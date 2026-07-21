@@ -52,11 +52,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.ProfileEntry
-import com.androidprj.fuzic.model.ProfileStat
-import com.androidprj.fuzic.model.ProfileStats
-import com.androidprj.fuzic.model.ProfileUiState
-import com.androidprj.fuzic.model.ProfileUser
+import com.androidprj.fuzic.model.ui.ProfileEntry
+import com.androidprj.fuzic.model.ui.ProfileStat
+import com.androidprj.fuzic.model.ui.ProfileStats
+import com.androidprj.fuzic.model.ui.ProfileUiState
+import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.fuzicShimmer

@@ -1,7 +1,9 @@
 package com.androidprj.fuzic.data.remote.repository
 
-import com.androidprj.fuzic.model.Interaction
-import com.androidprj.fuzic.model.Song
+import com.androidprj.fuzic.model.remote.InteractionDto
+import com.androidprj.fuzic.model.remote.SongDto
+import com.androidprj.fuzic.model.ui.SongItem
+import com.androidprj.fuzic.model.mapper.toSongItem
 import com.androidprj.fuzic.repository.InteractionRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -14,7 +16,7 @@ class RemoteInteractionRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) : InteractionRepository {
 
-    override suspend fun getRecentlyPlayed(userId: String, offset: Long, limit: Long): Result<List<Song>> {
+    override suspend fun getRecentlyPlayed(userId: String, offset: Long, limit: Long): Result<List<SongItem>> {
         return try {
             val songs = supabaseClient.postgrest["interactions"]
                 .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
@@ -26,14 +28,14 @@ class RemoteInteractionRepository @Inject constructor(
                     range(offset, offset + limit - 1)
                 }
                 .decodeList<SongWrapper>()
-                .map { it.song }
+                .map { it.song.toSongItem() }
             Result.success(songs)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun getLikedSongs(userId: String, offset: Long, limit: Long): Result<List<Song>> {
+    override suspend fun getLikedSongs(userId: String, offset: Long, limit: Long): Result<List<SongItem>> {
         return try {
             val songs = supabaseClient.postgrest["interactions"]
                 .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
@@ -45,7 +47,7 @@ class RemoteInteractionRepository @Inject constructor(
                     range(offset, offset + limit - 1)
                 }
                 .decodeList<SongWrapper>()
-                .map { it.song }
+                .map { it.song.toSongItem() }
             Result.success(songs)
         } catch (e: Exception) {
             Result.failure(e)
@@ -79,13 +81,14 @@ class RemoteInteractionRepository @Inject constructor(
     private suspend fun insertInteraction(songId: String, type: String): Result<Unit> {
         return try {
             val userId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
-            val interaction = Interaction(
+            val interaction = InteractionDto(
                 id = UUID.randomUUID().toString(),
                 userId = userId,
                 songId = songId,
                 interactionType = type
             )
-            supabaseClient.postgrest["interactions"].insert(interaction)
+            // Use upsert = true to handle unique constraint (user_id, song_id, interaction_type) gracefully
+            supabaseClient.postgrest["interactions"].upsert(interaction)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -94,6 +97,6 @@ class RemoteInteractionRepository @Inject constructor(
 
     @kotlinx.serialization.Serializable
     private data class SongWrapper(
-        @kotlinx.serialization.SerialName("songs") val song: Song
+        @kotlinx.serialization.SerialName("songs") val song: SongDto
     )
 }

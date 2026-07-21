@@ -50,9 +50,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
-import com.androidprj.fuzic.model.DownloadSortOption
-import com.androidprj.fuzic.model.DownloadedSongItem
-import com.androidprj.fuzic.model.DownloadsUiState
+import com.androidprj.fuzic.model.ui.DownloadSortOption
+import com.androidprj.fuzic.model.ui.DownloadedSongItem
+import com.androidprj.fuzic.model.ui.DownloadsUiState
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.fuzicShimmer
