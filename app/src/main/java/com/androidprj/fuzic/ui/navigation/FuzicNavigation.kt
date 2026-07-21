@@ -93,6 +93,7 @@ import com.androidprj.fuzic.ui.screens.follow.FollowListViewModel
 import com.androidprj.fuzic.ui.screens.follow.FollowSearchIntent
 import com.androidprj.fuzic.ui.screens.follow.FollowListIntent
 import com.androidprj.fuzic.model.ui.ChatConversation
+import com.androidprj.fuzic.model.ui.ChatMessage
 import com.androidprj.fuzic.model.ui.FollowListType
 import com.androidprj.fuzic.model.ui.FollowUser
 import com.androidprj.fuzic.model.ui.HomeQuickAction
@@ -729,6 +730,9 @@ fun FuzicNavigation(
                     },
                     onSongClick = { navController.navigate(SongDestination(it.id)) },
                     onRetryClick = { viewModel.onIntent(ChatDetailIntent.Retry) },
+                    onVisibleUnreadMessages = { messages ->
+                        viewModel.onIntent(ChatDetailIntent.MarkMessagesRead(messages.map(ChatMessage::id)))
+                    },
                 )
             }
             composable<FollowSearchDestination> {

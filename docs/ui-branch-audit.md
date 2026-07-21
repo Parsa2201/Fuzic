@@ -27,7 +27,7 @@ Before this can be treated as feature-complete, prioritize fixing the confirmed 
 | Done (`ui`) | P1 | Logout entry | Choosing `ProfileEntry.Logout` merely opens Settings instead of requesting logout or opening the confirmation dialog. This is misleading and adds an unexpected extra step. | Profile now opens Settings with a typed `showLogoutConfirmation` argument, so the existing confirmation and logout flow is presented directly. |
 | Partial (`893fa65`) | P1 | Music navigation | `navigateForItem()` only recognises `"Playlist"` and `"Artist"`; `MusicItemType.Album` falls through to `SongDestination`. Album cards will open a song-detail screen. | Routing is now type-safe and Albums no longer open song detail. Add a real album destination or hide album cards before release. |
 | Done (`ui`) | P1 | Song download | Song details wires Download to a generic “action unavailable” snackbar, regardless of premium state. The required upgrade prompt is not reached from this entry point. | Free users now navigate to Premium; premium users enqueue a `DownloadRequest` through the download repository. |
-| Pending | P1 | Chat read receipts | `MarkMessagesRead` exists but no navigation/UI code dispatches it for visible unread incoming messages. | Have the chat route derive visible unread messages and send the intent once per visible set, with an idempotency guard. |
+| Done (`ui`) | P1 | Chat read receipts | `MarkMessagesRead` exists but no navigation/UI code dispatches it for visible unread incoming messages. | The chat screen dispatches visible unread incoming message ids; the view model deduplicates calls and retries ids after a failure. |
 
 ## Remaining UI work by requirement
 

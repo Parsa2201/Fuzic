@@ -83,6 +83,7 @@ class ChatDetailViewModel @Inject constructor(
 
     private var messagesJob: Job? = null
     private var typingJob: Job? = null
+    private val markedReadMessageIds = mutableSetOf<String>()
 
     fun onIntent(intent: ChatDetailIntent) {
         when (intent) {
@@ -101,6 +102,7 @@ class ChatDetailViewModel @Inject constructor(
     }
 
     private fun loadConversation(conversation: ChatConversation) {
+        markedReadMessageIds.clear()
         _uiState.value = _uiState.value.copy(conversation = conversation, isLoading = true, errorMessage = null)
         messagesJob?.cancel()
         typingJob?.cancel()
@@ -200,11 +202,13 @@ class ChatDetailViewModel @Inject constructor(
 
     private fun markMessagesRead(messageIds: List<String>) {
         val conversation = _uiState.value.conversation ?: return
-        if (messageIds.isEmpty()) return
+        val unreadIds = messageIds.filter { markedReadMessageIds.add(it) }
+        if (unreadIds.isEmpty()) return
         viewModelScope.launch {
             withContext(ioDispatcher) {
-                chatRepository.markMessagesAsRead(conversation.id, messageIds)
+                chatRepository.markMessagesAsRead(conversation.id, unreadIds)
             }.onFailure { throwable ->
+                markedReadMessageIds.removeAll(unreadIds.toSet())
                 _uiState.value = _uiState.value.copy(
                     errorMessage = throwable.message ?: stringProvider.get(R.string.chat_error_title),
                 )

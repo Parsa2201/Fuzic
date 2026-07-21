@@ -46,6 +46,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -130,6 +131,7 @@ fun ChatDetailRoute(
     onShareSongClick: () -> Unit,
     onSongClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
+    onVisibleUnreadMessages: (List<ChatMessage>) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     ChatDetailScreen(
@@ -140,6 +142,7 @@ fun ChatDetailRoute(
         onShareSongClick = onShareSongClick,
         onSongClick = onSongClick,
         onRetryClick = onRetryClick,
+        onVisibleUnreadMessages = onVisibleUnreadMessages,
         modifier = modifier,
     )
 }
@@ -153,6 +156,7 @@ fun ChatDetailScreen(
     onShareSongClick: () -> Unit,
     onSongClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
+    onVisibleUnreadMessages: (List<ChatMessage>) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val conversation = uiState.conversation
@@ -183,6 +187,12 @@ fun ChatDetailScreen(
             else -> {
                 val listState = rememberLazyListState()
                 val pagedMessages = flowOf(uiState.messages).collectAsLazyPagingItems()
+                val visibleUnreadMessages = pagedMessages.itemSnapshotList.items.filter {
+                    !it.isMine && it.status != ChatMessageStatus.Read
+                }
+                LaunchedEffect(visibleUnreadMessages.map(ChatMessage::id)) {
+                    onVisibleUnreadMessages(visibleUnreadMessages)
+                }
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     state = listState,
