@@ -1,0 +1,20 @@
+<resources>
+    <string name="settings_title">تنظیمات</string>
+    <string name="settings_appearance_section">ظاهر</string>
+    <string name="settings_language_section">زبان</string>
+    <string name="settings_account_section">حساب کاربری</string>
+    <string name="settings_theme_title">پوسته</string>
+    <string name="settings_theme_system">پیش‌فرض سیستم</string>
+    <string name="settings_theme_light">روشن</string>
+    <string name="settings_theme_dark">تیره</string>
+    <string name="settings_language_title">زبان</string>
+    <string name="settings_language_system">پیش‌فرض سیستم</string>
+    <string name="settings_language_english">انگلیسی</string>
+    <string name="settings_language_persian">فارسی</string>
+    <string name="settings_logout">خروج</string>
+    <string name="settings_logout_title">از فوزیک خارج می‌شوی؟</string>
+    <string name="settings_logout_message">هر زمان خواستی می‌توانی دوباره وارد شوی.</string>
+    <string name="settings_logout_confirm">خروج</string>
+    <string name="settings_error_title">تنظیمات در دسترس نیست</string>
+    <string name="settings_error_message">تنظیمات بارگذاری نشد.</string>
+</resources>
