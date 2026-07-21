@@ -160,4 +160,24 @@
     <string name="preview_song_duration_echoes">۳:۱۸</string>
     <string name="preview_artist_monthly_listeners">۱.۴ میلیون شنونده ماهانه</string>
     <string name="preview_playlist_description">آهنگ‌های شبانه برای هر سفر جاده‌ای.</string>
+    <string name="premium_title">بدون محدودیت گوش کن</string>
+    <string name="premium_subtitle">پخش آفلاین و امکانات ویژه پریمیوم را فعال کن.</string>
+    <string name="premium_choose_plan">پلن خود را انتخاب کن</string>
+    <string name="premium_upgrade">ارتقا به پریمیوم</string>
+    <string name="premium_restore_purchase">بازیابی خرید</string>
+    <string name="premium_recommended">پیشنهادی</string>
+    <string name="premium_feature_downloads">دانلود آفلاین</string>
+    <string name="premium_feature_downloads_description">آهنگ‌ها را ذخیره کن و بدون اینترنت گوش بده.</string>
+    <string name="premium_feature_audio">شنیدن پریمیوم</string>
+    <string name="premium_feature_audio_description">از بهترین کیفیت پخش موجود لذت ببر.</string>
+    <string name="premium_feature_badge">نشان پریمیوم نمایه</string>
+    <string name="premium_feature_badge_description">وضعیت پریمیوم خود را در نمایه نشان بده.</string>
+    <string name="premium_error_title">پلن‌های پریمیوم در دسترس نیستند</string>
+    <string name="premium_active_title">تو از قبل پریمیوم هستی</string>
+    <string name="premium_active_message">دانلود آفلاین و امکانات پریمیوم برایت فعال است.</string>
+    <string name="premium_dialog_title">ارتقا به پریمیوم</string>
+    <string name="premium_dialog_message">پریمیوم دانلود آفلاین و امکانات شنیداری بیشتری را فعال می‌کند.</string>
+    <string name="premium_download_blocked_title">دانلود به پریمیوم نیاز دارد</string>
+    <string name="premium_download_blocked_message">برای ذخیره این آهنگ و پخش آفلاین، به پریمیوم ارتقا بده.</string>
+    <string name="premium_view_plans">دیدن پلن‌ها</string>
 </resources>
