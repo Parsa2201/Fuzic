@@ -180,4 +180,14 @@
     <string name="premium_download_blocked_title">دانلود به پریمیوم نیاز دارد</string>
     <string name="premium_download_blocked_message">برای ذخیره این آهنگ و پخش آفلاین، به پریمیوم ارتقا بده.</string>
     <string name="premium_view_plans">دیدن پلن‌ها</string>
+    <string name="notifications_title">اعلان‌ها</string>
+    <string name="notifications_mark_all_read">همه را خوانده‌شده کن</string>
+    <string name="notifications_empty_title">همه چیز را دیدی</string>
+    <string name="notifications_empty_message">انتشارهای جدید، دنبال‌کننده‌ها و به‌روزرسانی‌ها اینجا نمایش داده می‌شوند.</string>
+    <string name="notifications_error_title">اعلان‌ها در دسترس نیستند</string>
+    <string name="notifications_type_new_release">انتشار جدید</string>
+    <string name="notifications_type_follow">دنبال‌کننده جدید</string>
+    <string name="notifications_type_playlist">به‌روزرسانی پلی‌لیست</string>
+    <string name="notifications_type_premium">به‌روزرسانی پریمیوم</string>
+    <string name="notifications_type_system">به‌روزرسانی فوزیک</string>
 </resources>

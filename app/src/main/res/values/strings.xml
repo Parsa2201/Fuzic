@@ -180,4 +180,14 @@
     <string name="premium_download_blocked_title">Downloads require Premium</string>
     <string name="premium_download_blocked_message">Upgrade to Premium to save this song for offline listening.</string>
     <string name="premium_view_plans">View plans</string>
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_mark_all_read">Mark all read</string>
+    <string name="notifications_empty_title">You are all caught up</string>
+    <string name="notifications_empty_message">New releases, follows, and updates will appear here.</string>
+    <string name="notifications_error_title">Notifications unavailable</string>
+    <string name="notifications_type_new_release">New release</string>
+    <string name="notifications_type_follow">New follower</string>
+    <string name="notifications_type_playlist">Playlist update</string>
+    <string name="notifications_type_premium">Premium update</string>
+    <string name="notifications_type_system">Fuzic update</string>
 </resources>
