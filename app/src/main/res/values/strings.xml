@@ -223,4 +223,17 @@
     <string name="preview_notification_playlist_message">The songs you saved were added to Late Night.</string>
     <string name="preview_notification_two_days">2 days ago</string>
     <string name="preview_notifications_error_message">Notifications could not be loaded.</string>
+    <string name="ui_action_unavailable">This action is not available yet.</string>
+    <string name="notification_target_unavailable">This notification has no destination.</string>
+    <string name="edit_profile_title">Edit profile</string>
+    <string name="edit_profile_display_name">Display name</string>
+    <string name="edit_profile_username">Username</string>
+    <string name="edit_profile_avatar_url">Avatar URL</string>
+    <string name="edit_profile_save">Save changes</string>
+    <string name="edit_profile_error">Profile could not be updated.</string>
+    <string name="password_recovery_title">Reset password</string>
+    <string name="password_recovery_message">Enter your email and we will send reset instructions.</string>
+    <string name="password_recovery_submit">Send instructions</string>
+    <string name="password_recovery_success">Password reset instructions were sent.</string>
+    <string name="password_recovery_error">Password reset could not be requested.</string>
 </resources>

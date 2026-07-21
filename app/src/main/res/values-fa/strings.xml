@@ -223,4 +223,17 @@
     <string name="preview_notification_playlist_message">آهنگ‌های ذخیره‌شده به پلی‌لیست شبانه اضافه شدند.</string>
     <string name="preview_notification_two_days">۲ روز پیش</string>
     <string name="preview_notifications_error_message">اعلان‌ها بارگذاری نشدند.</string>
+    <string name="ui_action_unavailable">این اقدام هنوز در دسترس نیست.</string>
+    <string name="notification_target_unavailable">این اعلان مقصدی ندارد.</string>
+    <string name="edit_profile_title">ویرایش پروفایل</string>
+    <string name="edit_profile_display_name">نام نمایشی</string>
+    <string name="edit_profile_username">نام کاربری</string>
+    <string name="edit_profile_avatar_url">نشانی تصویر پروفایل</string>
+    <string name="edit_profile_save">ذخیره تغییرات</string>
+    <string name="edit_profile_error">پروفایل به‌روزرسانی نشد.</string>
+    <string name="password_recovery_title">بازیابی گذرواژه</string>
+    <string name="password_recovery_message">ایمیل خود را وارد کنید تا دستورالعمل بازیابی ارسال شود.</string>
+    <string name="password_recovery_submit">ارسال دستورالعمل</string>
+    <string name="password_recovery_success">دستورالعمل بازیابی گذرواژه ارسال شد.</string>
+    <string name="password_recovery_error">درخواست بازیابی گذرواژه انجام نشد.</string>
 </resources>

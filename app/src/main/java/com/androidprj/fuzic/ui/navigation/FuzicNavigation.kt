@@ -7,13 +7,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.NavigationBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.androidprj.fuzic.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -36,6 +41,9 @@ import com.androidprj.fuzic.ui.screens.playlists.PlaylistsScreen
 import com.androidprj.fuzic.ui.screens.playlists.PlaylistsViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileScreen
 import com.androidprj.fuzic.ui.screens.profile.ProfileViewModel
+import com.androidprj.fuzic.ui.screens.profile.ProfileEditorScreen
+import com.androidprj.fuzic.ui.screens.profile.ProfileEditorViewModel
+import com.androidprj.fuzic.ui.screens.profile.ProfileEditorIntent
 import com.androidprj.fuzic.ui.screens.song.SongDetailsScreen
 import com.androidprj.fuzic.ui.screens.song.SongDetailsViewModel
 import com.androidprj.fuzic.ui.screens.playlistdetail.PlaylistDetailsScreen
@@ -91,6 +99,7 @@ import com.androidprj.fuzic.ui.screens.search.SearchIntent
 import com.androidprj.fuzic.ui.screens.search.SearchScreen
 import com.androidprj.fuzic.ui.screens.search.SearchViewModel
 import kotlinx.serialization.Serializable
+import kotlinx.coroutines.launch
 
 @Serializable
 data object HomeDestination
@@ -161,6 +170,21 @@ data object FollowSearchDestination
 @Serializable
 data class FollowListDestination(val userId: String, val type: String)
 
+@Serializable
+data class UserProfileDestination(val userId: String)
+
+@Serializable
+data object EditProfileDestination
+
+@Serializable
+data object PasswordRecoveryDestination
+
+@Serializable
+data class AddToPlaylistDestination(val songId: String)
+
+@Serializable
+data class ChatPickerDestination(val songId: String)
+
 private val topLevelDestinations = listOf(
     HomeDestination,
     SearchDestination,
@@ -174,6 +198,13 @@ fun FuzicNavigation(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val unavailableMessage = stringResource(R.string.ui_action_unavailable)
+    val notificationTargetUnavailableMessage = stringResource(R.string.notification_target_unavailable)
+    val unavailableAction: (String) -> Unit = { message ->
+        scope.launch { snackbarHostState.showSnackbar(message) }
+    }
     val sessionViewModel: SessionViewModel = hiltViewModel()
     val currentUser by sessionViewModel.currentUser.collectAsStateWithLifecycle()
     val playerViewModel: PlayerViewModel = hiltViewModel()
@@ -244,6 +275,7 @@ fun FuzicNavigation(
                 }
             }
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         NavHost(
             navController = navController,
@@ -286,7 +318,7 @@ fun FuzicNavigation(
                     onPasswordVisibilityClick = { viewModel.onIntent(AuthIntent.TogglePasswordVisibility) },
                     onConfirmPasswordVisibilityClick = { viewModel.onIntent(AuthIntent.ToggleConfirmPasswordVisibility) },
                     onSubmitClick = { viewModel.onIntent(AuthIntent.Submit) },
-                    onForgotPasswordClick = { },
+                    onForgotPasswordClick = { unavailableAction(unavailableMessage) },
                     onSwitchModeClick = { viewModel.onIntent(AuthIntent.ToggleMode) },
                     onRetryClick = { viewModel.onIntent(AuthIntent.Retry) },
                 )
@@ -319,7 +351,15 @@ fun FuzicNavigation(
                     onHistoryClick = { viewModel.onIntent(SearchIntent.HistorySelected(it)) },
                     onHistoryDeleteClick = { viewModel.onIntent(SearchIntent.DeleteHistory(it)) },
                     onClearHistoryClick = { viewModel.onIntent(SearchIntent.ClearHistory) },
-                    onResultClick = { viewModel.onIntent(SearchIntent.ResultSelected(it)) },
+                    onResultClick = { item ->
+                        viewModel.onIntent(SearchIntent.ResultSelected(item))
+                        when (item.type) {
+                            com.androidprj.fuzic.model.ui.SearchFilter.Songs -> navController.navigate(SongDestination(item.id))
+                            com.androidprj.fuzic.model.ui.SearchFilter.Artists -> navController.navigate(ArtistDestination(item.id))
+                            com.androidprj.fuzic.model.ui.SearchFilter.Playlists -> navController.navigate(PlaylistDestination(item.id))
+                            com.androidprj.fuzic.model.ui.SearchFilter.Users -> unavailableAction(unavailableMessage)
+                        }
+                    },
                     onRetryClick = { viewModel.onIntent(SearchIntent.Retry) },
                 )
             }
@@ -355,7 +395,7 @@ fun FuzicNavigation(
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 ProfileScreen(
                     uiState = uiState,
-                    onEditProfileClick = { },
+                    onEditProfileClick = { navController.navigate(EditProfileDestination) },
                     onEntryClick = { entry ->
                         when (entry) {
                             ProfileEntry.Followers -> uiState.profile?.id?.let { id ->
@@ -374,6 +414,19 @@ fun FuzicNavigation(
                     onRetryClick = viewModel::retry,
                 )
             }
+            composable<EditProfileDestination> {
+                val viewModel: ProfileEditorViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                ProfileEditorScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onDisplayNameChange = { viewModel.onIntent(ProfileEditorIntent.DisplayNameChanged(it)) },
+                    onUsernameChange = { viewModel.onIntent(ProfileEditorIntent.UsernameChanged(it)) },
+                    onAvatarUrlChange = { viewModel.onIntent(ProfileEditorIntent.AvatarUrlChanged(it)) },
+                    onSaveClick = { viewModel.onIntent(ProfileEditorIntent.Save) },
+                    onRetryClick = { viewModel.onIntent(ProfileEditorIntent.Retry) },
+                )
+            }
             composable<SongDestination> { entry ->
                 val args = entry.toRoute<SongDestination>()
                 val viewModel: SongDetailsViewModel = hiltViewModel()
@@ -382,11 +435,11 @@ fun FuzicNavigation(
                 SongDetailsScreen(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
-                    onPlayClick = { },
+                    onPlayClick = { playerViewModel.onIntent(PlayerIntent.Play(it)) },
                     onLikeClick = { viewModel.toggleLike() },
-                    onDownloadClick = { },
-                    onShareClick = { },
-                    onAddToPlaylistClick = { },
+                    onDownloadClick = { unavailableAction(unavailableMessage) },
+                    onShareClick = { unavailableAction(unavailableMessage) },
+                    onAddToPlaylistClick = { unavailableAction(unavailableMessage) },
                     onRetryClick = { viewModel.load(args.songId) },
                 )
             }
@@ -402,7 +455,7 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onPlayAllClick = { viewModel.onIntent(PlaylistDetailsIntent.PlayAll(it)) },
                     onSongClick = { song -> navController.navigate(SongDestination(song.id)) },
-                    onSongMoreClick = { },
+                    onSongMoreClick = { unavailableAction(unavailableMessage) },
                     onRetryClick = { viewModel.onIntent(PlaylistDetailsIntent.Retry) },
                 )
             }
@@ -418,7 +471,7 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onFollowClick = { viewModel.onIntent(ArtistDetailsIntent.ToggleFollow) },
                     onPlaySongClick = { viewModel.onIntent(ArtistDetailsIntent.PlaySong(it)) },
-                    onSongMoreClick = { },
+                    onSongMoreClick = { unavailableAction(unavailableMessage) },
                     onRetryClick = { viewModel.onIntent(ArtistDetailsIntent.Retry) },
                 )
             }
@@ -449,13 +502,13 @@ fun FuzicNavigation(
                     onShuffleClick = { playerViewModel.onIntent(PlayerIntent.ToggleShuffle) },
                     onRepeatClick = { playerViewModel.onIntent(PlayerIntent.CycleRepeatMode) },
                     onLikeClick = { playerViewModel.onIntent(PlayerIntent.ToggleLike) },
-                    onShareClick = { },
-                    onAddToPlaylistClick = { },
+                    onShareClick = { unavailableAction(unavailableMessage) },
+                    onAddToPlaylistClick = { unavailableAction(unavailableMessage) },
                     onQueueClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.Queue)) },
                     onSleepTimerClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.SleepTimer)) },
                     onPlaybackSpeedClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.PlaybackSpeed)) },
                     onQueueSongClick = { playerViewModel.onIntent(PlayerIntent.QueueSongSelected(it)) },
-                    onSongMoreClick = { },
+                    onSongMoreClick = { unavailableAction(unavailableMessage) },
                     onOverlayDismiss = { playerViewModel.onIntent(PlayerIntent.DismissOverlay) },
                     onSleepTimerSelected = { playerViewModel.onIntent(PlayerIntent.SleepTimerSelected(it)) },
                     onPlaybackSpeedSelected = { playerViewModel.onIntent(PlayerIntent.PlaybackSpeedSelected(it)) },
@@ -468,7 +521,7 @@ fun FuzicNavigation(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
                     onSongClick = { navController.navigate(SongDestination(it.id)) },
-                    onSongMoreClick = { },
+                    onSongMoreClick = { unavailableAction(unavailableMessage) },
                     onRetryClick = { viewModel.onIntent(SongCollectionIntent.Retry) },
                 )
             }
@@ -479,7 +532,7 @@ fun FuzicNavigation(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
                     onSongClick = { navController.navigate(SongDestination(it.id)) },
-                    onSongMoreClick = { },
+                    onSongMoreClick = { unavailableAction(unavailableMessage) },
                     onRetryClick = { viewModel.onIntent(SongCollectionIntent.Retry) },
                 )
             }
@@ -498,7 +551,10 @@ fun FuzicNavigation(
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 NotificationsScreen(
                     uiState = uiState,
-                    onNotificationClick = { viewModel.onIntent(NotificationsIntent.NotificationSelected(it)) },
+                    onNotificationClick = {
+                        viewModel.onIntent(NotificationsIntent.NotificationSelected(it))
+                        unavailableAction(notificationTargetUnavailableMessage)
+                    },
                     onMarkAllReadClick = { viewModel.onIntent(NotificationsIntent.MarkAllRead) },
                     onRetryClick = { viewModel.onIntent(NotificationsIntent.Retry) },
                 )
@@ -557,7 +613,7 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onDraftChange = { viewModel.onIntent(ChatDetailIntent.DraftChanged(it)) },
                     onSendClick = { viewModel.onIntent(ChatDetailIntent.SendDraft) },
-                    onShareSongClick = { },
+                    onShareSongClick = { unavailableAction(unavailableMessage) },
                     onSongClick = { navController.navigate(SongDestination(it.id)) },
                     onRetryClick = { viewModel.onIntent(ChatDetailIntent.Retry) },
                 )
@@ -569,7 +625,7 @@ fun FuzicNavigation(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
                     onQueryChange = { viewModel.onIntent(FollowSearchIntent.QueryChanged(it)) },
-                    onUserClick = { },
+                    onUserClick = { unavailableAction(unavailableMessage) },
                     onFollowClick = { viewModel.onIntent(FollowSearchIntent.ToggleFollow(it)) },
                     onRetryClick = { viewModel.onIntent(FollowSearchIntent.Retry) },
                 )
@@ -585,7 +641,7 @@ fun FuzicNavigation(
                 FollowListScreen(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
-                    onUserClick = { },
+                    onUserClick = { unavailableAction(unavailableMessage) },
                     onFollowClick = { viewModel.onIntent(FollowListIntent.ToggleFollow(it)) },
                     onRetryClick = { viewModel.onIntent(FollowListIntent.Retry) },
                 )
