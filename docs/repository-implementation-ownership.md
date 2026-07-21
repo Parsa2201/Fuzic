@@ -57,6 +57,8 @@ Sina's player implementation should decide whether to play a local downloaded fi
 
 Do not add file paths or WorkManager ids to UI models unless a screen truly needs to display them.
 
+`MusicRepository` should populate `SongItem.audioUrl` when a song is eligible for streaming or download. It is an opaque app-facing source URL, not a Supabase Storage path contract; the UI passes it to `DownloadRepository` only when requesting an offline download.
+
 ### Playback And Interactions
 
 When playback starts or reaches the agreed threshold, `PlayerRepository` implementation can call `InteractionRepository.recordPlay(songId)`. The UI should not manually record plays from composables.
