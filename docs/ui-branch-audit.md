@@ -44,7 +44,7 @@ Before this can be treated as feature-complete, prioritize fixing the confirmed 
 ### Screen/UI completion
 
 - **Home:** auto-scroll, cards, sections, shimmer, cached-content banner, and state branches exist. Ensure cached snapshots are driven by repository cache metadata; add a real empty-state CTA target. Album support must be resolved as above.
-- **Search:** debounce and filters exist, but the UI state is a full `List<SearchResultItem>`. Convert results to Paging 3 (`PagingData`, `collectAsLazyPagingItems`) before real backend integration, enforce the specified maximum query length, and persist history through Room implementation.
+- **Search:** **Done (`ui`):** results now use `PagingData` and `collectAsLazyPagingItems`; debounce and query-length protection remain. Pending repository work: persist history through Room.
 - **Downloads:** UI contains sorting, progress, swipe-to-dismiss, undo, and storage warning. Connect `FreeUpSpace` to a meaningful OS/storage action or remove the CTA; ensure delete waits for both file and Room removal. Add a premium-aware download entry from song/player screens. Download worker/file work belongs to the repository/data owners.
 - **Playlists and playlist detail:** grid/create/detail/play-all UI exists. **Done (`ui`):** the playlist grid uses `GridCells.Adaptive(160.dp)` instead of a fixed two-column layout. Pending: Paging 3 for long section/list data and an optional photo-picker cover flow.
 - **Profile/follow:** profile editor, public profile, follow search/list, and premium badge exist. Add a route from profile to follow search if it is intended to be reachable; make logout direct as noted above.

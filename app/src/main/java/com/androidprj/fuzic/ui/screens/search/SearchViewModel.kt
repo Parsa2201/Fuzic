@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
+import androidx.paging.PagingData
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -91,7 +92,7 @@ class SearchViewModel @Inject constructor(
             val query = _uiState.value.query.trim()
             if (query.isBlank()) {
                 lastSubmittedQuery = ""
-                _uiState.update { it.copy(isLoading = false, results = emptyList(), errorMessage = null) }
+                _uiState.update { it.copy(isLoading = false, results = PagingData.empty(), errorMessage = null) }
                 return@launch
             }
             if (query.length > MAX_QUERY_LENGTH) {
@@ -100,22 +101,16 @@ class SearchViewModel @Inject constructor(
             }
             lastSubmittedQuery = query
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            withContext(ioDispatcher) {
-                runCatching { searchRepository.search(query, _uiState.value.selectedFilter) }
-            }.fold(
-                onSuccess = {
+            runCatching { searchRepository.search(query, _uiState.value.selectedFilter) }
+                .onSuccess { results ->
                     searchRepository.saveSearchQuery(query)
-                    _uiState.update { state -> state.copy(isLoading = false, errorMessage = null) }
-                },
-                onFailure = { throwable ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            errorMessage = throwable.message ?: stringProvider.get(R.string.search_error_message),
-                        )
+                    results.collect { pagingData ->
+                        _uiState.update { state -> state.copy(results = pagingData, isLoading = false, errorMessage = null) }
                     }
-                },
-            )
+                }
+                .onFailure { throwable -> _uiState.update {
+                    it.copy(isLoading = false, errorMessage = throwable.message ?: stringProvider.get(R.string.search_error_message))
+                } }
         }
     }
 

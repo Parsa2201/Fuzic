@@ -288,7 +288,7 @@ private fun sampleSearchUiState(): SearchUiState = SearchUiState(
         stringResource(R.string.preview_search_history_two),
         stringResource(R.string.preview_search_history_three)
     ),
-    results = listOf(
+    results = androidx.paging.PagingData.from(listOf(
         SearchResultItem(
             id = "result-midnight-drive",
             title = stringResource(R.string.preview_song_midnight_drive),
@@ -303,7 +303,7 @@ private fun sampleSearchUiState(): SearchUiState = SearchUiState(
             type = SearchFilter.Songs,
             artworkUrl = previewArtworkUri(R.drawable.preview_artwork_tehran)
         )
-    )
+    ))
 )
 
 @Composable
