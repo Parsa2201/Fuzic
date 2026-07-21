@@ -47,6 +47,20 @@ import com.androidprj.fuzic.ui.screens.artist.ArtistDetailsViewModel
 import com.androidprj.fuzic.ui.screens.settings.SettingsIntent
 import com.androidprj.fuzic.ui.screens.settings.SettingsScreen
 import com.androidprj.fuzic.ui.screens.settings.SettingsViewModel
+import com.androidprj.fuzic.ui.screens.liked.LikedSongsScreen
+import com.androidprj.fuzic.ui.screens.recentlyplayed.RecentlyPlayedScreen
+import com.androidprj.fuzic.ui.screens.songcollection.LikedSongsViewModel
+import com.androidprj.fuzic.ui.screens.songcollection.RecentlyPlayedViewModel
+import com.androidprj.fuzic.ui.screens.songcollection.SongCollectionIntent
+import com.androidprj.fuzic.ui.screens.artists.ArtistsScreen
+import com.androidprj.fuzic.ui.screens.artists.ArtistsIntent
+import com.androidprj.fuzic.ui.screens.artists.ArtistsViewModel
+import com.androidprj.fuzic.ui.screens.notifications.NotificationsScreen
+import com.androidprj.fuzic.ui.screens.notifications.NotificationsIntent
+import com.androidprj.fuzic.ui.screens.notifications.NotificationsViewModel
+import com.androidprj.fuzic.ui.screens.premium.PremiumScreen
+import com.androidprj.fuzic.ui.screens.premium.PremiumIntent
+import com.androidprj.fuzic.ui.screens.premium.PremiumViewModel
 import com.androidprj.fuzic.ui.screens.player.PlayerIntent
 import com.androidprj.fuzic.ui.screens.player.PlayerScreen
 import com.androidprj.fuzic.ui.screens.player.PlayerViewModel
@@ -84,6 +98,21 @@ data object SettingsDestination
 
 @Serializable
 data object FullPlayerDestination
+
+@Serializable
+data object LikedSongsDestination
+
+@Serializable
+data object RecentlyPlayedDestination
+
+@Serializable
+data object ArtistsDestination
+
+@Serializable
+data object NotificationsDestination
+
+@Serializable
+data object PremiumDestination
 
 private val topLevelDestinations = listOf(
     HomeDestination,
@@ -302,6 +331,59 @@ fun FuzicNavigation(
                     onOverlayDismiss = { playerViewModel.onIntent(PlayerIntent.DismissOverlay) },
                     onSleepTimerSelected = { playerViewModel.onIntent(PlayerIntent.SleepTimerSelected(it)) },
                     onPlaybackSpeedSelected = { playerViewModel.onIntent(PlayerIntent.PlaybackSpeedSelected(it)) },
+                )
+            }
+            composable<LikedSongsDestination> {
+                val viewModel: LikedSongsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LikedSongsScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onSongClick = { navController.navigate(SongDestination(it.id)) },
+                    onSongMoreClick = { },
+                    onRetryClick = { viewModel.onIntent(SongCollectionIntent.Retry) },
+                )
+            }
+            composable<RecentlyPlayedDestination> {
+                val viewModel: RecentlyPlayedViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                RecentlyPlayedScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onSongClick = { navController.navigate(SongDestination(it.id)) },
+                    onSongMoreClick = { },
+                    onRetryClick = { viewModel.onIntent(SongCollectionIntent.Retry) },
+                )
+            }
+            composable<ArtistsDestination> {
+                val viewModel: ArtistsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                ArtistsScreen(
+                    uiState = uiState,
+                    onArtistClick = { navController.navigate(ArtistDestination(it.id)) },
+                    onFollowClick = { viewModel.onIntent(ArtistsIntent.ToggleFollow(it)) },
+                    onRetryClick = { viewModel.onIntent(ArtistsIntent.Retry) },
+                )
+            }
+            composable<NotificationsDestination> {
+                val viewModel: NotificationsViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                NotificationsScreen(
+                    uiState = uiState,
+                    onNotificationClick = { viewModel.onIntent(NotificationsIntent.NotificationSelected(it)) },
+                    onMarkAllReadClick = { viewModel.onIntent(NotificationsIntent.MarkAllRead) },
+                    onRetryClick = { viewModel.onIntent(NotificationsIntent.Retry) },
+                )
+            }
+            composable<PremiumDestination> {
+                val viewModel: PremiumViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                PremiumScreen(
+                    uiState = uiState,
+                    onPlanSelected = { viewModel.onIntent(PremiumIntent.SelectPlan(it)) },
+                    onUpgradeClick = { viewModel.onIntent(PremiumIntent.Upgrade) },
+                    onRestoreClick = { viewModel.onIntent(PremiumIntent.RestorePurchase) },
+                    onRetryClick = { viewModel.onIntent(PremiumIntent.Retry) },
                 )
             }
         }
