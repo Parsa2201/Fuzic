@@ -44,6 +44,8 @@ import com.androidprj.fuzic.ui.screens.profile.ProfileViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileEditorScreen
 import com.androidprj.fuzic.ui.screens.profile.ProfileEditorViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileEditorIntent
+import com.androidprj.fuzic.ui.screens.profile.UserProfileScreen
+import com.androidprj.fuzic.ui.screens.profile.UserProfileViewModel
 import com.androidprj.fuzic.ui.screens.song.SongDetailsScreen
 import com.androidprj.fuzic.ui.screens.song.SongDetailsViewModel
 import com.androidprj.fuzic.ui.screens.playlistdetail.PlaylistDetailsScreen
@@ -357,7 +359,7 @@ fun FuzicNavigation(
                             com.androidprj.fuzic.model.ui.SearchFilter.Songs -> navController.navigate(SongDestination(item.id))
                             com.androidprj.fuzic.model.ui.SearchFilter.Artists -> navController.navigate(ArtistDestination(item.id))
                             com.androidprj.fuzic.model.ui.SearchFilter.Playlists -> navController.navigate(PlaylistDestination(item.id))
-                            com.androidprj.fuzic.model.ui.SearchFilter.Users -> unavailableAction(unavailableMessage)
+                            com.androidprj.fuzic.model.ui.SearchFilter.Users -> navController.navigate(UserProfileDestination(item.id))
                         }
                     },
                     onRetryClick = { viewModel.onIntent(SearchIntent.Retry) },
@@ -425,6 +427,17 @@ fun FuzicNavigation(
                     onAvatarUrlChange = { viewModel.onIntent(ProfileEditorIntent.AvatarUrlChanged(it)) },
                     onSaveClick = { viewModel.onIntent(ProfileEditorIntent.Save) },
                     onRetryClick = { viewModel.onIntent(ProfileEditorIntent.Retry) },
+                )
+            }
+            composable<UserProfileDestination> { entry ->
+                val args = entry.toRoute<UserProfileDestination>()
+                val viewModel: UserProfileViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(args.userId) { viewModel.load(args.userId) }
+                UserProfileScreen(
+                    uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
+                    onRetryClick = viewModel::retry,
                 )
             }
             composable<SongDestination> { entry ->
@@ -625,7 +638,7 @@ fun FuzicNavigation(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
                     onQueryChange = { viewModel.onIntent(FollowSearchIntent.QueryChanged(it)) },
-                    onUserClick = { unavailableAction(unavailableMessage) },
+                    onUserClick = { navController.navigate(UserProfileDestination(it.id)) },
                     onFollowClick = { viewModel.onIntent(FollowSearchIntent.ToggleFollow(it)) },
                     onRetryClick = { viewModel.onIntent(FollowSearchIntent.Retry) },
                 )
@@ -641,7 +654,7 @@ fun FuzicNavigation(
                 FollowListScreen(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
-                    onUserClick = { unavailableAction(unavailableMessage) },
+                    onUserClick = { navController.navigate(UserProfileDestination(it.id)) },
                     onFollowClick = { viewModel.onIntent(FollowListIntent.ToggleFollow(it)) },
                     onRetryClick = { viewModel.onIntent(FollowListIntent.Retry) },
                 )

@@ -236,4 +236,6 @@
     <string name="password_recovery_submit">ارسال دستورالعمل</string>
     <string name="password_recovery_success">دستورالعمل بازیابی گذرواژه ارسال شد.</string>
     <string name="password_recovery_error">درخواست بازیابی گذرواژه انجام نشد.</string>
+    <string name="user_profile_title">پروفایل</string>
+    <string name="user_profile_error">پروفایل بارگیری نشد.</string>
 </resources>

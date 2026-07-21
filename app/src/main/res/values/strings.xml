@@ -236,4 +236,6 @@
     <string name="password_recovery_submit">Send instructions</string>
     <string name="password_recovery_success">Password reset instructions were sent.</string>
     <string name="password_recovery_error">Password reset could not be requested.</string>
+    <string name="user_profile_title">Profile</string>
+    <string name="user_profile_error">Profile could not be loaded.</string>
 </resources>
