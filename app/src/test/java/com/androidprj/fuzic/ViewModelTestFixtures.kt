@@ -12,11 +12,14 @@ import com.androidprj.fuzic.model.ui.PlaylistDetails
 import com.androidprj.fuzic.model.ui.PremiumPlan
 import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.model.ui.AudioVisualizerFrame
+import com.androidprj.fuzic.model.ui.ArtistDetails
+import com.androidprj.fuzic.model.ui.ArtistItem
 import com.androidprj.fuzic.model.ui.PlayerUiState
 import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.DownloadRepository
+import com.androidprj.fuzic.repository.ArtistRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
@@ -57,6 +60,17 @@ internal val testProfile = ProfileUser(
     id = "user-1",
     username = "parsa",
     displayName = "Parsa",
+)
+
+internal val testArtist = ArtistItem(
+    id = "artist-1",
+    name = "Luna Ray",
+    monthlyListenersLabel = "1M listeners",
+)
+
+internal val testArtistDetails = ArtistDetails(
+    artist = testArtist,
+    popularSongs = listOf(testSong),
 )
 
 internal val testPremiumPlan = PremiumPlan(
@@ -326,6 +340,25 @@ internal class FakePlaylistDetailsRepository(
     }
 }
 
+internal class FakeArtistRepository(
+    var artistDetailsResult: Result<ArtistDetails> = Result.success(testArtistDetails),
+) : ArtistRepository {
+    var detailsCalls = 0
+    var lastArtistId: String? = null
+
+    override suspend fun getArtist(artistId: String): Result<ArtistItem> = artistDetailsResult.map { it.artist }
+
+    override suspend fun getArtistDetails(artistId: String): Result<ArtistDetails> {
+        detailsCalls++
+        lastArtistId = artistId
+        return artistDetailsResult
+    }
+
+    override fun observeArtists(): kotlinx.coroutines.flow.Flow<androidx.paging.PagingData<com.androidprj.fuzic.model.ui.ArtistCollectionItem>> {
+        return flowOf(androidx.paging.PagingData.empty())
+    }
+}
+
 internal class FakeUserRepository(
     var profileResult: Result<ProfileUser> = Result.success(testProfile),
 ) : UserRepository {
@@ -339,8 +372,19 @@ internal class FakeFollowRepository(
     var followersCount: Int = 7,
     var followingCount: Int = 3,
 ) : com.androidprj.fuzic.repository.FollowRepository {
-    override suspend fun followUser(followeeId: String) = Result.success(Unit)
-    override suspend fun unfollowUser(followeeId: String) = Result.success(Unit)
+    var followResult: Result<Unit> = Result.success(Unit)
+    var unfollowResult: Result<Unit> = Result.success(Unit)
+    var followCalls = 0
+    var unfollowCalls = 0
+
+    override suspend fun followUser(followeeId: String): Result<Unit> {
+        followCalls++
+        return followResult
+    }
+    override suspend fun unfollowUser(followeeId: String): Result<Unit> {
+        unfollowCalls++
+        return unfollowResult
+    }
     override suspend fun getFollowers(userId: String, offset: Long, limit: Long) = Result.success(emptyList<com.androidprj.fuzic.model.ui.FollowUser>())
     override suspend fun getFollowing(userId: String, offset: Long, limit: Long) = Result.success(emptyList<com.androidprj.fuzic.model.ui.FollowUser>())
     override fun observeFollowersCount(userId: String): Flow<Int> = flowOf(followersCount)
