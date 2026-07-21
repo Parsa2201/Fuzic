@@ -16,6 +16,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.androidprj.fuzic.R
@@ -95,6 +98,7 @@ import com.androidprj.fuzic.ui.screens.auth.AuthScreen
 import com.androidprj.fuzic.ui.screens.auth.AuthViewModel
 import com.androidprj.fuzic.ui.screens.auth.AuthIntent
 import com.androidprj.fuzic.ui.screens.auth.WelcomeScreen
+import com.androidprj.fuzic.ui.screens.auth.PasswordRecoveryScreen
 import com.androidprj.fuzic.model.ui.AuthUiState
 import com.androidprj.fuzic.model.ui.WelcomeUiState
 import com.androidprj.fuzic.ui.screens.search.SearchIntent
@@ -320,7 +324,7 @@ fun FuzicNavigation(
                     onPasswordVisibilityClick = { viewModel.onIntent(AuthIntent.TogglePasswordVisibility) },
                     onConfirmPasswordVisibilityClick = { viewModel.onIntent(AuthIntent.ToggleConfirmPasswordVisibility) },
                     onSubmitClick = { viewModel.onIntent(AuthIntent.Submit) },
-                    onForgotPasswordClick = { unavailableAction(unavailableMessage) },
+                    onForgotPasswordClick = { navController.navigate(PasswordRecoveryDestination) },
                     onSwitchModeClick = { viewModel.onIntent(AuthIntent.ToggleMode) },
                     onRetryClick = { viewModel.onIntent(AuthIntent.Retry) },
                 )
@@ -414,6 +418,20 @@ fun FuzicNavigation(
                         }
                     },
                     onRetryClick = viewModel::retry,
+                )
+            }
+            composable<PasswordRecoveryDestination> {
+                var email by rememberSaveable { mutableStateOf("") }
+                var isSubmitted by rememberSaveable { mutableStateOf(false) }
+                PasswordRecoveryScreen(
+                    email = email,
+                    isSubmitted = isSubmitted,
+                    onBackClick = { navController.popBackStack() },
+                    onEmailChange = {
+                        email = it
+                        isSubmitted = false
+                    },
+                    onSubmitClick = { isSubmitted = true },
                 )
             }
             composable<EditProfileDestination> {
