@@ -11,11 +11,11 @@ class RemoteMusicRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) : MusicRepository {
 
-    override suspend fun getDailyPicks(): Result<List<Song>> {
+    override suspend fun getDailyPicks(offset: Long, limit: Long): Result<List<Song>> {
         return try {
             val songs = supabaseClient.postgrest["songs"]
                 .select { 
-                    limit(10)
+                    range(offset, offset + limit - 1)
                 }
                 .decodeList<Song>()
             Result.success(songs)
@@ -24,12 +24,12 @@ class RemoteMusicRepository @Inject constructor(
         }
     }
 
-    override suspend fun getTrendingSongs(): Result<List<Song>> {
+    override suspend fun getTrendingSongs(offset: Long, limit: Long): Result<List<Song>> {
         return try {
             val songs = supabaseClient.postgrest["songs"]
                 .select { 
                     order("play_count", order = Order.DESCENDING)
-                    limit(20)
+                    range(offset, offset + limit - 1)
                 }
                 .decodeList<Song>()
             Result.success(songs)
@@ -38,12 +38,12 @@ class RemoteMusicRepository @Inject constructor(
         }
     }
 
-    override suspend fun getNewReleases(): Result<List<Song>> {
+    override suspend fun getNewReleases(offset: Long, limit: Long): Result<List<Song>> {
         return try {
             val songs = supabaseClient.postgrest["songs"]
                 .select { 
                     order("release_date", order = Order.DESCENDING)
-                    limit(20)
+                    range(offset, offset + limit - 1)
                 }
                 .decodeList<Song>()
             Result.success(songs)
@@ -52,8 +52,8 @@ class RemoteMusicRepository @Inject constructor(
         }
     }
 
-    override suspend fun getMostPopular(): Result<List<Song>> {
-        return getTrendingSongs()
+    override suspend fun getMostPopular(offset: Long, limit: Long): Result<List<Song>> {
+        return getTrendingSongs(offset, limit)
     }
 
     override suspend fun getSongById(songId: String): Result<Song> {
@@ -67,10 +67,18 @@ class RemoteMusicRepository @Inject constructor(
         }
     }
 
-    override suspend fun searchSongs(query: String): Result<List<Song>> {
+    override suspend fun searchSongs(query: String, offset: Long, limit: Long): Result<List<Song>> {
         return try {
             val songs = supabaseClient.postgrest["songs"]
-                .select { filter { ilike("title", "%$query%") } }
+                .select { 
+                    filter { 
+                        or {
+                            ilike("title", "%$query%")
+                            ilike("artist_name", "%$query%")
+                        }
+                    }
+                    range(offset, offset + limit - 1)
+                }
                 .decodeList<Song>()
             Result.success(songs)
         } catch (e: Exception) {

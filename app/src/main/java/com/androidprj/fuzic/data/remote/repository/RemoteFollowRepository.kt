@@ -44,11 +44,12 @@ class RemoteFollowRepository @Inject constructor(
         }
     }
 
-    override suspend fun getFollowers(userId: String): Result<List<User>> {
+    override suspend fun getFollowers(userId: String, offset: Long, limit: Long): Result<List<User>> {
         return try {
             val users = supabaseClient.postgrest["follows"]
                 .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("follower_id, users!follows_follower_id_fkey(*)")) {
                     filter { eq("followee_id", userId) }
+                    range(offset, offset + limit - 1)
                 }
                 .decodeList<UserWrapper>()
                 .map { it.user }
@@ -58,11 +59,12 @@ class RemoteFollowRepository @Inject constructor(
         }
     }
 
-    override suspend fun getFollowing(userId: String): Result<List<User>> {
+    override suspend fun getFollowing(userId: String, offset: Long, limit: Long): Result<List<User>> {
         return try {
             val users = supabaseClient.postgrest["follows"]
                 .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("followee_id, users!follows_followee_id_fkey(*)")) {
                     filter { eq("follower_id", userId) }
+                    range(offset, offset + limit - 1)
                 }
                 .decodeList<UserWrapper>()
                 .map { it.user }

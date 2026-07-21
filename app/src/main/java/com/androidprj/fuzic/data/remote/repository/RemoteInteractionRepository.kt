@@ -14,7 +14,7 @@ class RemoteInteractionRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) : InteractionRepository {
 
-    override suspend fun getRecentlyPlayed(userId: String): Result<List<Song>> {
+    override suspend fun getRecentlyPlayed(userId: String, offset: Long, limit: Long): Result<List<Song>> {
         return try {
             val songs = supabaseClient.postgrest["interactions"]
                 .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
@@ -23,7 +23,7 @@ class RemoteInteractionRepository @Inject constructor(
                         eq("interaction_type", "play")
                     }
                     order("created_at", order = Order.DESCENDING)
-                    limit(20)
+                    range(offset, offset + limit - 1)
                 }
                 .decodeList<SongWrapper>()
                 .map { it.song }
@@ -33,7 +33,7 @@ class RemoteInteractionRepository @Inject constructor(
         }
     }
 
-    override suspend fun getLikedSongs(userId: String): Result<List<Song>> {
+    override suspend fun getLikedSongs(userId: String, offset: Long, limit: Long): Result<List<Song>> {
         return try {
             val songs = supabaseClient.postgrest["interactions"]
                 .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
@@ -42,6 +42,7 @@ class RemoteInteractionRepository @Inject constructor(
                         eq("interaction_type", "like")
                     }
                     order("created_at", order = Order.DESCENDING)
+                    range(offset, offset + limit - 1)
                 }
                 .decodeList<SongWrapper>()
                 .map { it.song }

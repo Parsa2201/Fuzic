@@ -9,6 +9,7 @@ import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.decodeRecord
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -18,7 +19,7 @@ class RemoteChatRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) : ChatRepository {
 
-    override suspend fun getChatHistory(userId: String): Result<List<Message>> {
+    override suspend fun getChatHistory(userId: String, offset: Long, limit: Long): Result<List<Message>> {
         return try {
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
             val messages = supabaseClient.postgrest["messages"]
@@ -36,6 +37,7 @@ class RemoteChatRepository @Inject constructor(
                         }
                     }
                     order("created_at", order = Order.ASCENDING)
+                    range(offset, offset + limit - 1)
                 }
                 .decodeList<Message>()
             Result.success(messages)
@@ -77,7 +79,12 @@ class RemoteChatRepository @Inject constructor(
     }
 
     override fun observeMessages(userId: String): Flow<Message> {
-        // A full implementation would use Supabase Realtime channels
-        throw NotImplementedError("Realtime implementation required here")
+        val currentUserId = supabaseClient.auth.currentUserOrNull()?.id 
+            ?: throw Exception("Not logged in")
+            
+        val channel = supabaseClient.channel("public:messages")
+        return channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+            table = "messages"
+        }.map { it.decodeRecord<Message>() }
     }
 }

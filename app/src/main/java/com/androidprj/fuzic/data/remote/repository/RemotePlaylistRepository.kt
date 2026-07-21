@@ -14,10 +14,13 @@ class RemotePlaylistRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) : PlaylistRepository {
 
-    override suspend fun getGlobalPlaylists(): Result<List<Playlist>> {
+    override suspend fun getGlobalPlaylists(offset: Long, limit: Long): Result<List<Playlist>> {
         return try {
             val playlists = supabaseClient.postgrest["playlists"]
-                .select { filter { eq("is_public", true) } }
+                .select { 
+                    filter { eq("is_public", true) } 
+                    range(offset, offset + limit - 1)
+                }
                 .decodeList<Playlist>()
             Result.success(playlists)
         } catch (e: Exception) {
@@ -25,14 +28,17 @@ class RemotePlaylistRepository @Inject constructor(
         }
     }
 
-    override suspend fun getLocalPlaylists(): Result<List<Playlist>> {
+    override suspend fun getLocalPlaylists(offset: Long, limit: Long): Result<List<Playlist>> {
         return Result.success(emptyList()) // Local Room cache to be implemented
     }
 
-    override suspend fun getUserPlaylists(userId: String): Result<List<Playlist>> {
+    override suspend fun getUserPlaylists(userId: String, offset: Long, limit: Long): Result<List<Playlist>> {
         return try {
             val playlists = supabaseClient.postgrest["playlists"]
-                .select { filter { eq("owner_id", userId) } }
+                .select { 
+                    filter { eq("owner_id", userId) }
+                    range(offset, offset + limit - 1)
+                }
                 .decodeList<Playlist>()
             Result.success(playlists)
         } catch (e: Exception) {
@@ -40,13 +46,14 @@ class RemotePlaylistRepository @Inject constructor(
         }
     }
 
-    override suspend fun getPlaylistSongs(playlistId: String): Result<List<Song>> {
+    override suspend fun getPlaylistSongs(playlistId: String, offset: Long, limit: Long): Result<List<Song>> {
         return try {
             // Note: In Supabase, you can use inner joins. 
             // For simplicity with the standard SDK, we fetch pivot table then songs, or use select("..., songs(*)")
             val songs = supabaseClient.postgrest["playlist_songs"]
                 .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
                     filter { eq("playlist_id", playlistId) }
+                    range(offset, offset + limit - 1)
                 }
                 .decodeList<SongWrapper>()
                 .map { it.song }
