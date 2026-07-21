@@ -286,7 +286,9 @@ private fun ArtistsLoadingPreview() {
 private fun ArtistsErrorPreview() {
     FuzicTheme {
         ArtistsScreen(
-            uiState = ArtistCollectionUiState(errorMessage = "Artists could not be loaded."),
+            uiState = ArtistCollectionUiState(
+                errorMessage = stringResource(R.string.preview_artists_error_message),
+            ),
             onArtistClick = {},
             onFollowClick = {},
             onRetryClick = {},

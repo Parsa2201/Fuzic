@@ -361,10 +361,22 @@ private val premiumFeatures = listOf(
     PremiumFeature(R.string.premium_feature_badge, R.string.premium_feature_badge_description),
 )
 
+@Composable
 private fun samplePremiumState() = PremiumUiState(
     plans = listOf(
-        PremiumPlan("monthly", "Monthly", "$4.99", "Billed every month"),
-        PremiumPlan("yearly", "Yearly", "$39.99", "Best value · billed yearly", isRecommended = true),
+        PremiumPlan(
+            "monthly",
+            stringResource(R.string.preview_premium_monthly),
+            stringResource(R.string.preview_premium_monthly_price),
+            stringResource(R.string.preview_premium_monthly_billing),
+        ),
+        PremiumPlan(
+            "yearly",
+            stringResource(R.string.preview_premium_yearly),
+            stringResource(R.string.preview_premium_yearly_price),
+            stringResource(R.string.preview_premium_yearly_billing),
+            isRecommended = true,
+        ),
     ),
     selectedPlanId = "yearly",
 )
@@ -416,7 +428,9 @@ private fun PremiumLoadingPreview() {
 private fun PremiumErrorPreview() {
     FuzicTheme {
         PremiumScreen(
-            uiState = PremiumUiState(errorMessage = "The plans could not be loaded."),
+            uiState = PremiumUiState(
+                errorMessage = stringResource(R.string.preview_premium_error_message),
+            ),
             onPlanSelected = {},
             onUpgradeClick = {},
             onRestoreClick = {},

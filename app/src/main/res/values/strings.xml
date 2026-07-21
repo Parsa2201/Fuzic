@@ -205,4 +205,22 @@
     <string name="player_share_to_chat_description">Send this song to a conversation.</string>
     <string name="player_copy_song_link">Copy song link</string>
     <string name="player_copy_song_link_description">Copy a shareable link for this song.</string>
+    <string name="preview_premium_monthly">Monthly</string>
+    <string name="preview_premium_monthly_price">$4.99</string>
+    <string name="preview_premium_monthly_billing">Billed every month</string>
+    <string name="preview_premium_yearly">Yearly</string>
+    <string name="preview_premium_yearly_price">$39.99</string>
+    <string name="preview_premium_yearly_billing">Best value · billed yearly</string>
+    <string name="preview_premium_error_message">The plans could not be loaded.</string>
+    <string name="preview_artists_error_message">Artists could not be loaded.</string>
+    <string name="preview_notification_release_title">New release from Raha Band</string>
+    <string name="preview_notification_release_message">Midnight Echoes is now available to play.</string>
+    <string name="preview_notification_five_minutes">5 minutes ago</string>
+    <string name="preview_notification_follow_title">Nika started following you</string>
+    <string name="preview_notification_follow_message">Follow back to share music with Nika.</string>
+    <string name="preview_notification_yesterday">Yesterday</string>
+    <string name="preview_notification_playlist_title">Your playlist is ready</string>
+    <string name="preview_notification_playlist_message">The songs you saved were added to Late Night.</string>
+    <string name="preview_notification_two_days">2 days ago</string>
+    <string name="preview_notifications_error_message">Notifications could not be loaded.</string>
 </resources>
