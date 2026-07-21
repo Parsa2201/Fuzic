@@ -47,6 +47,10 @@ Repositories are app-facing contracts used by ViewModels. They should expose pro
 
 ## Coordination Points
 
+### Password Recovery Binding
+
+The password-recovery screen and route are complete as UI, but the production request must only be connected after Bagher provides a `PasswordRecoveryRepository` implementation and Hilt binding. Do not add an in-memory or UI-owned replacement merely to make the request appear to succeed.
+
 ### Playback And Downloads
 
 Sina's player implementation should decide whether to play a local downloaded file or a stream URL without changing `PlayerRepository`. Bagher's `DownloadRepository` should expose enough download metadata for the player/service layer to resolve downloaded files internally or through a small service collaborator.
