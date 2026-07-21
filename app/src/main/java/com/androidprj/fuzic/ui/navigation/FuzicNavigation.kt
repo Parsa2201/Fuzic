@@ -76,6 +76,8 @@ import com.androidprj.fuzic.ui.screens.follow.FollowListIntent
 import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.model.ui.FollowListType
 import com.androidprj.fuzic.model.ui.FollowUser
+import com.androidprj.fuzic.model.ui.HomeQuickAction
+import com.androidprj.fuzic.model.ui.ProfileEntry
 import com.androidprj.fuzic.ui.screens.player.PlayerIntent
 import com.androidprj.fuzic.ui.screens.player.PlayerScreen
 import com.androidprj.fuzic.ui.screens.player.PlayerViewModel
@@ -193,7 +195,7 @@ fun FuzicNavigation(
             if (showShell) {
                 FuzicTopAppBar(
                     onProfileClick = { navController.navigate(ProfileDestination) },
-                    onNotificationsClick = { },
+                    onNotificationsClick = { navController.navigate(NotificationsDestination) },
                     onSettingsClick = { navController.navigate(SettingsDestination) },
                 )
             }
@@ -287,7 +289,14 @@ fun FuzicNavigation(
                 HomeScreen(
                     uiState = uiState,
                     onDailyPickClick = { item -> navigateForItem(navController, item.id, item.type.name) },
-                    onQuickActionClick = { },
+                    onQuickActionClick = { action ->
+                        when (action) {
+                            HomeQuickAction.LikedSongs -> navController.navigate(LikedSongsDestination)
+                            HomeQuickAction.RecentlyPlayed -> navController.navigate(RecentlyPlayedDestination)
+                            HomeQuickAction.MyPlaylists -> navController.navigate(PlaylistsDestination)
+                            HomeQuickAction.TopArtists -> navController.navigate(ArtistsDestination)
+                        }
+                    },
                     onMusicItemClick = { item -> navigateForItem(navController, item.id, item.type.name) },
                     onRetryClick = viewModel::retry,
                 )
@@ -312,7 +321,7 @@ fun FuzicNavigation(
                 DownloadsScreen(
                     uiState = uiState,
                     onSortClick = { viewModel.onIntent(DownloadsIntent.SortSelected(it)) },
-                    onSongClick = { },
+                    onSongClick = { navController.navigate(SongDestination(it.id)) },
                     onDeleteClick = { viewModel.onIntent(DownloadsIntent.Delete(it)) },
                     onUndoDeleteClick = { viewModel.onIntent(DownloadsIntent.UndoDelete) },
                     onRetryClick = { viewModel.onIntent(DownloadsIntent.Retry) },
@@ -339,7 +348,21 @@ fun FuzicNavigation(
                 ProfileScreen(
                     uiState = uiState,
                     onEditProfileClick = { },
-                    onEntryClick = { },
+                    onEntryClick = { entry ->
+                        when (entry) {
+                            ProfileEntry.Followers -> uiState.profile?.id?.let { id ->
+                                navController.navigate(FollowListDestination(id, FollowListType.Followers.name))
+                            }
+                            ProfileEntry.Following -> uiState.profile?.id?.let { id ->
+                                navController.navigate(FollowListDestination(id, FollowListType.Following.name))
+                            }
+                            ProfileEntry.LikedSongs -> navController.navigate(LikedSongsDestination)
+                            ProfileEntry.RecentlyPlayed -> navController.navigate(RecentlyPlayedDestination)
+                            ProfileEntry.Settings -> navController.navigate(SettingsDestination)
+                            ProfileEntry.Chat -> navController.navigate(ChatListDestination)
+                            ProfileEntry.Logout -> navController.navigate(SettingsDestination)
+                        }
+                    },
                     onRetryClick = viewModel::retry,
                 )
             }
