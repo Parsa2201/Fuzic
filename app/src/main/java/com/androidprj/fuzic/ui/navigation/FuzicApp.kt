@@ -167,6 +167,7 @@ private fun FuzicMainTabContent(
             onPlaylistClick = {},
             onNewPlaylistClick = {},
             onCreateNameChange = {},
+            onCreateCoverSelected = {},
             onCreateConfirmClick = {},
             onCreateDismissClick = {},
             onRetryClick = {},
