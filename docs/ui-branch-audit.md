@@ -4,6 +4,12 @@
 **Reviewed:** 22 July 2026  
 **Scope:** Compose UI, previews, UI-facing view models, and Navigation Compose. Repository implementations are deliberately out of scope; the findings below only identify the UI contracts those implementations must satisfy.
 
+## Tracking legend
+
+- **Done** — implemented and committed on `ui`.
+- **Partial** — the incorrect behavior is contained, but the complete product requirement still needs work.
+- **Pending** — not implemented yet.
+
 ## Executive summary
 
 The branch has a substantial UI foundation: the five-tab shell, type-safe destinations, Hilt view models, theme tokens, loading/empty/error compositions, and most of the product screens are present. The project builds and all current debug unit tests pass.
@@ -12,16 +18,16 @@ Before this can be treated as feature-complete, prioritize fixing the confirmed 
 
 ## Confirmed defects
 
-| Priority | Area | Finding and effect | Recommended correction |
+| Status | Priority | Area | Finding and effect | Recommended correction |
 |---|---|---|---|
-| P0 | Chat | `ChatDetailViewModel` collects `observeMessages()` but discards each emitted list. Opening a conversation therefore never renders repository/cached/realtime messages; only a locally sent message is appended. | Assign the emitted messages to `ChatDetailUiState.messages`, preserve draft/typing/overlay state, and add a test covering an emission after `LoadConversation`. |
-| P0 | Notifications | `NotificationsViewModel` collects `observeNotifications()` but only changes loading/error state. The notifications list is never populated. | Store the emitted list in `NotificationsUiState.notifications`; add an emission test. |
-| P0 | Welcome | In `FuzicNavigation`, `WelcomeScreen` receives empty callbacks for `onPageChanged` and `onNextClick`. The Next button does nothing, so button-only users are stuck on the first page (swiping happens to work). | Put onboarding page state in a small `WelcomeViewModel`, or animate the pager from the route; wire Next and page changes. |
-| P1 | Password recovery | `PasswordRecoveryDestination` owns `email` and `isSubmitted` with `rememberSaveable` and sets success locally. It never calls `PasswordRecoveryRepository`, cannot report an error/loading state, and claims success without sending a reset request. | Add `PasswordRecoveryViewModel` with `UiState` and intents; invoke the repository on `Dispatchers.IO`. |
-| P1 | Logout entry | Choosing `ProfileEntry.Logout` merely opens Settings instead of requesting logout or opening the confirmation dialog. This is misleading and adds an unexpected extra step. | Expose a logout event/callback from Profile, or navigate to Settings with an explicit typed action that opens the confirmation dialog. On success clear the auth back stack and show auth/welcome. |
-| P1 | Music navigation | `navigateForItem()` only recognises `"Playlist"` and `"Artist"`; `MusicItemType.Album` falls through to `SongDestination`. Album cards will open a song-detail screen. | Either remove Album until an album-detail destination exists, or introduce a typed `AlbumDestination` and handle it explicitly. Avoid passing `type.name` strings; pass `MusicItemType`. |
-| P1 | Song download | Song details wires Download to a generic “action unavailable” snackbar, regardless of premium state. The required upgrade prompt is not reached from this entry point. | Add a UI-facing premium/download eligibility state and show `PremiumScreen`/upgrade dialog for free users; dispatch an actual download request for premium users. |
-| P1 | Chat read receipts | `MarkMessagesRead` exists but no navigation/UI code dispatches it for visible unread incoming messages. | Have the chat route derive visible unread messages and send the intent once per visible set, with an idempotency guard. |
+| Done (`847ea86`) | P0 | Chat | `ChatDetailViewModel` collects `observeMessages()` but discards each emitted list. Opening a conversation therefore never renders repository/cached/realtime messages; only a locally sent message is appended. | Now stored as `PagingData` and rendered through `LazyPagingItems`. Preserve the paging contract for realtime/cache implementations. |
+| Done (`847ea86`) | P0 | Notifications | `NotificationsViewModel` collects `observeNotifications()` but only changes loading/error state. The notifications list is never populated. | Now stored as `PagingData` and rendered through `LazyPagingItems`. |
+| Done (`893fa65`) | P0 | Welcome | In `FuzicNavigation`, `WelcomeScreen` receives empty callbacks for `onPageChanged` and `onNextClick`. The Next button does nothing, so button-only users are stuck on the first page (swiping happens to work). | Next now animates the pager forward; the route callback remains optional. |
+| Pending | P1 | Password recovery | `PasswordRecoveryDestination` owns `email` and `isSubmitted` with `rememberSaveable` and sets success locally. It never calls `PasswordRecoveryRepository`, cannot report an error/loading state, and claims success without sending a reset request. | Add `PasswordRecoveryViewModel` with `UiState` and intents; invoke the repository on `Dispatchers.IO`. |
+| Pending | P1 | Logout entry | Choosing `ProfileEntry.Logout` merely opens Settings instead of requesting logout or opening the confirmation dialog. This is misleading and adds an unexpected extra step. | Expose a logout event/callback from Profile, or navigate to Settings with an explicit typed action that opens the confirmation dialog. On success clear the auth back stack and show auth/welcome. |
+| Partial (`893fa65`) | P1 | Music navigation | `navigateForItem()` only recognises `"Playlist"` and `"Artist"`; `MusicItemType.Album` falls through to `SongDestination`. Album cards will open a song-detail screen. | Routing is now type-safe and Albums no longer open song detail. Add a real album destination or hide album cards before release. |
+| Pending | P1 | Song download | Song details wires Download to a generic “action unavailable” snackbar, regardless of premium state. The required upgrade prompt is not reached from this entry point. | Add a UI-facing premium/download eligibility state and show `PremiumScreen`/upgrade dialog for free users; dispatch an actual download request for premium users. |
+| Pending | P1 | Chat read receipts | `MarkMessagesRead` exists but no navigation/UI code dispatches it for visible unread incoming messages. | Have the chat route derive visible unread messages and send the intent once per visible set, with an idempotency guard. |
 
 ## Remaining UI work by requirement
 
@@ -29,7 +35,7 @@ Before this can be treated as feature-complete, prioritize fixing the confirmed 
 
 - Keep Navigation Compose 2 with `@Serializable` destinations, as required by the team decision. Do **not** migrate to Navigation 3 merely for adaptive layouts.
 - Split `FuzicNavigation.kt` into a route/destination file, a root graph, and feature graph builders. It currently owns all destination declarations, Hilt acquisition, authentication redirects, screen callbacks, snackbars, bottom navigation, player sheet routing, and item-type mapping in one file. This makes each feature hard to test or change independently.
-- Replace `FollowListDestination.type: String` with `type: FollowListType`; it is an enum that is already serializable or can be made so. The current `runCatching { valueOf(...) }` silently turns malformed links into Followers.
+- **Done (`c43f949`):** `FollowListDestination.type` is now `FollowListType`; the string parsing fallback is removed.
 - Centralize shell visibility (`showShell`, mini-player visibility, top bar) as route metadata or helper functions. The two manual boolean chains will drift as destinations grow.
 - Establish an explicit authenticated root/start destination. The app always starts at Welcome and redirects later; restoration and a slow current-user flow can produce visible onboarding flashes. On logout, clear the entire authenticated stack rather than only relying on a later `currentUser == null` redirect.
 - Add one-time UI events (`SharedFlow`/`Channel`) for navigation and snackbars. At present, the root graph infers completion from retained state (`isComplete`) and performs side effects in `LaunchedEffect`; returning to a destination can replay a snackbar/pop.
