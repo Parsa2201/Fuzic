@@ -1,0 +1,18 @@
+<resources>
+    <string name="chat_title">چت</string>
+    <string name="chat_empty_title">هنوز گفتگویی نیست</string>
+    <string name="chat_empty_message">با یکی از افرادی که دنبال می‌کنی گفتگو را شروع کن.</string>
+    <string name="chat_error_title">چت در دسترس نیست</string>
+    <string name="chat_offline">نمایش پیام‌های ذخیره شده</string>
+    <string name="chat_message_placeholder">پیامی بنویس</string>
+    <string name="chat_send">ارسال پیام</string>
+    <string name="chat_share_song">اشتراک آهنگ</string>
+    <string name="chat_typing">در حال نوشتن…</string>
+    <string name="chat_no_messages_title">گفتگو را شروع کن</string>
+    <string name="chat_no_messages_message">برای سلام کردن یک پیام بفرست.</string>
+    <string name="chat_status_sending">در حال ارسال</string>
+    <string name="chat_status_sent">ارسال شد</string>
+    <string name="chat_status_delivered">تحویل شد</string>
+    <string name="chat_status_read">خوانده شد</string>
+    <string name="preview_chat_last_message">امشب می‌بینمت!</string>
+</resources>
