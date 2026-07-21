@@ -190,4 +190,12 @@
     <string name="notifications_type_playlist">به‌روزرسانی پلی‌لیست</string>
     <string name="notifications_type_premium">به‌روزرسانی پریمیوم</string>
     <string name="notifications_type_system">به‌روزرسانی فوزیک</string>
+    <string name="artists_title">هنرمندان برتر</string>
+    <string name="artists_empty_title">هنرمندی برای نمایش نیست</string>
+    <string name="artists_empty_message">هنرمندانی که کشف و دنبال می‌کنی اینجا نمایش داده می‌شوند.</string>
+    <string name="artists_error_title">هنرمندان در دسترس نیستند</string>
+    <string name="preview_artist_midnight">خیابان نیمه‌شب</string>
+    <string name="preview_artist_followers_large">۲۴۸ هزار دنبال‌کننده</string>
+    <string name="preview_artist_followers_medium">۹۴ هزار دنبال‌کننده</string>
+    <string name="preview_artist_followers_small">۱۸ هزار دنبال‌کننده</string>
 </resources>

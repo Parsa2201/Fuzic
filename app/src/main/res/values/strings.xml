@@ -190,4 +190,12 @@
     <string name="notifications_type_playlist">Playlist update</string>
     <string name="notifications_type_premium">Premium update</string>
     <string name="notifications_type_system">Fuzic update</string>
+    <string name="artists_title">Top artists</string>
+    <string name="artists_empty_title">No artists to show</string>
+    <string name="artists_empty_message">Artists you discover and follow will appear here.</string>
+    <string name="artists_error_title">Artists unavailable</string>
+    <string name="preview_artist_midnight">Midnight Avenue</string>
+    <string name="preview_artist_followers_large">248K followers</string>
+    <string name="preview_artist_followers_medium">94K followers</string>
+    <string name="preview_artist_followers_small">18K followers</string>
 </resources>
