@@ -1,20 +1,13 @@
 package com.androidprj.fuzic.di
 
 import com.androidprj.fuzic.data.remote.repository.RemoteAuthRepository
-import com.androidprj.fuzic.data.local.repository.InMemoryDownloadRepository
-import com.androidprj.fuzic.data.player.InMemoryPlayerRepository
+import com.androidprj.fuzic.data.repository.*
 import com.androidprj.fuzic.data.remote.repository.RemoteChatRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteFollowRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteInteractionRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteMusicRepository
 import com.androidprj.fuzic.data.remote.repository.RemotePlaylistRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteUserRepository
-import com.androidprj.fuzic.data.remote.repository.InMemoryPremiumRepository
-import com.androidprj.fuzic.data.remote.repository.InMemoryPlaylistDetailsRepository
-import com.androidprj.fuzic.data.remote.repository.InMemoryArtistRepository
-import com.androidprj.fuzic.data.remote.repository.InMemorySearchRepository
-import com.androidprj.fuzic.data.remote.repository.InMemoryNotificationRepository
-import com.androidprj.fuzic.data.settings.InMemorySettingsRepository
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.PasswordRecoveryRepository
 import com.androidprj.fuzic.repository.ArtistRepository
@@ -92,48 +85,48 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSettingsRepository(
-        inMemorySettingsRepository: InMemorySettingsRepository
+        settingsRepositoryImpl: SettingsRepositoryImpl
     ): SettingsRepository
 
     @Binds
     @Singleton
     abstract fun bindPremiumRepository(
-        inMemoryPremiumRepository: InMemoryPremiumRepository
+        premiumRepositoryImpl: PremiumRepositoryImpl
     ): PremiumRepository
 
     @Binds
     @Singleton
     abstract fun bindDownloadRepository(
-        inMemoryDownloadRepository: InMemoryDownloadRepository
+        downloadRepositoryImpl: DownloadRepositoryImpl
     ): DownloadRepository
 
     @Binds
     @Singleton
     abstract fun bindPlayerRepository(
-        inMemoryPlayerRepository: InMemoryPlayerRepository
+        playerRepositoryImpl: PlayerRepositoryImpl
     ): PlayerRepository
 
     @Binds
     @Singleton
     abstract fun bindPlaylistDetailsRepository(
-        inMemoryPlaylistDetailsRepository: InMemoryPlaylistDetailsRepository
+        playlistDetailsRepositoryImpl: PlaylistDetailsRepositoryImpl
     ): PlaylistDetailsRepository
 
     @Binds
     @Singleton
     abstract fun bindArtistRepository(
-        inMemoryArtistRepository: InMemoryArtistRepository
+        artistRepositoryImpl: ArtistRepositoryImpl
     ): ArtistRepository
 
     @Binds
     @Singleton
     abstract fun bindSearchRepository(
-        inMemorySearchRepository: InMemorySearchRepository
+        searchRepositoryImpl: SearchRepositoryImpl
     ): SearchRepository
 
     @Binds
     @Singleton
     abstract fun bindNotificationRepository(
-        inMemoryNotificationRepository: InMemoryNotificationRepository
+        notificationRepositoryImpl: NotificationRepositoryImpl
     ): NotificationRepository
 }
