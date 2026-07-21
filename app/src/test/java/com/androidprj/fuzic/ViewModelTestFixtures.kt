@@ -365,6 +365,10 @@ internal class FakePlaylistRepository(
     var userResult: Result<List<PlaylistItem>> = Result.success(listOf(testPlaylist)),
 ) : PlaylistRepository {
     var createCalls = 0
+    var addSongResult: Result<Unit> = Result.success(Unit)
+    var addSongCalls = 0
+    var lastAddedPlaylistId: String? = null
+    var lastAddedSongId: String? = null
     var lastCreatedTitle: String? = null
     var lastCreateRequest: CreatePlaylistRequest? = null
 
@@ -381,7 +385,12 @@ internal class FakePlaylistRepository(
     }
 
     override suspend fun deletePlaylist(playlistId: String) = Result.success(Unit)
-    override suspend fun addSongToPlaylist(playlistId: String, songId: String) = Result.success(Unit)
+    override suspend fun addSongToPlaylist(playlistId: String, songId: String): Result<Unit> {
+        addSongCalls++
+        lastAddedPlaylistId = playlistId
+        lastAddedSongId = songId
+        return addSongResult
+    }
     override suspend fun removeSongFromPlaylist(playlistId: String, songId: String) = Result.success(Unit)
 }
 
