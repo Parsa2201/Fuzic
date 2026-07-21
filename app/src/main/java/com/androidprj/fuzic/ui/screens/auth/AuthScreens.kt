@@ -168,6 +168,7 @@ private fun WelcomePage(
 @Composable
 fun AuthRoute(
     uiState: AuthUiState,
+    onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
@@ -181,6 +182,7 @@ fun AuthRoute(
 ) {
     AuthScreen(
         uiState,
+        onNameChange,
         onEmailChange,
         onPasswordChange,
         onConfirmPasswordChange,
@@ -197,6 +199,7 @@ fun AuthRoute(
 @Composable
 fun AuthScreen(
     uiState: AuthUiState,
+    onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
@@ -243,6 +246,7 @@ fun AuthScreen(
         } else {
             AuthForm(
                 uiState = uiState,
+                onNameChange = onNameChange,
                 onEmailChange = onEmailChange,
                 onPasswordChange = onPasswordChange,
                 onConfirmPasswordChange = onConfirmPasswordChange,
@@ -264,6 +268,7 @@ fun AuthScreen(
 @Composable
 private fun AuthForm(
     uiState: AuthUiState,
+    onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onConfirmPasswordChange: (String) -> Unit,
@@ -273,14 +278,26 @@ private fun AuthForm(
     onForgotPasswordClick: () -> Unit,
     onSwitchModeClick: () -> Unit,
 ) {
+    if (uiState.isSignUp) {
+        OutlinedTextField(
+            value = uiState.name,
+            onValueChange = onNameChange,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.auth_name_label)) },
+            isError = uiState.nameErrorRes != null,
+            supportingText = uiState.nameErrorRes?.let { errorRes -> { Text(stringResource(errorRes)) } },
+            singleLine = true,
+        )
+        Spacer(Modifier.height(MaterialTheme.spacing.medium))
+    }
     OutlinedTextField(
         value = uiState.email,
         onValueChange = onEmailChange,
         modifier = Modifier.fillMaxWidth(),
         label = { Text(stringResource(R.string.auth_email_label)) },
         leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-        isError = uiState.emailError != null,
-        supportingText = uiState.emailError?.let { { Text(it) } },
+        isError = uiState.emailErrorRes != null,
+        supportingText = uiState.emailErrorRes?.let { errorRes -> { Text(stringResource(errorRes)) } },
         singleLine = true,
     )
     Spacer(Modifier.height(MaterialTheme.spacing.medium))
@@ -289,7 +306,7 @@ private fun AuthForm(
         onValueChange = onPasswordChange,
         label = stringResource(R.string.auth_password_label),
         isVisible = uiState.isPasswordVisible,
-        errorMessage = uiState.passwordError,
+        errorMessage = uiState.passwordErrorRes?.let { stringResource(it) },
         onVisibilityClick = onPasswordVisibilityClick,
     )
     if (uiState.isSignUp) {
@@ -299,7 +316,7 @@ private fun AuthForm(
             onValueChange = onConfirmPasswordChange,
             label = stringResource(R.string.auth_confirm_password_label),
             isVisible = uiState.isConfirmPasswordVisible,
-            errorMessage = uiState.confirmPasswordError,
+            errorMessage = uiState.confirmPasswordErrorRes?.let { stringResource(it) },
             onVisibilityClick = onConfirmPasswordVisibilityClick,
         )
     } else {
@@ -373,6 +390,7 @@ private fun SignInPreview() {
     FuzicTheme {
         AuthScreen(
             uiState = AuthUiState(email = "parsa@example.com"),
+            onNameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
             onConfirmPasswordChange = {},
@@ -396,10 +414,11 @@ private fun SignUpValidationPreview() {
                 email = "bad",
                 password = "123",
                 confirmPassword = "456",
-                emailError = stringResource(R.string.auth_email_error),
-                passwordError = stringResource(R.string.auth_password_error),
-                confirmPasswordError = stringResource(R.string.auth_confirm_password_error),
+                emailErrorRes = R.string.auth_email_error,
+                passwordErrorRes = R.string.auth_password_error,
+                confirmPasswordErrorRes = R.string.auth_confirm_password_error,
             ),
+            onNameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
             onConfirmPasswordChange = {},
@@ -419,6 +438,7 @@ private fun SignInLoadingPreview() {
     FuzicTheme {
         AuthScreen(
             uiState = AuthUiState(isLoading = true),
+            onNameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
             onConfirmPasswordChange = {},
@@ -438,6 +458,7 @@ private fun SignInErrorPreview() {
     FuzicTheme {
         AuthScreen(
             AuthUiState(errorMessage = stringResource(R.string.auth_error_message)),
+            onNameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
             onConfirmPasswordChange = {},

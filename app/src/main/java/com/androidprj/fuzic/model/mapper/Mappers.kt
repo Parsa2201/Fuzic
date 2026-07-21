@@ -29,7 +29,7 @@ fun UserDto.toProfileUser(): ProfileUser {
     return ProfileUser(
         id = this.id,
         displayName = name,
-        username = name.lowercase().replace(" ", "_"), // Fallback until username is properly fetched
+        username = this.username ?: name.lowercase().replace(" ", "_"),
         avatarUrl = this.avatarUrl,
         isPremium = this.isPremium
     )
@@ -39,7 +39,7 @@ fun UserDto.toFollowUser(currentUserId: String? = null): FollowUser {
     val name = this.name ?: "Unknown"
     return FollowUser(
         id = this.id,
-        username = name.lowercase().replace(" ", "_"),
+        username = this.username ?: name.lowercase().replace(" ", "_"),
         displayName = name,
         avatarUrl = this.avatarUrl,
         isFollowing = false, // Must be updated by the caller if needed

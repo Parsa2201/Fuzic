@@ -6,6 +6,7 @@
     <string name="auth_welcome_start">شروع کنید</string>
     <string name="auth_sign_in_title">خوش برگشتی</string>
     <string name="auth_sign_up_title">حساب کاربری بساز</string>
+    <string name="auth_name_label">نام</string>
     <string name="auth_email_label">ایمیل</string>
     <string name="auth_password_label">رمز عبور</string>
     <string name="auth_confirm_password_label">تکرار رمز عبور</string>
@@ -15,7 +16,10 @@
     <string name="auth_switch_to_sign_in">حساب داری؟ وارد شو</string>
     <string name="auth_forgot_password">رمز عبورت را فراموش کردی؟</string>
     <string name="auth_email_error">یک ایمیل معتبر وارد کن.</string>
+    <string name="auth_name_required">نامت را وارد کن.</string>
+    <string name="auth_email_required">ایمیلت را وارد کن.</string>
     <string name="auth_password_error">رمز عبور باید حداقل ۸ کاراکتر باشد.</string>
+    <string name="auth_password_required">رمز عبورت را وارد کن.</string>
     <string name="auth_confirm_password_error">رمزهای عبور یکسان نیستند.</string>
     <string name="auth_error_title">ورود در دسترس نیست</string>
     <string name="auth_error_message">اتصال را بررسی و دوباره تلاش کن.</string>
