@@ -1,6 +1,9 @@
 package com.androidprj.fuzic
 
 import com.androidprj.fuzic.model.ui.CreatePlaylistRequest
+import com.androidprj.fuzic.model.ui.ChatConversation
+import com.androidprj.fuzic.model.ui.ChatMessage
+import com.androidprj.fuzic.model.ui.ChatMessageType
 import com.androidprj.fuzic.model.ui.AppLanguageOption
 import com.androidprj.fuzic.model.ui.AppSettings
 import com.androidprj.fuzic.model.ui.AppThemeOption
@@ -23,7 +26,9 @@ import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SearchFilter
 import com.androidprj.fuzic.model.ui.SearchResultItem
 import com.androidprj.fuzic.model.ui.SongItem
+import com.androidprj.fuzic.model.ui.TypingStatus
 import com.androidprj.fuzic.repository.AuthRepository
+import com.androidprj.fuzic.repository.ChatRepository
 import com.androidprj.fuzic.repository.DownloadRepository
 import com.androidprj.fuzic.repository.ArtistRepository
 import com.androidprj.fuzic.repository.InteractionRepository
@@ -125,6 +130,21 @@ internal val testFollowUser = FollowUser(
     username = "nika",
     displayName = "Nika",
     isFollowing = false,
+)
+
+internal val testConversation = ChatConversation(
+    id = "conversation-1",
+    participant = testFollowUser,
+    lastMessagePreview = "Hey",
+    lastMessageTimeLabel = "Now",
+)
+
+internal val testChatMessage = ChatMessage(
+    id = "message-1",
+    senderId = "user-1",
+    text = "Hello",
+    timeLabel = "Now",
+    isMine = true,
 )
 
 internal object FakeStringProvider : StringProvider {
@@ -538,5 +558,92 @@ internal class FakeNotificationRepository : NotificationRepository {
     override suspend fun markAllNotificationsAsRead(): Result<Unit> {
         markAllCalls++
         return markAllResult
+    }
+}
+
+internal class FakeChatRepository(
+    initialConversations: List<ChatConversation> = listOf(testConversation),
+) : ChatRepository {
+    val conversations = MutableStateFlow(initialConversations)
+    val typingStatus = MutableStateFlow<TypingStatus?>(null)
+    var conversationsFailure: Throwable? = null
+    var messagesFailure: Throwable? = null
+    var sendTextResult: Result<ChatMessage> = Result.success(testChatMessage)
+    var sendSongResult: Result<ChatMessage> = Result.success(
+        testChatMessage.copy(
+            id = "song-message-1",
+            type = ChatMessageType.SongShare,
+            song = testSong,
+            text = null,
+        ),
+    )
+    var markReadResult: Result<Unit> = Result.success(Unit)
+    var refreshResult: Result<Unit> = Result.success(Unit)
+    var typingResult: Result<Unit> = Result.success(Unit)
+    var conversationObserveCalls = 0
+    var messageObserveCalls = 0
+    var sendTextCalls = 0
+    var sendSongCalls = 0
+    var markReadCalls = 0
+    var refreshCalls = 0
+    var typingCalls = 0
+    var lastSentText: String? = null
+    var lastSharedSongId: String? = null
+    var lastReadMessageIds: List<String> = emptyList()
+    var lastTypingValue: Boolean? = null
+
+    override fun observeConversations(): Flow<List<ChatConversation>> {
+        conversationObserveCalls++
+        conversationsFailure?.let { throwable ->
+            return flow { throw throwable }
+        }
+        return conversations
+    }
+
+    override fun observeMessages(conversationId: String): Flow<androidx.paging.PagingData<ChatMessage>> {
+        messageObserveCalls++
+        messagesFailure?.let { throwable ->
+            return flow { throw throwable }
+        }
+        return flowOf(androidx.paging.PagingData.empty())
+    }
+
+    override fun observeTypingStatus(conversationId: String): Flow<TypingStatus?> = typingStatus
+
+    override suspend fun sendTextMessage(
+        conversationId: String,
+        receiverId: String,
+        text: String,
+    ): Result<ChatMessage> {
+        sendTextCalls++
+        lastSentText = text
+        return sendTextResult
+    }
+
+    override suspend fun sendSongMessage(
+        conversationId: String,
+        receiverId: String,
+        songId: String,
+    ): Result<ChatMessage> {
+        sendSongCalls++
+        lastSharedSongId = songId
+        return sendSongResult
+    }
+
+    override suspend fun markMessagesAsRead(conversationId: String, messageIds: List<String>): Result<Unit> {
+        markReadCalls++
+        lastReadMessageIds = messageIds
+        return markReadResult
+    }
+
+    override suspend fun setTyping(conversationId: String, isTyping: Boolean): Result<Unit> {
+        typingCalls++
+        lastTypingValue = isTyping
+        return typingResult
+    }
+
+    override suspend fun refreshConversation(conversationId: String): Result<Unit> {
+        refreshCalls++
+        return refreshResult
     }
 }
