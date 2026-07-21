@@ -160,4 +160,24 @@
     <string name="preview_song_duration_echoes">3:18</string>
     <string name="preview_artist_monthly_listeners">1.4M monthly listeners</string>
     <string name="preview_playlist_description">Late-night tracks for every road trip.</string>
+    <string name="premium_title">Listen without limits</string>
+    <string name="premium_subtitle">Unlock offline listening and premium-only perks.</string>
+    <string name="premium_choose_plan">Choose your plan</string>
+    <string name="premium_upgrade">Upgrade to Premium</string>
+    <string name="premium_restore_purchase">Restore purchase</string>
+    <string name="premium_recommended">Recommended</string>
+    <string name="premium_feature_downloads">Offline downloads</string>
+    <string name="premium_feature_downloads_description">Save songs and listen without an internet connection.</string>
+    <string name="premium_feature_audio">Premium listening</string>
+    <string name="premium_feature_audio_description">Enjoy the best available playback quality.</string>
+    <string name="premium_feature_badge">Premium profile badge</string>
+    <string name="premium_feature_badge_description">Show your premium status on your profile.</string>
+    <string name="premium_error_title">Premium plans unavailable</string>
+    <string name="premium_active_title">You are already Premium</string>
+    <string name="premium_active_message">Your offline downloads and premium benefits are ready.</string>
+    <string name="premium_dialog_title">Upgrade to Premium</string>
+    <string name="premium_dialog_message">Premium unlocks offline downloads and other listening benefits.</string>
+    <string name="premium_download_blocked_title">Downloads require Premium</string>
+    <string name="premium_download_blocked_message">Upgrade to Premium to save this song for offline listening.</string>
+    <string name="premium_view_plans">View plans</string>
 </resources>
