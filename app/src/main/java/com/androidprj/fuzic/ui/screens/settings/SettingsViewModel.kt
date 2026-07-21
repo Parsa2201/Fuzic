@@ -143,6 +143,7 @@ class SettingsViewModel @Inject constructor(
                         current.copy(
                             isLoading = false,
                             isLogoutConfirmationVisible = false,
+                            isLogoutComplete = true,
                             errorMessage = null,
                         )
                     },

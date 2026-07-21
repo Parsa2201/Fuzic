@@ -572,6 +572,13 @@ fun FuzicNavigation(
                         viewModel.onIntent(SettingsIntent.ShowLogoutConfirmation)
                     }
                 }
+                LaunchedEffect(uiState.isLogoutComplete) {
+                    if (uiState.isLogoutComplete) {
+                        navController.navigate(WelcomeDestination) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    }
+                }
                 SettingsScreen(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
