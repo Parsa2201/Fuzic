@@ -12,6 +12,7 @@ import com.androidprj.fuzic.data.remote.repository.RemoteUserRepository
 import com.androidprj.fuzic.data.remote.repository.InMemoryPremiumRepository
 import com.androidprj.fuzic.data.remote.repository.InMemoryPlaylistDetailsRepository
 import com.androidprj.fuzic.data.remote.repository.InMemoryArtistRepository
+import com.androidprj.fuzic.data.remote.repository.InMemorySearchRepository
 import com.androidprj.fuzic.data.settings.InMemorySettingsRepository
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.ArtistRepository
@@ -25,6 +26,7 @@ import com.androidprj.fuzic.repository.PlaylistDetailsRepository
 import com.androidprj.fuzic.repository.PlayerRepository
 import com.androidprj.fuzic.repository.PremiumRepository
 import com.androidprj.fuzic.repository.SettingsRepository
+import com.androidprj.fuzic.repository.SearchRepository
 import com.androidprj.fuzic.repository.UserRepository
 import dagger.Binds
 import dagger.Module
@@ -113,4 +115,10 @@ abstract class RepositoryModule {
     abstract fun bindArtistRepository(
         inMemoryArtistRepository: InMemoryArtistRepository
     ): ArtistRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSearchRepository(
+        inMemorySearchRepository: InMemorySearchRepository
+    ): SearchRepository
 }

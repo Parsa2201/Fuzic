@@ -16,6 +16,8 @@ import com.androidprj.fuzic.model.ui.ArtistDetails
 import com.androidprj.fuzic.model.ui.ArtistItem
 import com.androidprj.fuzic.model.ui.PlayerUiState
 import com.androidprj.fuzic.model.ui.RepeatMode
+import com.androidprj.fuzic.model.ui.SearchFilter
+import com.androidprj.fuzic.model.ui.SearchResultItem
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.DownloadRepository
@@ -26,6 +28,7 @@ import com.androidprj.fuzic.repository.PlaylistRepository
 import com.androidprj.fuzic.repository.PlayerRepository
 import com.androidprj.fuzic.repository.PlaylistDetailsRepository
 import com.androidprj.fuzic.repository.PremiumRepository
+import com.androidprj.fuzic.repository.SearchRepository
 import com.androidprj.fuzic.repository.SettingsRepository
 import com.androidprj.fuzic.repository.UserRepository
 import com.androidprj.fuzic.util.StringProvider
@@ -87,6 +90,13 @@ internal val testDownload = DownloadedSongItem(
     artist = "Luna Ray",
     fileSizeLabel = "8 MB",
     downloadedAtLabel = "Today",
+)
+
+internal val testSearchResult = SearchResultItem(
+    id = "search-1",
+    title = "Midnight Drive",
+    subtitle = "Luna Ray",
+    type = SearchFilter.Songs,
 )
 
 internal object FakeStringProvider : StringProvider {
@@ -407,5 +417,43 @@ internal class FakeInteractionRepository(
     override suspend fun unlikeSong(songId: String): Result<Unit> {
         unlikeCalls++
         return Result.success(Unit)
+    }
+}
+
+internal class FakeSearchRepository(
+    initialHistory: List<String> = emptyList(),
+) : SearchRepository {
+    val history = MutableStateFlow(initialHistory)
+    var searchThrows: Throwable? = null
+    var saveResult: Result<Unit> = Result.success(Unit)
+    var deleteResult: Result<Unit> = Result.success(Unit)
+    var clearResult: Result<Unit> = Result.success(Unit)
+    var searchCalls = 0
+    var lastQuery: String? = null
+    var lastFilter: SearchFilter? = null
+
+    override fun search(
+        query: String,
+        filter: SearchFilter
+    ): Flow<androidx.paging.PagingData<SearchResultItem>> {
+        searchCalls++
+        lastQuery = query
+        lastFilter = filter
+        searchThrows?.let { throw it }
+        return flowOf(androidx.paging.PagingData.empty())
+    }
+
+    override fun observeSearchHistory(): Flow<List<String>> = history
+
+    override suspend fun saveSearchQuery(query: String): Result<Unit> {
+        return saveResult.onSuccess { history.value = listOf(query) + history.value.filterNot { it == query } }
+    }
+
+    override suspend fun deleteSearchQuery(query: String): Result<Unit> {
+        return deleteResult.onSuccess { history.value = history.value.filterNot { it == query } }
+    }
+
+    override suspend fun clearSearchHistory(): Result<Unit> {
+        return clearResult.onSuccess { history.value = emptyList() }
     }
 }
