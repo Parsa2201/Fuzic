@@ -1,6 +1,7 @@
 package com.androidprj.fuzic.di
 
 import com.androidprj.fuzic.data.remote.repository.RemoteAuthRepository
+import com.androidprj.fuzic.data.local.repository.InMemoryDownloadRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteChatRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteFollowRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteInteractionRepository
@@ -11,6 +12,7 @@ import com.androidprj.fuzic.data.remote.repository.InMemoryPremiumRepository
 import com.androidprj.fuzic.data.settings.InMemorySettingsRepository
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.ChatRepository
+import com.androidprj.fuzic.repository.DownloadRepository
 import com.androidprj.fuzic.repository.FollowRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
@@ -81,4 +83,10 @@ abstract class RepositoryModule {
     abstract fun bindPremiumRepository(
         inMemoryPremiumRepository: InMemoryPremiumRepository
     ): PremiumRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDownloadRepository(
+        inMemoryDownloadRepository: InMemoryDownloadRepository
+    ): DownloadRepository
 }

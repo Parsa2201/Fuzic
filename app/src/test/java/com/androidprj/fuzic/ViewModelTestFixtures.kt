@@ -4,11 +4,15 @@ import com.androidprj.fuzic.model.ui.CreatePlaylistRequest
 import com.androidprj.fuzic.model.ui.AppLanguageOption
 import com.androidprj.fuzic.model.ui.AppSettings
 import com.androidprj.fuzic.model.ui.AppThemeOption
+import com.androidprj.fuzic.model.ui.DownloadRequest
+import com.androidprj.fuzic.model.ui.DownloadSortOption
+import com.androidprj.fuzic.model.ui.DownloadedSongItem
 import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.model.ui.PremiumPlan
 import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.repository.AuthRepository
+import com.androidprj.fuzic.repository.DownloadRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
@@ -45,6 +49,14 @@ internal val testPremiumPlan = PremiumPlan(
     priceLabel = "$4.99",
     billingLabel = "Monthly",
     isRecommended = true,
+)
+
+internal val testDownload = DownloadedSongItem(
+    id = "download-1",
+    title = "Midnight Drive",
+    artist = "Luna Ray",
+    fileSizeLabel = "8 MB",
+    downloadedAtLabel = "Today",
 )
 
 internal object FakeStringProvider : StringProvider {
@@ -133,6 +145,41 @@ internal class FakePremiumRepository(
     override suspend fun restorePurchase(): Result<Unit> {
         restoreCalls++
         return restoreResult
+    }
+}
+
+internal class FakeDownloadRepository(
+    initialDownloads: List<DownloadedSongItem> = listOf(testDownload),
+) : DownloadRepository {
+    val downloads = MutableStateFlow(initialDownloads)
+    var deleteResult: Result<Unit> = Result.success(Unit)
+    var restoreResult: Result<Unit> = Result.success(Unit)
+    var removeFileResult: Result<Unit> = Result.success(Unit)
+    var deleteCalls = 0
+    var restoreCalls = 0
+    var removeFileCalls = 0
+    var observedSortOption: DownloadSortOption? = null
+
+    override fun observeDownloads(sortOption: DownloadSortOption): Flow<List<DownloadedSongItem>> {
+        observedSortOption = sortOption
+        return downloads
+    }
+
+    override suspend fun enqueueDownload(request: DownloadRequest): Result<Unit> = Result.success(Unit)
+
+    override suspend fun deleteDownload(downloadId: String): Result<Unit> {
+        deleteCalls++
+        return deleteResult.onSuccess { downloads.value = downloads.value.filterNot { it.id == downloadId } }
+    }
+
+    override suspend fun restoreDownload(downloadId: String): Result<Unit> {
+        restoreCalls++
+        return restoreResult
+    }
+
+    override suspend fun removeDownloadFile(downloadId: String): Result<Unit> {
+        removeFileCalls++
+        return removeFileResult
     }
 }
 
