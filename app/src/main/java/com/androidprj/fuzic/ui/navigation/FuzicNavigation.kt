@@ -232,6 +232,13 @@ fun FuzicNavigation(
         currentDestination?.hasRoute(DownloadsDestination::class) == true ||
         currentDestination?.hasRoute(PlaylistsDestination::class) == true ||
         currentDestination?.hasRoute(ProfileDestination::class) == true
+    val hideMiniPlayer = currentDestination?.hasRoute(WelcomeDestination::class) == true ||
+        currentDestination?.hasRoute(AuthDestination::class) == true ||
+        currentDestination?.hasRoute(PasswordRecoveryDestination::class) == true ||
+        currentDestination?.hasRoute(FullPlayerDestination::class) == true ||
+        currentDestination?.hasRoute(EditProfileDestination::class) == true ||
+        currentDestination?.hasRoute(AddToPlaylistDestination::class) == true ||
+        currentDestination?.hasRoute(ChatPickerDestination::class) == true
 
     LaunchedEffect(currentUser, showShell) {
         if (currentUser == null && showShell) {
@@ -275,7 +282,7 @@ fun FuzicNavigation(
             }
         },
         bottomBar = {
-            if (showShell) {
+            if (!hideMiniPlayer) {
                 playerUiState.currentSong?.let { song ->
                     MiniPlayer(
                         uiState = MiniPlayerUiState(
