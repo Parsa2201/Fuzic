@@ -1,8 +1,11 @@
 package com.androidprj.fuzic.data.remote.repository
 
+import androidx.paging.PagingData
 import com.androidprj.fuzic.model.remote.MessageDto
+import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.model.ui.ChatMessage
 import com.androidprj.fuzic.model.mapper.toChatMessage
+import com.androidprj.fuzic.model.ui.TypingStatus
 import com.androidprj.fuzic.repository.ChatRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -14,15 +17,61 @@ import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.decodeRecord
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
-import java.util.UUID
 
 class RemoteChatRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) : ChatRepository {
 
-    override suspend fun getChatHistory(userId: String, offset: Long, limit: Long): Result<List<ChatMessage>> {
+    override fun observeConversations(): Flow<List<ChatConversation>> = flowOf(emptyList())
+
+    override fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>> = flow {
+        emit(PagingData.from(getChatHistory(conversationId).getOrDefault(emptyList())))
+    }
+
+    override fun observeTypingStatus(conversationId: String): Flow<TypingStatus?> = flowOf(null)
+
+    override suspend fun sendTextMessage(
+        conversationId: String,
+        receiverId: String,
+        text: String
+    ): Result<ChatMessage> = sendMessage(
+        receiverId = receiverId,
+        content = text,
+        sharedSongId = null
+    )
+
+    override suspend fun sendSongMessage(
+        conversationId: String,
+        receiverId: String,
+        songId: String
+    ): Result<ChatMessage> = sendMessage(
+        receiverId = receiverId,
+        content = null,
+        sharedSongId = songId
+    )
+
+    override suspend fun markMessagesAsRead(
+        conversationId: String,
+        messageIds: List<String>
+    ): Result<Unit> = runCatching {
+        messageIds.forEach { messageId ->
+            markMessageAsRead(messageId).getOrThrow()
+        }
+    }
+
+    override suspend fun setTyping(conversationId: String, isTyping: Boolean): Result<Unit> {
+        return Result.success(Unit)
+    }
+
+    override suspend fun refreshConversation(conversationId: String): Result<Unit> {
+        return Result.success(Unit)
+    }
+
+    private suspend fun getChatHistory(userId: String, offset: Long = 0, limit: Long = 50): Result<List<ChatMessage>> {
         return try {
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
             val messages = supabaseClient.postgrest["messages"]
@@ -50,7 +99,7 @@ class RemoteChatRepository @Inject constructor(
         }
     }
 
-    override suspend fun sendMessage(receiverId: String, content: String?, sharedSongId: String?): Result<ChatMessage> {
+    private suspend fun sendMessage(receiverId: String, content: String?, sharedSongId: String?): Result<ChatMessage> {
         return try {
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
             val message = InsertMessageDto(
@@ -68,7 +117,7 @@ class RemoteChatRepository @Inject constructor(
         }
     }
 
-    override suspend fun markMessageAsRead(messageId: String): Result<Unit> {
+    private suspend fun markMessageAsRead(messageId: String): Result<Unit> {
         return try {
             supabaseClient.postgrest["messages"].update(
                 { "status" to "read" }
@@ -81,7 +130,7 @@ class RemoteChatRepository @Inject constructor(
         }
     }
 
-    override fun observeMessages(userId: String): Flow<ChatMessage> {
+    private fun observeMessageInserts(userId: String): Flow<ChatMessage> {
         val currentUserId = supabaseClient.auth.currentUserOrNull()?.id 
             ?: throw Exception("Not logged in")
             

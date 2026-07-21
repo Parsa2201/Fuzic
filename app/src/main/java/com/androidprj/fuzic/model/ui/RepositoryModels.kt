@@ -10,6 +10,21 @@ data class DownloadRequest(
     val audioUrl: String,
 )
 
+/**
+ * App-level playlist creation input. Repository implementations decide how this maps to
+ * remote rows, local drafts, uploads, or cached records.
+ */
+data class CreatePlaylistRequest(
+    val title: String,
+    val visibility: PlaylistVisibility = PlaylistVisibility.Private,
+    val coverImageUrl: String? = null,
+)
+
+enum class PlaylistVisibility {
+    Public,
+    Private,
+}
+
 data class TypingStatus(
     val conversationId: String,
     val userId: String,

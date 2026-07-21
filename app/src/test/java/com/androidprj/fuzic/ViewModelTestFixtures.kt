@@ -1,5 +1,6 @@
 package com.androidprj.fuzic
 
+import com.androidprj.fuzic.model.ui.CreatePlaylistRequest
 import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.model.ui.SongItem
@@ -84,21 +85,18 @@ internal class FakePlaylistRepository(
 ) : PlaylistRepository {
     var createCalls = 0
     var lastCreatedTitle: String? = null
+    var lastCreateRequest: CreatePlaylistRequest? = null
 
     override suspend fun getGlobalPlaylists(offset: Long, limit: Long) = globalResult
     override suspend fun getLocalPlaylists(offset: Long, limit: Long) = localResult
     override suspend fun getUserPlaylists(userId: String, offset: Long, limit: Long) = userResult
     override suspend fun getPlaylistSongs(playlistId: String, offset: Long, limit: Long) = Result.success(listOf(testSong))
 
-    override suspend fun createPlaylist(
-        title: String,
-        type: String?,
-        isPublic: Boolean,
-        coverImageUrl: String?,
-    ): Result<PlaylistItem> {
+    override suspend fun createPlaylist(request: CreatePlaylistRequest): Result<PlaylistItem> {
         createCalls++
-        lastCreatedTitle = title
-        return Result.success(testPlaylist.copy(title = title))
+        lastCreateRequest = request
+        lastCreatedTitle = request.title
+        return Result.success(testPlaylist.copy(title = request.title))
     }
 
     override suspend fun deletePlaylist(playlistId: String) = Result.success(Unit)

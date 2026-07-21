@@ -6,6 +6,7 @@ import com.androidprj.fuzic.R
 import com.androidprj.fuzic.di.IoDispatcher
 import com.androidprj.fuzic.util.StringProvider
 import com.androidprj.fuzic.model.ui.CreatePlaylistUiState
+import com.androidprj.fuzic.model.ui.CreatePlaylistRequest
 import com.androidprj.fuzic.model.ui.PlaylistSection
 import com.androidprj.fuzic.model.ui.PlaylistSectionType
 import com.androidprj.fuzic.model.ui.PlaylistsUiState
@@ -126,7 +127,12 @@ class PlaylistsViewModel @Inject constructor(
                 return@launch
             }
             val result = withContext(ioDispatcher) {
-                playlistRepository.createPlaylist(title, type = "user", isPublic = false, coverImageUrl = createState.selectedCoverUri)
+                playlistRepository.createPlaylist(
+                    CreatePlaylistRequest(
+                        title = title,
+                        coverImageUrl = createState.selectedCoverUri,
+                    )
+                )
             }
             if (result.isFailure) {
                 _uiState.update {

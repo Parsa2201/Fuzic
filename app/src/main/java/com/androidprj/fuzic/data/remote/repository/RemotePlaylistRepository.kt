@@ -3,7 +3,9 @@ package com.androidprj.fuzic.data.remote.repository
 import com.androidprj.fuzic.model.remote.PlaylistDto
 import com.androidprj.fuzic.model.remote.PlaylistDtoSong
 import com.androidprj.fuzic.model.remote.SongDto
+import com.androidprj.fuzic.model.ui.CreatePlaylistRequest
 import com.androidprj.fuzic.model.ui.PlaylistItem
+import com.androidprj.fuzic.model.ui.PlaylistVisibility
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.model.mapper.toPlaylistItem
 import com.androidprj.fuzic.model.mapper.toSongItem
@@ -69,15 +71,15 @@ class RemotePlaylistRepository @Inject constructor(
         }
     }
 
-    override suspend fun createPlaylist(title: String, type: String?, isPublic: Boolean, coverImageUrl: String?): Result<PlaylistItem> {
+    override suspend fun createPlaylist(request: CreatePlaylistRequest): Result<PlaylistItem> {
         return try {
             val userId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
             val newPlaylist = InsertPlaylistDto(
-                title = title,
+                title = request.title,
                 ownerId = userId,
-                type = type,
-                isPublic = isPublic,
-                coverImageUrl = coverImageUrl
+                type = USER_PLAYLIST_TYPE,
+                isPublic = request.visibility == PlaylistVisibility.Public,
+                coverImageUrl = request.coverImageUrl
             )
             val result = supabaseClient.postgrest["playlists"]
                 .insert(newPlaylist) { select() }
@@ -135,4 +137,8 @@ class RemotePlaylistRepository @Inject constructor(
         @kotlinx.serialization.SerialName("is_public") val isPublic: Boolean,
         @kotlinx.serialization.SerialName("cover_image_url") val coverImageUrl: String? = null
     )
+
+    private companion object {
+        const val USER_PLAYLIST_TYPE = "user"
+    }
 }
