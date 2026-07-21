@@ -59,8 +59,8 @@ class RemoteAuthRepository @Inject constructor(
                     user?.let {
                         User(
                             id = it.id,
-                            name = it.userMetadata?.get("full_name")?.toString()?.replace("\"", ""),
-                            avatarUrl = it.userMetadata?.get("avatar_url")?.toString()?.replace("\"", "")
+                            name = it.userMetadata?.get("full_name")?.kotlinx.serialization.json.jsonPrimitive?.content,
+                            avatarUrl = it.userMetadata?.get("avatar_url")?.kotlinx.serialization.json.jsonPrimitive?.content
                         )
                     }
                 }
