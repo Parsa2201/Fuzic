@@ -19,6 +19,60 @@ import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlaylistPlay
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.androidprj.fuzic.di.IoDispatcher
+import com.androidprj.fuzic.repository.AuthRepository
+import com.androidprj.fuzic.repository.PlaylistRepository
+import com.androidprj.fuzic.util.StringProvider
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+data class AddToPlaylistUiState(
+    val playlists: List<PlaylistItem> = emptyList(),
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null,
+    val isComplete: Boolean = false,
+)
+
+@HiltViewModel
+class AddToPlaylistViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
+    private val playlistRepository: PlaylistRepository,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val stringProvider: StringProvider,
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(AddToPlaylistUiState())
+    val uiState: StateFlow<AddToPlaylistUiState> = _uiState.asStateFlow()
+
+    fun load() = viewModelScope.launch {
+        _uiState.value = AddToPlaylistUiState()
+        val userId = withContext(ioDispatcher) { authRepository.getCurrentUserId() }
+        if (userId == null) {
+            _uiState.value = AddToPlaylistUiState(isLoading = false, errorMessage = stringProvider.get(R.string.auth_error_message))
+            return@launch
+        }
+        val result = withContext(ioDispatcher) { playlistRepository.getUserPlaylists(userId) }
+        _uiState.value = result.fold(
+            onSuccess = { AddToPlaylistUiState(playlists = it, isLoading = false) },
+            onFailure = { AddToPlaylistUiState(isLoading = false, errorMessage = it.message ?: stringProvider.get(R.string.add_to_playlist_error)) },
+        )
+    }
+
+    fun addSong(playlist: PlaylistItem, songId: String) = viewModelScope.launch {
+        val result = withContext(ioDispatcher) { playlistRepository.addSongToPlaylist(playlist.id, songId) }
+        _uiState.value = result.fold(
+            onSuccess = { _uiState.value.copy(isComplete = true, errorMessage = null) },
+            onFailure = { _uiState.value.copy(errorMessage = it.message ?: stringProvider.get(R.string.add_to_playlist_error)) },
+        )
+    }
+}
 
 @Composable
 fun AddToPlaylistScreen(

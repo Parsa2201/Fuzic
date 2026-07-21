@@ -42,6 +42,8 @@ import com.androidprj.fuzic.ui.screens.home.HomeViewModel
 import com.androidprj.fuzic.ui.screens.playlists.PlaylistsIntent
 import com.androidprj.fuzic.ui.screens.playlists.PlaylistsScreen
 import com.androidprj.fuzic.ui.screens.playlists.PlaylistsViewModel
+import com.androidprj.fuzic.ui.screens.playlists.AddToPlaylistScreen
+import com.androidprj.fuzic.ui.screens.playlists.AddToPlaylistViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileScreen
 import com.androidprj.fuzic.ui.screens.profile.ProfileViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileEditorScreen
@@ -470,7 +472,7 @@ fun FuzicNavigation(
                     onLikeClick = { viewModel.toggleLike() },
                     onDownloadClick = { unavailableAction(unavailableMessage) },
                     onShareClick = { unavailableAction(unavailableMessage) },
-                    onAddToPlaylistClick = { unavailableAction(unavailableMessage) },
+                    onAddToPlaylistClick = { navController.navigate(AddToPlaylistDestination(it.id)) },
                     onRetryClick = { viewModel.load(args.songId) },
                 )
             }
@@ -488,6 +490,26 @@ fun FuzicNavigation(
                     onSongClick = { song -> navController.navigate(SongDestination(song.id)) },
                     onSongMoreClick = { unavailableAction(unavailableMessage) },
                     onRetryClick = { viewModel.onIntent(PlaylistDetailsIntent.Retry) },
+                )
+            }
+            composable<AddToPlaylistDestination> { entry ->
+                val args = entry.toRoute<AddToPlaylistDestination>()
+                val viewModel: AddToPlaylistViewModel = hiltViewModel()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val addToPlaylistSuccess = stringResource(R.string.add_to_playlist_success)
+                LaunchedEffect(Unit) { viewModel.load() }
+                LaunchedEffect(uiState.isComplete) {
+                    if (uiState.isComplete) {
+                        snackbarHostState.showSnackbar(addToPlaylistSuccess)
+                        navController.popBackStack()
+                    }
+                }
+                AddToPlaylistScreen(
+                    playlists = uiState.playlists,
+                    isLoading = uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onBackClick = { navController.popBackStack() },
+                    onPlaylistClick = { viewModel.addSong(it, args.songId) },
                 )
             }
             composable<ArtistDestination> { entry ->
@@ -534,7 +556,7 @@ fun FuzicNavigation(
                     onRepeatClick = { playerViewModel.onIntent(PlayerIntent.CycleRepeatMode) },
                     onLikeClick = { playerViewModel.onIntent(PlayerIntent.ToggleLike) },
                     onShareClick = { unavailableAction(unavailableMessage) },
-                    onAddToPlaylistClick = { unavailableAction(unavailableMessage) },
+                    onAddToPlaylistClick = { playerUiState.currentSong?.let { navController.navigate(AddToPlaylistDestination(it.id)) } ?: unavailableAction(unavailableMessage) },
                     onQueueClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.Queue)) },
                     onSleepTimerClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.SleepTimer)) },
                     onPlaybackSpeedClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.PlaybackSpeed)) },
