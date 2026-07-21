@@ -14,6 +14,7 @@ import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.model.ui.AudioVisualizerFrame
 import com.androidprj.fuzic.model.ui.ArtistDetails
 import com.androidprj.fuzic.model.ui.ArtistItem
+import com.androidprj.fuzic.model.ui.FollowUser
 import com.androidprj.fuzic.model.ui.PlayerUiState
 import com.androidprj.fuzic.model.ui.NotificationItem
 import com.androidprj.fuzic.model.ui.NotificationType
@@ -109,6 +110,13 @@ internal val testNotification = NotificationItem(
     timeLabel = "Now",
     type = NotificationType.Follow,
     isRead = false,
+)
+
+internal val testFollowUser = FollowUser(
+    id = "user-2",
+    username = "nika",
+    displayName = "Nika",
+    isFollowing = false,
 )
 
 internal object FakeStringProvider : StringProvider {
@@ -384,10 +392,18 @@ internal class FakeArtistRepository(
 internal class FakeUserRepository(
     var profileResult: Result<ProfileUser> = Result.success(testProfile),
 ) : UserRepository {
+    var searchResult: Result<List<ProfileUser>> =
+        Result.success(listOf(testProfile.copy(id = "user-2", username = "nika", displayName = "Nika")))
+    var searchCalls = 0
+    var lastSearchQuery: String? = null
+
     override suspend fun getUserProfile(userId: String) = profileResult
     override suspend fun updateProfile(user: ProfileUser) = Result.success(user)
-    override suspend fun searchUsers(query: String) =
-        Result.success(emptyList<ProfileUser>())
+    override suspend fun searchUsers(query: String): Result<List<ProfileUser>> {
+        searchCalls++
+        lastSearchQuery = query
+        return searchResult
+    }
 }
 
 internal class FakeFollowRepository(
@@ -396,8 +412,12 @@ internal class FakeFollowRepository(
 ) : com.androidprj.fuzic.repository.FollowRepository {
     var followResult: Result<Unit> = Result.success(Unit)
     var unfollowResult: Result<Unit> = Result.success(Unit)
+    var followersResult: Result<List<FollowUser>> = Result.success(listOf(testFollowUser))
+    var followingResult: Result<List<FollowUser>> = Result.success(listOf(testFollowUser.copy(isFollowing = true)))
     var followCalls = 0
     var unfollowCalls = 0
+    var followersCalls = 0
+    var followingCalls = 0
 
     override suspend fun followUser(followeeId: String): Result<Unit> {
         followCalls++
@@ -407,8 +427,14 @@ internal class FakeFollowRepository(
         unfollowCalls++
         return unfollowResult
     }
-    override suspend fun getFollowers(userId: String, offset: Long, limit: Long) = Result.success(emptyList<com.androidprj.fuzic.model.ui.FollowUser>())
-    override suspend fun getFollowing(userId: String, offset: Long, limit: Long) = Result.success(emptyList<com.androidprj.fuzic.model.ui.FollowUser>())
+    override suspend fun getFollowers(userId: String, offset: Long, limit: Long): Result<List<FollowUser>> {
+        followersCalls++
+        return followersResult
+    }
+    override suspend fun getFollowing(userId: String, offset: Long, limit: Long): Result<List<FollowUser>> {
+        followingCalls++
+        return followingResult
+    }
     override fun observeFollowersCount(userId: String): Flow<Int> = flowOf(followersCount)
     override fun observeFollowingCount(userId: String): Flow<Int> = flowOf(followingCount)
 }
