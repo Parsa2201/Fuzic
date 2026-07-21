@@ -328,49 +328,112 @@ private fun PlayerContent(
             onShuffleClick = onShuffleClick,
             onRepeatClick = onRepeatClick,
         )
-        Spacer(Modifier.height(MaterialTheme.spacing.small))
+        Spacer(Modifier.height(MaterialTheme.spacing.large))
+        PlayerActionGrid(
+            uiState = uiState,
+            onLikeClick = onLikeClick,
+            onShareClick = onShareClick,
+            onAddToPlaylistClick = onAddToPlaylistClick,
+            onQueueClick = onQueueClick,
+            onSleepTimerClick = onSleepTimerClick,
+            onPlaybackSpeedClick = onPlaybackSpeedClick,
+        )
+    }
+}
+
+@Composable
+private fun PlayerActionGrid(
+    uiState: PlayerUiState,
+    onLikeClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onAddToPlaylistClick: () -> Unit,
+    onQueueClick: () -> Unit,
+    onSleepTimerClick: () -> Unit,
+    onPlaybackSpeedClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(
+            MaterialTheme.spacing.medium,
+        ),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.spacedBy(
+                MaterialTheme.spacing.small,
+            ),
         ) {
             PlayerActionButton(
-                icon = if (uiState.isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                label = stringResource(if (uiState.isLiked) R.string.player_unlike else R.string.player_like),
-                tint = if (uiState.isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                icon = if (uiState.isLiked) {
+                    Icons.Default.Favorite
+                } else {
+                    Icons.Default.FavoriteBorder
+                },
+                label = stringResource(
+                    if (uiState.isLiked) {
+                        R.string.player_unlike
+                    } else {
+                        R.string.player_like
+                    },
+                ),
+                tint = if (uiState.isLiked) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
                 onClick = onLikeClick,
+                modifier = Modifier.weight(1f),
             )
+
             PlayerActionButton(
                 icon = Icons.Default.Share,
                 label = stringResource(R.string.player_share),
                 onClick = onShareClick,
+                modifier = Modifier.weight(1f),
             )
+
             PlayerActionButton(
                 icon = Icons.Default.Add,
                 label = stringResource(R.string.player_add_to_playlist),
                 onClick = onAddToPlaylistClick,
+                modifier = Modifier.weight(1f),
             )
         }
-        Spacer(Modifier.height(MaterialTheme.spacing.medium))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.spacedBy(
+                MaterialTheme.spacing.small,
+            ),
         ) {
             PlayerActionButton(
                 icon = Icons.AutoMirrored.Filled.QueueMusic,
                 label = stringResource(R.string.player_queue),
                 onClick = onQueueClick,
+                modifier = Modifier.weight(1f),
             )
+
             PlayerActionButton(
                 icon = Icons.Default.Timer,
-                label = uiState.sleepTimerMinutes?.let {
-                    stringResource(R.string.player_timer_remaining, it)
+                label = uiState.sleepTimerMinutes?.let { minutes ->
+                    stringResource(
+                        R.string.player_timer_remaining,
+                        minutes,
+                    )
                 } ?: stringResource(R.string.player_sleep_timer),
                 onClick = onSleepTimerClick,
+                modifier = Modifier.weight(1f),
             )
+
             PlayerActionButton(
                 icon = Icons.Default.Speed,
-                label = stringResource(R.string.player_speed_format, uiState.playbackSpeed),
+                label = stringResource(
+                    R.string.player_speed_format,
+                    uiState.playbackSpeed,
+                ),
                 onClick = onPlaybackSpeedClick,
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -404,10 +467,10 @@ private fun PlayerTransportControls(
                 },
             )
         }
-        IconButton(onClick = onPreviousClick) {
+        IconButton(onClick = onNextClick) {
             Icon(
-                Icons.Default.SkipPrevious,
-                contentDescription = stringResource(R.string.player_previous),
+                Icons.Default.SkipNext,
+                contentDescription = stringResource(R.string.player_next),
                 modifier = Modifier.size(PlayerSizes.TransportIconSize),
             )
         }
@@ -427,10 +490,10 @@ private fun PlayerTransportControls(
                 )
             }
         }
-        IconButton(onClick = onNextClick) {
+        IconButton(onClick = onPreviousClick) {
             Icon(
-                Icons.Default.SkipNext,
-                contentDescription = stringResource(R.string.player_next),
+                Icons.Default.SkipPrevious,
+                contentDescription = stringResource(R.string.player_previous),
                 modifier = Modifier.size(PlayerSizes.TransportIconSize),
             )
         }
