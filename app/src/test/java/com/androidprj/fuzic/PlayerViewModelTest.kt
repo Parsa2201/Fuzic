@@ -39,7 +39,7 @@ class PlayerViewModelTest {
     @Test
     fun mirrorsRepositoryStateOnStart() = runTest {
         val repository = FakePlayerRepository(PlayerUiState(currentSong = testSong, isPlaying = true))
-        val viewModel = PlayerViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = PlayerViewModel(repository, FakeInteractionRepository(), dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         assertEquals(testSong, viewModel.uiState.value.currentSong)
@@ -49,7 +49,7 @@ class PlayerViewModelTest {
     @Test
     fun playAndToggleForwardToRepository() = runTest {
         val repository = FakePlayerRepository()
-        val viewModel = PlayerViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = PlayerViewModel(repository, FakeInteractionRepository(), dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         viewModel.onIntent(PlayerIntent.Play(testSong))
@@ -64,7 +64,7 @@ class PlayerViewModelTest {
     @Test
     fun shuffleAndRepeatUseNextState() = runTest {
         val repository = FakePlayerRepository(PlayerUiState(repeatMode = RepeatMode.Off))
-        val viewModel = PlayerViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = PlayerViewModel(repository, FakeInteractionRepository(), dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         viewModel.onIntent(PlayerIntent.ToggleShuffle)
@@ -78,7 +78,7 @@ class PlayerViewModelTest {
 
     @Test
     fun overlaysAreLocalUiState() = runTest {
-        val viewModel = PlayerViewModel(FakePlayerRepository(), dispatcher, FakeStringProvider)
+        val viewModel = PlayerViewModel(FakePlayerRepository(), FakeInteractionRepository(), dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         viewModel.onIntent(PlayerIntent.ShowOverlay(PlayerOverlay.Queue))
@@ -90,7 +90,7 @@ class PlayerViewModelTest {
     @Test
     fun sleepTimerAndSpeedDismissOverlayAfterSuccess() = runTest {
         val repository = FakePlayerRepository()
-        val viewModel = PlayerViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = PlayerViewModel(repository, FakeInteractionRepository(), dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         viewModel.onIntent(PlayerIntent.ShowOverlay(PlayerOverlay.SleepTimer))
@@ -110,7 +110,7 @@ class PlayerViewModelTest {
         val repository = FakePlayerRepository().apply {
             commandResult = Result.failure(IllegalStateException("player failed"))
         }
-        val viewModel = PlayerViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = PlayerViewModel(repository, FakeInteractionRepository(), dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         viewModel.onIntent(PlayerIntent.Next)
@@ -124,7 +124,7 @@ class PlayerViewModelTest {
     @Test
     fun visualizerFramesAreClampedAndExposedInUiState() = runTest {
         val repository = FakePlayerRepository(PlayerUiState(currentSong = testSong, isPlaying = true))
-        val viewModel = PlayerViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = PlayerViewModel(repository, FakeInteractionRepository(), dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         repository.visualizerFrames.emit(
@@ -143,7 +143,7 @@ class PlayerViewModelTest {
     @Test
     fun visualizerFramesAreIgnoredWhilePausedAndClearedOnPause() = runTest {
         val repository = FakePlayerRepository(PlayerUiState(currentSong = testSong, isPlaying = false))
-        val viewModel = PlayerViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = PlayerViewModel(repository, FakeInteractionRepository(), dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         repository.visualizerFrames.emit(AudioVisualizerFrame(listOf(1f), 1L))

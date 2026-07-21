@@ -9,6 +9,7 @@ import com.androidprj.fuzic.model.ui.PlayerUiState
 import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.repository.PlayerRepository
+import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.util.StringProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -49,6 +50,7 @@ sealed interface PlayerIntent {
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
+    private val interactionRepository: InteractionRepository,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val stringProvider: StringProvider,
 ) : ViewModel() {
@@ -104,7 +106,7 @@ class PlayerViewModel @Inject constructor(
             is PlayerIntent.Seek -> runPlayerCommand { playerRepository.seekTo(intent.progress) }
             PlayerIntent.ToggleShuffle -> runPlayerCommand { playerRepository.setShuffleEnabled(!_uiState.value.isShuffleEnabled) }
             PlayerIntent.CycleRepeatMode -> runPlayerCommand { playerRepository.setRepeatMode(_uiState.value.repeatMode.next()) }
-            PlayerIntent.ToggleLike -> _uiState.update { it.copy(isLiked = !it.isLiked, errorMessage = null) }
+            PlayerIntent.ToggleLike -> toggleLike()
             is PlayerIntent.ShowOverlay -> _uiState.update { it.copy(selectedOverlay = intent.overlay) }
             PlayerIntent.DismissOverlay -> _uiState.update { it.copy(selectedOverlay = PlayerOverlay.None) }
             is PlayerIntent.SleepTimerSelected -> runPlayerCommand(PlayerOverlay.None) { playerRepository.setSleepTimer(intent.minutes) }
@@ -113,6 +115,18 @@ class PlayerViewModel @Inject constructor(
             is PlayerIntent.RemoveFromQueue -> runPlayerCommand { playerRepository.removeFromQueue(intent.song.id) }
             PlayerIntent.Stop -> runPlayerCommand { playerRepository.stop() }
             PlayerIntent.ClearError -> _uiState.update { it.copy(errorMessage = null) }
+        }
+    }
+
+    private fun toggleLike() {
+        val song = _uiState.value.currentSong ?: return
+        val wasLiked = _uiState.value.isLiked
+        _uiState.update { it.copy(isLiked = !wasLiked, errorMessage = null) }
+        viewModelScope.launch {
+            val result = withContext(ioDispatcher) {
+                if (wasLiked) interactionRepository.unlikeSong(song.id) else interactionRepository.likeSong(song.id)
+            }
+            if (result.isFailure) _uiState.update { it.copy(isLiked = wasLiked, errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title)) }
         }
     }
 
