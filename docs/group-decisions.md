@@ -20,6 +20,7 @@ If this guide conflicts with the Android Skills, stop and ask the developer whic
 - Dependency injection: use Hilt.
 - Image loading: use Coil.
 - Navigation routes must be type-safe. Do not use raw string routes. Define routes with classes and objects following Google recommendations.
+- Navigation technology: use Navigation Compose 2 with `NavHost`, `NavController`, and `@Serializable` typed destinations. Do not migrate to Navigation 3 unless the team explicitly approves that migration.
 - Commits must follow Conventional Commits.
 - Follow SOLID and DRY principles.
 - Keep features loosely coupled so team members can work in parallel.
