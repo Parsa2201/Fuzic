@@ -5,12 +5,14 @@ import com.androidprj.fuzic.model.ui.AppLanguageOption
 import com.androidprj.fuzic.model.ui.AppSettings
 import com.androidprj.fuzic.model.ui.AppThemeOption
 import com.androidprj.fuzic.model.ui.PlaylistItem
+import com.androidprj.fuzic.model.ui.PremiumPlan
 import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
+import com.androidprj.fuzic.repository.PremiumRepository
 import com.androidprj.fuzic.repository.SettingsRepository
 import com.androidprj.fuzic.repository.UserRepository
 import com.androidprj.fuzic.util.StringProvider
@@ -35,6 +37,14 @@ internal val testProfile = ProfileUser(
     id = "user-1",
     username = "parsa",
     displayName = "Parsa",
+)
+
+internal val testPremiumPlan = PremiumPlan(
+    id = "premium-monthly",
+    title = "Monthly",
+    priceLabel = "$4.99",
+    billingLabel = "Monthly",
+    isRecommended = true,
 )
 
 internal object FakeStringProvider : StringProvider {
@@ -97,6 +107,33 @@ internal class FakeSettingsRepository(
     }
 
     override suspend fun clearSettings(): Result<Unit> = clearResult
+}
+
+internal class FakePremiumRepository(
+    initialPremium: Boolean = false,
+    var plansResult: Result<List<PremiumPlan>> = Result.success(listOf(testPremiumPlan)),
+) : PremiumRepository {
+    val premiumStatus = MutableStateFlow(initialPremium)
+    var purchaseResult: Result<Unit> = Result.success(Unit)
+    var restoreResult: Result<Unit> = Result.success(Unit)
+    var purchaseCalls = 0
+    var restoreCalls = 0
+    var lastPurchasedPlanId: String? = null
+
+    override fun observePremiumStatus(): Flow<Boolean> = premiumStatus
+
+    override suspend fun getPlans(): Result<List<PremiumPlan>> = plansResult
+
+    override suspend fun purchasePlan(planId: String): Result<Unit> {
+        purchaseCalls++
+        lastPurchasedPlanId = planId
+        return purchaseResult.onSuccess { premiumStatus.value = true }
+    }
+
+    override suspend fun restorePurchase(): Result<Unit> {
+        restoreCalls++
+        return restoreResult
+    }
 }
 
 internal class FakeMusicRepository(
