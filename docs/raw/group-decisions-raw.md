@@ -49,17 +49,17 @@
 - Before start coding, a top level plan should be planned to define what steps should be made (some steps are done by a specific person, whilst some other are like a phase that we all do it or wny person that wants does it).
 - The plan starts by defining all the criteria projects needs.
 - There should be a feature graph that specifies what are the features and their dependencies. Many features, like ui screens, don't depend on each other. But they may depend on a feature that they all use. It is recommended to make these dependencies minimum.
-- All the graphs, architectures, and diagrams are drawn in the eraser.io parsa's Team 2. The name of the project is "Android Project". AIs will have access to it through the eraser mcp server. The mcp server should be available and authorized for the AI to be able to work with it.
+- All the graphs, architectures, and diagrams are drawn in the eraser.io parsa's Team 2. The name of the project is "Android Project". AIs will have access to it through the eraser mcp server. The mcp server should be available and authorized for the AI to be able to work with it. AIs should locate the project file by calling `list_files` on parsa's Team 2 and selecting the file titled "Android Project"; search-by-title alone may return no results even when the file exists.
 - The diagrams are only for we humans to have a better understanding of what to do. They are not 100% correct as they may be changed in the future.
 - No AI token should be used in eraser.io. All the diagrams should be created manually using the APIs mcp server serves that don't use AI credit.
 - It is recommended to use diagram-as-code when drawing any architecture or diagram.
 - When the diagram-as-codes are drawn, if there is access to changing the component positions, the component positions should be arranged in a way that the diagram looks clean and organized.
 - All the processes and graphs should be shown in eraser.
 - All the ERDs should be shown in eraser.
-- For phase 1, these are our tasks:
-  - Parsa: Defining the project criteria, Starting the base code for project, drawing plan diagrams, starting the ui development.
-  - Bagher: Working on PocketBase, defining ERDs.
-  - Sina: Learning how to define the player service, define AI related docs.
+- For phase 1, these are our tasks (mirrors the "Phase 1" BPMN diagram in the Android Project Eraser file):
+  - Parsa: Define the GitHub project, define the app UI, and integrate the chosen backend client in the Android app. Firebase was evaluated and rejected, so Parsa's final Android-side step is the "Use Alternative Backend in Android App" branch of the BPMN.
+  - Bagher: Own the backend. Evaluates the candidate (Firebase vs alternative), defines the App–Backend API, and develops the chosen backend. For Fuzic, the chosen backend is Supabase, so Bagher's deliverable is a self-hosted Supabase project with schema, auth, storage, and realtime ready for the Android client.
+  - Sina: Prepare AI tools, learn media playback well enough to define the player service. Exit event: Media Playback Ready.
 - The chat feature is in the last phases.
 - The Android Skills (https://github.com/android/skills) should be installed before using the AI for coding in the project.
 - The AI should consider all the criteria from this document and the Android Skills.

@@ -29,12 +29,12 @@ The full feature set is defined in the course spec PDF. This document restates t
 | State | `StateFlow<UiState>` in ViewModel, collected in Compose with `collectAsStateWithLifecycle()` |
 | One-time events | `SharedFlow` or `Channel` (e.g. snackbar errors) |
 | DI | Hilt |
-| Backend | PocketBase (self-hosted, run by a teammate) |
+| Backend | Supabase (self-hosted: Postgres + Auth + Storage + Realtime + Edge Functions) |
 | Local DB | Room (offline cache for chat history, search history, downloads metadata, favorites) |
 | Preferences | DataStore Preferences (language, theme, premium status) |
 | Media playback | ExoPlayer (Media3) |
 | Background work | WorkManager (downloads) |
-| Realtime | TBD — PocketBase SSE realtime endpoint if available, fallback strategy TBD |
+| Realtime | Supabase Realtime (Postgres changes via websocket) |
 | Networking | OkHttp / Ktor-client — TBD |
 | Image loading | Coil |
 | Paging | Paging 3 (required by spec for all long lists) |
@@ -146,8 +146,8 @@ The Home tab is the app's showcase. It surfaces recommendations, recently played
   - Local playlists (Iranian / Persian content)
 
 ### 7.3 Data
-- All sections pull from the backend (PocketBase).
-- [TBD by team — what collection(s) hold these recommendations]
+- All sections pull from the backend (Supabase).
+- [TBD by team — what table(s) hold these recommendations]
 
 ### 7.4 Technical approach
 - Use `HorizontalPager` for the daily-picks carousel with auto-scroll.
@@ -181,7 +181,7 @@ Allow users to search across songs, artists, playlists, and users, with debounce
 5. Search history is shown when the field is empty; user can delete individual entries or clear all.
 
 ### 8.3 Data
-- Backend exposes search across multiple collections.
+- Backend exposes search across multiple tables (Postgres full-text / RPC functions).
 - [TBD by team — exact search endpoint, full-text vs prefix match]
 - Search history is stored in Room (local only).
 
@@ -249,7 +249,7 @@ Show all playlists the user has access to: global playlists, local (Iranian) pla
 5. Tapping "+ New Playlist" creates a new playlist (name, optional cover image).
 
 ### 10.3 Data
-- Playlists live in PocketBase.
+- Playlists live in Supabase (Postgres `playlists` table).
 - Each playlist has songs (ordered list of song IDs).
 
 ### 10.4 Technical approach
@@ -282,8 +282,8 @@ Show the current user's profile, follow stats, premium status, and provide acces
 - **Entry points:** Settings, Chat list, Logout.
 
 ### 11.3 Data
-- User profile from PocketBase users collection.
-- Follow counts derived from follows collection.
+- User profile from Supabase `profiles` table (joined to `auth.users`).
+- Follow counts derived from the `follows` table.
 - Premium status from a `isPremium` boolean on the user.
 
 ### 11.4 Technical approach
@@ -330,7 +330,7 @@ Provide professional music playback: mini-player, full-player with shared elemen
 - Standard lock-screen + notification media controls.
 
 ### 12.3 Data
-- Audio URLs come from the songs collection in PocketBase.
+- Audio URLs come from the `songs` table in Supabase (or from local file paths for downloaded songs).
 - Local file paths for downloaded songs.
 
 ### 12.4 Technical approach
@@ -365,7 +365,7 @@ Differentiate free vs premium users. The only behavioral difference is offline d
 
 ### 13.3 Data
 - User has `isPremium: boolean` field.
-- Persistence: stored on the backend (PocketBase) and cached in DataStore for offline access.
+- Persistence: stored on the backend (Supabase) and cached in DataStore for offline access.
 
 ### 13.4 Technical approach
 - Premium check lives in a `UserService` (or `SubscriptionService`).
@@ -397,7 +397,7 @@ Allow users to send and receive direct messages in real time, with read receipts
 7. User can tap a share-song button inside chat → opens a song picker → selected song appears as a special message with a mini-card UI → tapping the card triggers playback via the shared player.
 8. If the user has no internet, the app should still show the last cached chat history.
 
-### 14.3 Data model (PocketBase) — [TBD by team — exact collection names]
+### 14.3 Data model (Supabase / Postgres) — exact table names TBD
 
 ```
 Collection: messages
@@ -441,17 +441,17 @@ Collection: conversations (or derived from messages)
 ```
 
 ### 14.4 Technical approach
-- **Realtime transport:** [TBD by team — PocketBase SSE confirmed by PocketBase owner? If not, fallback strategy]
+- **Realtime transport:** Supabase Realtime over websocket. Subscriptions are created against the `messages`, `conversations`, and `typing` tables (with the realtime publication enabled per table). Verify with Bagher that the required tables are added to the `supabase_realtime` publication.
 - **ViewModel pattern:**
   - `ChatListViewModel` exposes `StateFlow<ChatListUiState>`.
   - `ChatDetailViewModel` exposes `StateFlow<ChatDetailUiState>`.
   - Both send `Intent`s to their VMs; VMs call `ChatRepository`.
 - **ChatRepository** is the single source of truth:
-  - Subscribes to `messages` collection filtered by `roomId`.
+  - Subscribes to `messages` table filtered by `roomId` via Supabase Realtime.
   - On every new message → write to Room + update `StateFlow`.
-  - On send → optimistic local insert with `status = sending` → PocketBase write → on success update to `sent`.
+  - On send → optimistic local insert with `status = sending` → Supabase insert → on success update to `sent`.
 - **Read receipts:** When chat detail screen is open and messages are visible, mark unread incoming messages as `read` via a batched update. Optimistic local update first.
-- **Typing indicator:** Throttled — write to `typing` collection on every keystroke, max once every 2s. Read other side via SSE/poll. TTL of 5s.
+- **Typing indicator:** Throttled — write to `typing` table on every keystroke, max once every 2s. Read other side via Supabase Realtime subscription on the same row. TTL of 5s.
 - **Share-song-as-message:**
   - User taps share → opens song picker (uses PlayerService's catalog).
   - User picks a song → send a message with `type = "song_share"`, `songId = ...`, `text = null`.
@@ -488,7 +488,7 @@ Let users search for other users, follow/unfollow them, and view lists of who th
 5. User opens the Followers list → sees all users following them.
 6. Unfollowing a user removes them from the Following list.
 
-### 15.3 Data model (PocketBase) — [TBD by team — exact collection names]
+### 15.3 Data model (Supabase / Postgres) — exact table names TBD
 
 ```
 Collection: follows
@@ -621,13 +621,13 @@ Per the course spec:
 
 ## 21. Open Questions (to resolve at 19 Tir 20:00 team meeting)
 
-1. **PocketBase realtime:** SSE endpoint enabled? Who confirms?
+1. **Supabase Realtime:** Are the `messages`, `conversations`, and `typing` tables added to the `supabase_realtime` publication? Who confirms with Bagher?
 2. **Shared `MaterialTheme`:** Which teammate owns the design system file?
 3. **Shared services (UserService, AuthService, PlayerService, ThemeManager):** Who owns each?
 4. **Profile tab ownership:** Sina planned to own the follow lists + settings entry, but not the rest of the Profile tab. Confirm split.
 5. **Logout policy:** Does logging out clear Sina's offline chat cache?
 6. **Logout behavior on cached songs:** What happens to downloads on logout?
-7. **Search endpoint:** Backend owner to confirm what PocketBase collections and fields are searchable.
+7. **Search endpoint:** Backend owner (Bagher) to confirm which Supabase tables/columns are searchable and which Postgres full-text indexes exist (or need to be added).
 8. **Song catalog minimum:** Spec requires at least 50 real songs. Who curates the list? Where do audio files live?
 9. **Git workflow:** Branch strategy (trunk-based? feature branches?), PR review rules, daily sync time.
 10. **Code style / formatter:** ktlint? detekt? Standard Android Studio formatter?
@@ -638,7 +638,7 @@ Per the course spec:
 
 ## 22. Build & Run
 
-[TBD after the team meeting once the repo structure is locked. Will include: clone URL, gradle commands, Firebase/PocketBase setup, emulator instructions.]
+[TBD after the team meeting once the repo structure is locked. Will include: clone URL, gradle commands, Supabase local-dev setup (`supabase start`), emulator instructions.]
 
 ---
 

@@ -156,6 +156,7 @@ All project diagrams must be maintained in Eraser.
 
 - Workspace/team: Parsa's Team 2.
 - Project name: Android Project.
+- AI agents access the diagrams through the Eraser MCP. Before reading or editing diagrams, the MCP must be available and authorized, and the agent must locate the project file by calling `list_files` on Parsa's Team 2 and selecting the file titled `Android Project` (search-by-title alone may miss it).
 - Use diagram-as-code when creating architecture diagrams, process diagrams, feature graphs, or ERDs.
 - Arrange diagram component positions so the final diagram is clean and readable when the API allows positioning.
 - Show all processes and graphs in Eraser.
@@ -165,22 +166,24 @@ Diagrams are for human understanding and may change over time. They are not guar
 
 ## Phase 1 Responsibilities
 
+The split mirrors the "Phase 1" BPMN diagram in the Android Project Eraser file.
+
 ### Parsa
 
-- Define project criteria.
-- Start the base project code.
-- Draw planning diagrams.
-- Start UI development.
+- Set up the GitHub project.
+- Define the app UI.
+- Integrate the chosen backend client in the Android app (the Phase 1 BPMN's "Use Alternative Backend in Android App" branch — Firebase was evaluated and rejected).
 
 ### Bagher
 
-- Work on PocketBase.
-- Define ERDs.
+- Own the backend. This includes evaluating the candidate (Firebase vs alternative), defining the App–Backend API, and developing the chosen backend.
+- For Fuzic, the chosen backend is **Supabase**. Bagher's deliverable is a self-hosted Supabase project with schema, auth, storage, and realtime ready for the Android client.
 
 ### Sina
 
-- Learn how to define the player service.
-- Define AI-related documentation.
+- Prepare AI tooling.
+- Learn media playback well enough to define the player service.
+- Exit event: Media Playback Ready.
 
 ## Known Product Planning Notes
 
