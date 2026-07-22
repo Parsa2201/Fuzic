@@ -32,6 +32,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -94,7 +95,7 @@ import com.androidprj.fuzic.model.ui.PlayerOverlay
 import com.androidprj.fuzic.model.ui.PlayerUiState
 import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SongItem
-import com.androidprj.fuzic.ui.components.DetailArtwork
+import com.androidprj.fuzic.ui.components.CircularMusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.SongListItem
 import com.androidprj.fuzic.ui.components.fuzicClickable
@@ -309,8 +310,9 @@ private fun PlayerContent(
             }
         }
         Spacer(Modifier.height(MaterialTheme.spacing.small))
-        DetailArtwork(
+        CircularMusicArtwork(
             artworkUrl = song.artworkUrl,
+            fallbackIcon = Icons.Default.Album,
             contentDescription = song.title,
             modifier = artworkModifier
                 .size(PlayerSizes.CoverSize)
