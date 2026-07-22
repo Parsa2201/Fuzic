@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +25,7 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -87,11 +90,24 @@ fun SongCollectionScreen(
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(MaterialTheme.spacing.medium),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
             ) {
                 item {
-                    Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
-                        Button(onClick = onPlayAllClick) { Text(stringResource(R.string.collection_play_all)) }
-                        Button(onClick = onShuffleClick) { Text(stringResource(R.string.collection_shuffle)) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Button(onClick = onPlayAllClick) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                            Spacer(Modifier.padding(MaterialTheme.spacing.extraSmall))
+                            Text(stringResource(R.string.collection_play_all))
+                        }
+                        Spacer(Modifier.padding(MaterialTheme.spacing.extraSmall))
+                        Button(onClick = onShuffleClick) {
+                            Icon(Icons.Default.Shuffle, contentDescription = null)
+                            Spacer(Modifier.padding(MaterialTheme.spacing.extraSmall))
+                            Text(stringResource(R.string.collection_shuffle))
+                        }
                     }
                 }
                 items(uiState.songs, key = { it.id }) { song ->
@@ -118,11 +134,13 @@ fun SongCollectionScreen(
                             }
                         },
                     ) {
-                        SongListItem(
-                            song = song,
-                            onClick = { onSongClick(song) },
-                            onMoreClick = { onRemoveClick(song) },
-                        )
+                        Surface(color = MaterialTheme.colorScheme.surface) {
+                            SongListItem(
+                                song = song,
+                                onClick = { onSongClick(song) },
+                                onMoreClick = { onRemoveClick(song) },
+                            )
+                        }
                     }
                 }
             }
