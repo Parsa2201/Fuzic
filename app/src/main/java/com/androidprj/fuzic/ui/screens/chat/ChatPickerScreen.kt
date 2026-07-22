@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.androidprj.fuzic.R
@@ -55,6 +56,7 @@ fun ChatPickerScreen(uiState: ChatPickerUiState, onBackClick: () -> Unit, onConv
         DetailTopAppBar(stringResource(R.string.share_to_chat_title), onBackClick)
         when {
             uiState.errorMessage != null -> ScreenMessage(Icons.Default.Share, stringResource(R.string.share_to_chat_title), uiState.errorMessage)
+            uiState.isLoading -> CircularProgressIndicator()
             !uiState.isLoading && uiState.conversations.isEmpty() -> ScreenMessage(Icons.Default.Share, stringResource(R.string.share_to_chat_title), stringResource(R.string.share_to_chat_empty))
             else -> LazyColumn { items(uiState.conversations, key = { it.id }) { conversation -> ListItem(headlineContent = { Text(conversation.participant.displayName) }, supportingContent = { Text(conversation.lastMessagePreview) }, modifier = Modifier.fillMaxWidth().clickable { onConversationClick(conversation) }) } }
         }
@@ -89,6 +91,26 @@ private fun ChatPickerEmptyPersianPreview() {
     FuzicTheme {
         ChatPickerScreen(
             uiState = ChatPickerUiState(isLoading = false),
+            onBackClick = {},
+            onConversationClick = {},
+        )
+    }
+}
+
+@Preview(name = "Share to chat loading - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ChatPickerLoadingPreview() {
+    FuzicTheme {
+        ChatPickerScreen(ChatPickerUiState(), onBackClick = {}, onConversationClick = {})
+    }
+}
+
+@Preview(name = "Share to chat error - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ChatPickerErrorPreview() {
+    FuzicTheme {
+        ChatPickerScreen(
+            uiState = ChatPickerUiState(isLoading = false, errorMessage = stringResource(R.string.share_to_chat_error)),
             onBackClick = {},
             onConversationClick = {},
         )

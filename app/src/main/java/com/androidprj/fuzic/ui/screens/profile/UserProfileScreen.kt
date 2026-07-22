@@ -96,6 +96,26 @@ private fun UserProfileErrorPersianPreview() {
     }
 }
 
+@Preview(name = "User profile loading - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun UserProfileLoadingPreview() {
+    FuzicTheme {
+        UserProfileScreen(UserProfileUiState(), onBackClick = {}, onRetryClick = {})
+    }
+}
+
+@Preview(name = "User profile empty - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun UserProfileEmptyPreview() {
+    FuzicTheme {
+        UserProfileScreen(
+            uiState = UserProfileUiState(isLoading = false),
+            onBackClick = {},
+            onRetryClick = {},
+        )
+    }
+}
+
 @Composable
 fun UserProfileScreen(
     uiState: UserProfileUiState,
@@ -117,6 +137,11 @@ fun UserProfileScreen(
                 Text(uiState.user.displayName, style = MaterialTheme.typography.headlineMedium)
                 Text(uiState.user.username, style = MaterialTheme.typography.bodyLarge)
             }
+            else -> ScreenMessage(
+                icon = Icons.Default.ErrorOutline,
+                title = stringResource(R.string.profile_empty_title),
+                message = stringResource(R.string.profile_empty_message),
+            )
         }
     }
 }

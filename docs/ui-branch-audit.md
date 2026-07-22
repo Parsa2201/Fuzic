@@ -65,9 +65,9 @@ Before this can be treated as feature-complete, prioritize fixing the confirmed 
 ## Preview and visual QA findings
 
 - Coverage is generally strong: most screens include English, Persian, content, empty, loading, and error previews. The home shimmer previews are useful delayed-loading scaffolding.
-- Missing reusable-component previews: `ContentDetailComponents.kt` and `SongActionSheet.kt` have no previews. Add normal/long-text/RTL and actionable states for each public reusable composable.
-- `ProfileEditorScreen.kt` and `SongCollectionScreen.kt` lack screen-state previews. Add English and Persian content, loading, empty, and error coverage where applicable.
-- `ChatPickerScreen` has no loading/error preview; `UserProfileScreen` has no loading/empty preview. Add these states.
+- **Done:** `ContentDetailComponents.kt` and `SongActionSheet.kt` now have English/Persian previews.
+- **Done:** `ProfileEditorScreen.kt` and `SongCollectionScreen.kt` now cover content and loading/error/empty states where applicable.
+- **Done:** `ChatPickerScreen` has loading/error previews and `UserProfileScreen` has loading/empty previews; the public profile empty state is rendered explicitly.
 - Preview callbacks are still empty in several component/app-shell previews. Use `remember` state and visible feedback where interaction matters, per the project preview rules.
 - There are no screenshot tests. Add Compose Preview Screenshot Testing (or the project-approved equivalent) before visual regressions are expensive. At minimum record phone, foldable, tablet, and desktop cases for the shell, home, playlist grid, chat list/detail, player, and settings.
 - Only the app-shell preview uses `@PreviewScreenSizes`; screen previews do not systematically test larger form factors. The adaptive navigation suite is a good foundation, but content still needs width-aware verification.

@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.model.ui.SongCollectionUiState
 import com.androidprj.fuzic.model.ui.SongItem
@@ -26,6 +27,7 @@ import com.androidprj.fuzic.ui.components.DetailLoadingContent
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.SongListItem
+import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 
 @Composable
@@ -82,5 +84,72 @@ fun SongCollectionScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(name = "Song collection - English", showBackground = true)
+@Composable
+private fun SongCollectionPreview() {
+    FuzicTheme {
+        SongCollectionScreen(
+            uiState = SongCollectionUiState(
+                title = stringResource(R.string.liked_songs_title),
+                songs = listOf(
+                    SongItem(
+                        id = "preview-song",
+                        title = stringResource(R.string.preview_song_midnight_drive),
+                        artist = stringResource(R.string.preview_artist_luna_ray),
+                        durationLabel = stringResource(R.string.preview_song_duration_midnight),
+                    ),
+                ),
+            ),
+            onBackClick = {},
+            onSongClick = {},
+            onSongMoreClick = {},
+            onRetryClick = {},
+            emptyIcon = Icons.Default.Refresh,
+            emptyTitle = stringResource(R.string.liked_songs_empty_title),
+            emptyMessage = stringResource(R.string.liked_songs_empty_message),
+            errorTitle = stringResource(R.string.liked_songs_error_title),
+        )
+    }
+}
+
+@Preview(name = "Song collection loading - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun SongCollectionLoadingPreview() {
+    FuzicTheme {
+        SongCollectionScreen(
+            uiState = SongCollectionUiState(title = stringResource(R.string.liked_songs_title), isLoading = true),
+            onBackClick = {}, onSongClick = {}, onSongMoreClick = {}, onRetryClick = {},
+            emptyIcon = Icons.Default.Refresh, emptyTitle = stringResource(R.string.liked_songs_empty_title),
+            emptyMessage = stringResource(R.string.liked_songs_empty_message), errorTitle = stringResource(R.string.liked_songs_error_title),
+        )
+    }
+}
+
+@Preview(name = "Song collection empty - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun SongCollectionEmptyPreview() {
+    FuzicTheme {
+        SongCollectionScreen(
+            uiState = SongCollectionUiState(title = stringResource(R.string.liked_songs_title)),
+            onBackClick = {}, onSongClick = {}, onSongMoreClick = {}, onRetryClick = {},
+            emptyIcon = Icons.Default.Refresh, emptyTitle = stringResource(R.string.liked_songs_empty_title),
+            emptyMessage = stringResource(R.string.liked_songs_empty_message), errorTitle = stringResource(R.string.liked_songs_error_title),
+        )
+    }
+}
+
+@Preview(name = "Song collection error - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun SongCollectionErrorPreview() {
+    FuzicTheme {
+        SongCollectionScreen(
+            uiState = SongCollectionUiState(title = stringResource(R.string.liked_songs_title), errorMessage = stringResource(R.string.liked_songs_error_title)),
+            onBackClick = {}, onSongClick = {}, onSongMoreClick = {}, onRetryClick = {},
+            emptyIcon = Icons.Default.Refresh, emptyTitle = stringResource(R.string.liked_songs_empty_title),
+            emptyMessage = stringResource(R.string.liked_songs_empty_message), errorTitle = stringResource(R.string.liked_songs_error_title),
+        )
     }
 }

@@ -11,11 +11,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.androidprj.fuzic.R
+import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 
 @Composable
@@ -48,5 +55,58 @@ fun ProfileEditorScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(name = "Edit profile - English", showBackground = true)
+@Composable
+private fun ProfileEditorContentPreview() {
+    FuzicTheme {
+        var state by remember {
+            mutableStateOf(
+                ProfileEditorUiState(
+                    profile = ProfileUser("preview-user", "parsa", "Parsa"),
+                    displayName = "Parsa",
+                    username = "parsa",
+                    isLoading = false,
+                ),
+            )
+        }
+        ProfileEditorScreen(
+            uiState = state,
+            onBackClick = {},
+            onDisplayNameChange = { state = state.copy(displayName = it) },
+            onUsernameChange = { state = state.copy(username = it) },
+            onAvatarUrlChange = { state = state.copy(avatarUrl = it) },
+            onSaveClick = { state = state.copy(isSaving = true) },
+            onRetryClick = { state = state.copy(errorMessage = null, isLoading = false) },
+        )
+    }
+}
+
+@Preview(name = "Edit profile loading - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ProfileEditorLoadingPreview() {
+    FuzicTheme {
+        ProfileEditorScreen(
+            uiState = ProfileEditorUiState(),
+            onBackClick = {}, onDisplayNameChange = {}, onUsernameChange = {}, onAvatarUrlChange = {}, onSaveClick = {}, onRetryClick = {},
+        )
+    }
+}
+
+@Preview(name = "Edit profile error - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ProfileEditorErrorPreview() {
+    FuzicTheme {
+        ProfileEditorScreen(
+            uiState = ProfileEditorUiState(isLoading = false, errorMessage = stringResource(R.string.edit_profile_error)),
+            onBackClick = {},
+            onDisplayNameChange = {},
+            onUsernameChange = {},
+            onAvatarUrlChange = {},
+            onSaveClick = {},
+            onRetryClick = {},
+        )
     }
 }

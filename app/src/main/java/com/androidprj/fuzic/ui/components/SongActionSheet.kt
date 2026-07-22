@@ -15,8 +15,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.model.ui.SongItem
+import com.androidprj.fuzic.ui.theme.FuzicTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,5 +52,18 @@ fun SongActionSheet(
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onShareClick),
             )
         }
+    }
+}
+
+@Preview(name = "Song actions - English", showBackground = true)
+@Preview(name = "Song actions - Persian", locale = "fa", showBackground = true)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SongActionSheetPreview() {
+    FuzicTheme {
+        SongActionSheet(
+            song = SongItem("preview-song", stringResource(R.string.preview_song_midnight_drive), stringResource(R.string.preview_artist_luna_ray)),
+            onDismiss = {}, onPlayClick = {}, onAddToPlaylistClick = {}, onShareClick = {},
+        )
     }
 }
