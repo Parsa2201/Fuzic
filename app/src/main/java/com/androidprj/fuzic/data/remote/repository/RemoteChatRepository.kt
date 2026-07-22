@@ -15,21 +15,45 @@ import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.decodeRecord
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.map
+import com.androidprj.fuzic.data.local.dao.ChatDao
+import com.androidprj.fuzic.model.mapper.toChatMessageEntity
+import com.androidprj.fuzic.model.ui.ChatMessageStatus
+import com.androidprj.fuzic.model.ui.ChatMessageType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 import javax.inject.Inject
 
 class RemoteChatRepository @Inject constructor(
-    private val supabaseClient: SupabaseClient
+    private val supabaseClient: SupabaseClient,
+    private val chatDao: ChatDao
 ) : ChatRepository {
 
     override fun observeConversations(): Flow<List<ChatConversation>> = flowOf(emptyList())
 
-    override fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>> = flow {
-        emit(PagingData.from(getChatHistory(conversationId).getOrDefault(emptyList())))
+    override fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>> {
+        val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: return flowOf(PagingData.empty())
+        
+        // Sync in background
+        CoroutineScope(Dispatchers.IO).launch {
+            syncChatHistory(conversationId)
+        }
+        
+        return Pager(
+            config = PagingConfig(pageSize = 50, enablePlaceholders = false),
+            pagingSourceFactory = { chatDao.getMessagesPagingSource(conversationId) }
+        ).flow.map { pagingData ->
+            pagingData.map { it.toChatMessage(currentUserId) }
+        }
     }
 
     override fun observeTypingStatus(conversationId: String): Flow<TypingStatus?> = flowOf(null)
@@ -38,20 +62,24 @@ class RemoteChatRepository @Inject constructor(
         conversationId: String,
         receiverId: String,
         text: String
-    ): Result<ChatMessage> = sendMessage(
+    ): Result<ChatMessage> = sendMessageOptimistic(
+        conversationId = conversationId,
         receiverId = receiverId,
         content = text,
-        sharedSongId = null
+        sharedSongId = null,
+        type = ChatMessageType.Text
     )
 
     override suspend fun sendSongMessage(
         conversationId: String,
         receiverId: String,
         songId: String
-    ): Result<ChatMessage> = sendMessage(
+    ): Result<ChatMessage> = sendMessageOptimistic(
+        conversationId = conversationId,
         receiverId = receiverId,
         content = null,
-        sharedSongId = songId
+        sharedSongId = songId,
+        type = ChatMessageType.SongShare
     )
 
     override suspend fun markMessagesAsRead(
@@ -59,6 +87,7 @@ class RemoteChatRepository @Inject constructor(
         messageIds: List<String>
     ): Result<Unit> = runCatching {
         messageIds.forEach { messageId ->
+            chatDao.updateMessageStatus(messageId, ChatMessageStatus.Read.name)
             markMessageAsRead(messageId).getOrThrow()
         }
     }
@@ -68,50 +97,68 @@ class RemoteChatRepository @Inject constructor(
     }
 
     override suspend fun refreshConversation(conversationId: String): Result<Unit> {
+        syncChatHistory(conversationId)
         return Result.success(Unit)
     }
 
-    private suspend fun getChatHistory(userId: String, offset: Long = 0, limit: Long = 50): Result<List<ChatMessage>> {
-        return try {
-            val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
+    private suspend fun syncChatHistory(conversationId: String) {
+        try {
             val messages = supabaseClient.postgrest["messages"]
                 .select {
-                    filter {
-                        or {
-                            and {
-                                eq("sender_id", currentUserId)
-                                eq("receiver_id", userId)
-                            }
-                            and {
-                                eq("sender_id", userId)
-                                eq("receiver_id", currentUserId)
-                            }
-                        }
-                    }
-                    order("created_at", order = Order.ASCENDING)
-                    range(offset, offset + limit - 1)
+                    filter { eq("conversation_id", conversationId) }
+                    order("created_at", order = Order.DESCENDING)
+                    limit(50)
                 }
                 .decodeList<MessageDto>()
-                .map { it.toChatMessage(currentUserId) }
-            Result.success(messages)
+                .map { it.toChatMessageEntity() }
+            chatDao.insertMessages(messages)
         } catch (e: Exception) {
-            Result.failure(e)
+            // Ignore background sync errors
         }
     }
 
-    private suspend fun sendMessage(receiverId: String, content: String?, sharedSongId: String?): Result<ChatMessage> {
+    private suspend fun sendMessageOptimistic(
+        conversationId: String, 
+        receiverId: String, 
+        content: String?, 
+        sharedSongId: String?,
+        type: ChatMessageType
+    ): Result<ChatMessage> {
         return try {
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
+            
+            // 1. Optimistic insertion to local DB
+            val tempId = UUID.randomUUID().toString()
+            val optimisticMessage = ChatMessage(
+                id = tempId,
+                senderId = currentUserId,
+                text = content ?: "",
+                type = type,
+                song = null, // Can't resolve optimistically
+                status = ChatMessageStatus.Sending,
+                timeLabel = "Just now",
+                isMine = true
+            )
+            chatDao.insertMessage(optimisticMessage.toChatMessageEntity(conversationId, currentUserId, sharedSongId))
+
+            // 2. Send to network
             val message = InsertMessageDto(
                 senderId = currentUserId,
                 receiverId = receiverId,
                 content = content,
-                sharedSongId = sharedSongId
+                sharedSongId = sharedSongId,
+                conversationId = conversationId,
+                messageType = type.name
             )
             val insertedMessage = supabaseClient.postgrest["messages"]
                 .insert(message) { select() }
                 .decodeSingle<MessageDto>()
-            Result.success(insertedMessage.toChatMessage(currentUserId))
+            
+            // 3. Update local DB with real data from network
+            val realEntity = insertedMessage.toChatMessageEntity()
+            chatDao.insertMessage(realEntity)
+            
+            Result.success(realEntity.toChatMessage(currentUserId))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -130,7 +177,7 @@ class RemoteChatRepository @Inject constructor(
         }
     }
 
-    private fun observeMessageInserts(userId: String): Flow<ChatMessage> {
+    private fun observeMessageInserts(conversationId: String): Flow<ChatMessage> {
         val currentUserId = supabaseClient.auth.currentUserOrNull()?.id 
             ?: throw Exception("Not logged in")
             
@@ -138,11 +185,12 @@ class RemoteChatRepository @Inject constructor(
         return channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
             table = "messages"
         }.map { it.decodeRecord<MessageDto>() }
-         .filter { message ->
-             (message.senderId == currentUserId && message.receiverId == userId) ||
-             (message.senderId == userId && message.receiverId == currentUserId)
+         .filter { message -> message.conversationId == conversationId }
+         .map { it.toChatMessageEntity() }
+         .map { 
+             chatDao.insertMessage(it) // Write directly to cache
+             it.toChatMessage(currentUserId) 
          }
-         .map { it.toChatMessage(currentUserId) }
     }
 
     @kotlinx.serialization.Serializable
@@ -150,6 +198,8 @@ class RemoteChatRepository @Inject constructor(
         @kotlinx.serialization.SerialName("sender_id") val senderId: String,
         @kotlinx.serialization.SerialName("receiver_id") val receiverId: String,
         val content: String? = null,
-        @kotlinx.serialization.SerialName("shared_song_id") val sharedSongId: String? = null
+        @kotlinx.serialization.SerialName("shared_song_id") val sharedSongId: String? = null,
+        @kotlinx.serialization.SerialName("conversation_id") val conversationId: String,
+        @kotlinx.serialization.SerialName("message_type") val messageType: String
     )
 }

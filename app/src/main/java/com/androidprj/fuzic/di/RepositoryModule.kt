@@ -16,8 +16,10 @@ import com.androidprj.fuzic.repository.PlaylistRepository
 import com.androidprj.fuzic.repository.UserRepository
 import com.androidprj.fuzic.repository.SettingsRepository
 import com.androidprj.fuzic.repository.PremiumRepository
+import com.androidprj.fuzic.repository.SearchRepository
 import com.androidprj.fuzic.data.settings.LocalSettingsRepository
 import com.androidprj.fuzic.data.settings.LocalPremiumRepository
+import com.androidprj.fuzic.data.remote.repository.RemoteSearchRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -81,4 +83,10 @@ abstract class RepositoryModule {
     abstract fun bindPremiumRepository(
         localPremiumRepository: LocalPremiumRepository
     ): PremiumRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSearchRepository(
+        remoteSearchRepository: RemoteSearchRepository
+    ): SearchRepository
 }
