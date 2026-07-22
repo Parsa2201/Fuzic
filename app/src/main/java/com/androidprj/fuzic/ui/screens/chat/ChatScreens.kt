@@ -597,6 +597,69 @@ private fun ChatDetailSendingPreview() {
     }
 }
 
+@Preview(name = "Chat detail message types - English", showBackground = true)
+@Preview(name = "Chat detail message types - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ChatDetailMessageTypesPreview() {
+    FuzicTheme {
+        ChatDetailScreen(
+            uiState = sampleChatDetailState().copy(
+                messages = androidx.paging.PagingData.from(
+                    listOf(
+                        ChatMessage(
+                            id = "incoming-text",
+                            senderId = "raha",
+                            text = "I found a new playlist for you.",
+                            status = ChatMessageStatus.Delivered,
+                            timeLabel = "10:30",
+                            isMine = false,
+                        ),
+                        ChatMessage(
+                            id = "sent-text",
+                            senderId = "me",
+                            text = "Nice, send it over!",
+                            status = ChatMessageStatus.Sent,
+                            timeLabel = "10:31",
+                            isMine = true,
+                        ),
+                        ChatMessage(
+                            id = "read-text",
+                            senderId = "me",
+                            text = "Added it to my library.",
+                            status = ChatMessageStatus.Read,
+                            timeLabel = "10:32",
+                            isMine = true,
+                        ),
+                        ChatMessage(
+                            id = "song-share",
+                            senderId = "raha",
+                            type = ChatMessageType.SongShare,
+                            song = sampleSong(),
+                            status = ChatMessageStatus.Delivered,
+                            timeLabel = "10:33",
+                            isMine = false,
+                        ),
+                        ChatMessage(
+                            id = "sending-text",
+                            senderId = "me",
+                            text = "Listening now!",
+                            status = ChatMessageStatus.Sending,
+                            timeLabel = "10:34",
+                            isMine = true,
+                        ),
+                    ),
+                ),
+            ),
+            onBackClick = {},
+            onDraftChange = {},
+            onSendClick = {},
+            onShareSongClick = {},
+            onSongClick = {},
+            onRetryClick = {},
+        )
+    }
+}
+
 @Preview(name = "Chat error Persian", locale = "fa", showBackground = true)
 @Composable
 private fun ChatErrorPreview() {
