@@ -59,8 +59,8 @@ class LocalPremiumRepository @Inject constructor(
         // Stub plans for now, would typically fetch from RevenueCat/Play Billing
         return Result.success(
             listOf(
-                PremiumPlan(id = "1_month", name = "1 Month Premium", priceLabel = "$4.99"),
-                PremiumPlan(id = "1_year", name = "1 Year Premium", priceLabel = "$49.99")
+                PremiumPlan(id = "1_month", title = "1 Month Premium", priceLabel = "$4.99", billingLabel = "/mo"),
+                PremiumPlan(id = "1_year", title = "1 Year Premium", priceLabel = "$49.99", billingLabel = "/yr")
             )
         )
     }
