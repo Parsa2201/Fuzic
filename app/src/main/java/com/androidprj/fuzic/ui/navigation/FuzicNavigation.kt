@@ -1,8 +1,12 @@
 package com.androidprj.fuzic.ui.navigation
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -320,6 +324,34 @@ fun FuzicNavigation(
                     navController = navController,
                     startDestination = WelcomeDestination,
                     modifier = Modifier.padding(paddingValues),
+                    enterTransition = {
+                        fadeIn(animationSpec = tween(NavigationMotion.DurationMillis)) +
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(NavigationMotion.DurationMillis),
+                            )
+                    },
+                    exitTransition = {
+                        fadeOut(animationSpec = tween(NavigationMotion.DurationMillis)) +
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(NavigationMotion.DurationMillis),
+                            )
+                    },
+                    popEnterTransition = {
+                        fadeIn(animationSpec = tween(NavigationMotion.DurationMillis)) +
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                                animationSpec = tween(NavigationMotion.DurationMillis),
+                            )
+                    },
+                    popExitTransition = {
+                        fadeOut(animationSpec = tween(NavigationMotion.DurationMillis)) +
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                                animationSpec = tween(NavigationMotion.DurationMillis),
+                            )
+                    },
                 ) {
             composable<WelcomeDestination> {
                 LaunchedEffect(currentUser) {
@@ -812,6 +844,10 @@ fun FuzicNavigation(
         )
     }
     }
+}
+
+private object NavigationMotion {
+    const val DurationMillis = 220
 }
 
 private fun navigateForItem(controller: NavHostController, id: String, type: MusicItemType) {

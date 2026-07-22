@@ -87,6 +87,7 @@ import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.ui.components.DetailArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.SongListItem
+import com.androidprj.fuzic.ui.components.fuzicClickable
 import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
@@ -483,7 +484,7 @@ private fun PlayerTransportControls(
         Surface(
             modifier = Modifier
                 .size(PlayerSizes.PlayButtonSize)
-                .clickable(onClick = onPlayPauseClick),
+                .fuzicClickable(onPlayPauseClick),
             shape = CircleShape,
             color = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -530,7 +531,8 @@ private fun PlayerActionButton(
     tint: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Column(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier
+            .fuzicClickable(onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
     ) {
