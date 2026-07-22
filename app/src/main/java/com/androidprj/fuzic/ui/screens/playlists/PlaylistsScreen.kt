@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Image
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -216,6 +218,9 @@ private fun CreatePlaylistForm(
     onDismissClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val coverPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        onCoverSelected(uri?.toString())
+    }
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -261,6 +266,11 @@ private fun CreatePlaylistForm(
                         onClick = { onCoverSelected(uri) },
                     )
                 }
+            }
+            OutlinedButton(onClick = { coverPicker.launch("image/*") }) {
+                Icon(Icons.Default.Image, contentDescription = null)
+                Spacer(Modifier.width(MaterialTheme.spacing.small))
+                Text(stringResource(R.string.playlists_pick_cover))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
                 OutlinedButton(onClick = onDismissClick) {
@@ -323,7 +333,7 @@ private fun PlaylistSectionGrid(
     ) {
         SectionHeader(titleRes = section.titleRes)
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+            columns = GridCells.Adaptive(minSize = 160.dp),
             modifier = Modifier.height(gridHeightFor(section.playlists.size)),
             userScrollEnabled = false,
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),

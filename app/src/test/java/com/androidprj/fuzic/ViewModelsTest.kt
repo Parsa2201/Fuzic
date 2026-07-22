@@ -171,6 +171,8 @@ class ViewModelsTest {
         val viewModel = SongDetailsViewModel(
             FakeMusicRepository(),
             interactionRepository,
+            FakePremiumRepository(),
+            FakeDownloadRepository(),
             dispatcher,
             FakeStringProvider,
         )

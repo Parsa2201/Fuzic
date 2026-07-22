@@ -8,12 +8,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.androidprj.fuzic.R
@@ -47,18 +53,41 @@ import com.androidprj.fuzic.ui.screens.playlists.PlaylistsScreen
 import com.androidprj.fuzic.ui.screens.profile.ProfileScreen
 import com.androidprj.fuzic.ui.screens.search.SearchScreen
 import com.androidprj.fuzic.ui.theme.FuzicTheme
+import com.androidprj.fuzic.model.ui.AppLanguageOption
+import com.androidprj.fuzic.model.ui.AppThemeOption
+import java.util.Locale
 
 @Composable
 fun FuzicApp(modifier: Modifier = Modifier) {
-    var selectedTab by rememberSaveable { mutableStateOf(MainTab.Home) }
+    val viewModel: AppSettingsViewModel = hiltViewModel()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val darkTheme = when (settings.theme) {
+        AppThemeOption.System -> androidx.compose.foundation.isSystemInDarkTheme()
+        AppThemeOption.Light -> false
+        AppThemeOption.Dark -> true
+    }
+    val baseContext = LocalContext.current
+    val baseConfiguration = LocalConfiguration.current
+    val locale = when (settings.language) {
+        AppLanguageOption.System -> null
+        AppLanguageOption.English -> Locale.ENGLISH
+        AppLanguageOption.Persian -> Locale.forLanguageTag("fa")
+    }
+    val localizedConfiguration = android.content.res.Configuration(baseConfiguration).apply {
+        locale?.let(::setLocale)
+        setLayoutDirection(locale ?: Locale.getDefault())
+    }
+    val localizedContext = baseContext.createConfigurationContext(localizedConfiguration)
 
-    FuzicAppShell(
-        selectedTab = selectedTab,
-        onTabSelected = { selectedTab = it },
-        onProfileClick = { selectedTab = MainTab.Profile },
-        onSettingsClick = { selectedTab = MainTab.Profile },
-        modifier = modifier
-    )
+    CompositionLocalProvider(
+        LocalContext provides localizedContext,
+        LocalConfiguration provides localizedConfiguration,
+        androidx.compose.ui.platform.LocalLayoutDirection provides if (locale?.language == "fa") LayoutDirection.Rtl else LayoutDirection.Ltr,
+    ) {
+        FuzicTheme(darkTheme = darkTheme) {
+            FuzicNavigation(modifier = modifier)
+        }
+    }
 }
 
 @Composable
@@ -259,7 +288,7 @@ private fun sampleSearchUiState(): SearchUiState = SearchUiState(
         stringResource(R.string.preview_search_history_two),
         stringResource(R.string.preview_search_history_three)
     ),
-    results = listOf(
+    results = androidx.paging.PagingData.from(listOf(
         SearchResultItem(
             id = "result-midnight-drive",
             title = stringResource(R.string.preview_song_midnight_drive),
@@ -274,7 +303,7 @@ private fun sampleSearchUiState(): SearchUiState = SearchUiState(
             type = SearchFilter.Songs,
             artworkUrl = previewArtworkUri(R.drawable.preview_artwork_tehran)
         )
-    )
+    ))
 )
 
 @Composable

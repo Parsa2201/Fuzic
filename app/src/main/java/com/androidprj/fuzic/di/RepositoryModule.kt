@@ -1,6 +1,7 @@
 package com.androidprj.fuzic.di
 
 import com.androidprj.fuzic.data.remote.repository.RemoteAuthRepository
+import com.androidprj.fuzic.data.repository.*
 import com.androidprj.fuzic.data.remote.repository.RemoteChatRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteFollowRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteInteractionRepository
@@ -8,11 +9,20 @@ import com.androidprj.fuzic.data.remote.repository.RemoteMusicRepository
 import com.androidprj.fuzic.data.remote.repository.RemotePlaylistRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteUserRepository
 import com.androidprj.fuzic.repository.AuthRepository
+import com.androidprj.fuzic.repository.PasswordRecoveryRepository
+import com.androidprj.fuzic.repository.ArtistRepository
 import com.androidprj.fuzic.repository.ChatRepository
+import com.androidprj.fuzic.repository.DownloadRepository
 import com.androidprj.fuzic.repository.FollowRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.MusicRepository
+import com.androidprj.fuzic.repository.NotificationRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
+import com.androidprj.fuzic.repository.PlaylistDetailsRepository
+import com.androidprj.fuzic.repository.PlayerRepository
+import com.androidprj.fuzic.repository.PremiumRepository
+import com.androidprj.fuzic.repository.SettingsRepository
+import com.androidprj.fuzic.repository.SearchRepository
 import com.androidprj.fuzic.repository.UserRepository
 import com.androidprj.fuzic.repository.SettingsRepository
 import com.androidprj.fuzic.repository.PremiumRepository
@@ -37,6 +47,12 @@ abstract class RepositoryModule {
     abstract fun bindAuthRepository(
         remoteAuthRepository: RemoteAuthRepository
     ): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPasswordRecoveryRepository(
+        remoteAuthRepository: RemoteAuthRepository,
+    ): PasswordRecoveryRepository
 
     @Binds
     @Singleton
@@ -97,4 +113,28 @@ abstract class RepositoryModule {
     abstract fun bindSearchRepository(
         remoteSearchRepository: RemoteSearchRepository
     ): SearchRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPlayerRepository(
+        playerRepositoryImpl: PlayerRepositoryImpl
+    ): PlayerRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPlaylistDetailsRepository(
+        playlistDetailsRepositoryImpl: PlaylistDetailsRepositoryImpl
+    ): PlaylistDetailsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindArtistRepository(
+        artistRepositoryImpl: ArtistRepositoryImpl
+    ): ArtistRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNotificationRepository(
+        notificationRepositoryImpl: NotificationRepositoryImpl
+    ): NotificationRepository
 }

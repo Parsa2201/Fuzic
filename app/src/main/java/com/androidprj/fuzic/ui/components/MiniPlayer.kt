@@ -33,7 +33,8 @@ fun MiniPlayer(
     uiState: MiniPlayerUiState,
     onClick: () -> Unit,
     onPlayPauseClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    artworkModifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier
@@ -55,7 +56,7 @@ fun MiniPlayer(
                 artworkUrl = uiState.artworkUrl,
                 fallbackIcon = Icons.Default.Album,
                 contentDescription = stringResource(R.string.shell_cd_open_player),
-                modifier = Modifier.size(48.dp)
+                modifier = artworkModifier.size(48.dp)
             )
             Column(
                 modifier = Modifier.weight(1f),

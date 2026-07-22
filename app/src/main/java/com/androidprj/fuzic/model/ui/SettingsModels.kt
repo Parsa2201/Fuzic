@@ -23,6 +23,7 @@ data class SettingsUiState(
     val language: AppLanguageOption = AppLanguageOption.System,
     val selectedOverlay: SettingsOverlay = SettingsOverlay.None,
     val isLogoutConfirmationVisible: Boolean = false,
+    val isLogoutComplete: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 )

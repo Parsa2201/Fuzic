@@ -1,5 +1,7 @@
 package com.androidprj.fuzic.model.ui
 
+import androidx.paging.PagingData
+
 enum class ChatMessageStatus {
     Sending,
     Sent,
@@ -43,13 +45,12 @@ data class ChatListUiState(
 
 data class ChatDetailUiState(
     val conversation: ChatConversation? = null,
-    val messages: List<ChatMessage> = emptyList(),
+    val messages: PagingData<ChatMessage> = PagingData.empty(),
+    val optimisticMessages: List<ChatMessage> = emptyList(),
     val draft: String = "",
     val isOtherUserTyping: Boolean = false,
     val isOffline: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 ) {
-    val isEmpty: Boolean
-        get() = !isLoading && errorMessage == null && messages.isEmpty()
 }

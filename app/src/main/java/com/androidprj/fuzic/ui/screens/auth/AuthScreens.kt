@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -47,6 +48,7 @@ import com.androidprj.fuzic.model.ui.WelcomeUiState
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
+import kotlinx.coroutines.launch
 
 @Composable
 fun WelcomeRoute(
@@ -73,6 +75,7 @@ fun WelcomeScreen(
         initialPage = uiState.page.coerceIn(0, uiState.pageCount - 1),
         pageCount = { uiState.pageCount },
     )
+    val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(pagerState.currentPage) {
         onPageChanged(pagerState.currentPage)
     }
@@ -113,7 +116,14 @@ fun WelcomeScreen(
         }
         Spacer(Modifier.height(MaterialTheme.spacing.medium))
         Button(
-            onClick = if (pagerState.currentPage == uiState.pageCount - 1) onStartClick else onNextClick,
+            onClick = if (pagerState.currentPage == uiState.pageCount - 1) onStartClick else {
+                {
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                    }
+                    onNextClick()
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(

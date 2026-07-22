@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
+import kotlinx.coroutines.flow.flowOf
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
@@ -101,6 +104,7 @@ fun SearchScreen(
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val pagedResults = flowOf(uiState.results).collectAsLazyPagingItems()
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -152,18 +156,13 @@ fun SearchScreen(
                     message = stringResource(R.string.search_empty_query_message)
                 )
             }
-            uiState.shouldShowNoResults -> item {
-                SearchMessageContent(
-                    icon = Icons.Default.Search,
-                    title = stringResource(R.string.search_no_results_title),
-                    message = stringResource(R.string.search_no_results_message)
-                )
-            }
-            else -> items(uiState.results) { result ->
-                SearchResultRow(
-                    item = result,
-                    onClick = { onResultClick(result) }
-                )
+            else -> {
+                if (pagedResults.itemCount == 0) item {
+                    SearchMessageContent(icon = Icons.Default.Search, title = stringResource(R.string.search_no_results_title), message = stringResource(R.string.search_no_results_message))
+                }
+                items(count = pagedResults.itemCount, key = pagedResults.itemKey { it.id }) { index ->
+                    pagedResults[index]?.let { result -> SearchResultRow(item = result, onClick = { onResultClick(result) }) }
+                }
             }
         }
     }
@@ -459,7 +458,7 @@ private fun SearchScreenContentPersianPreview() {
 @Composable
 private fun SearchScreenHistoryPreview() {
     FuzicTheme {
-        SearchPreviewState(uiState = sampleSearchUiState().copy(query = "", results = emptyList()))
+        SearchPreviewState(uiState = sampleSearchUiState().copy(query = "", results = androidx.paging.PagingData.empty()))
     }
 }
 
@@ -593,7 +592,7 @@ private fun SearchMessageContentPreview() {
 @Composable
 private fun SearchPreviewState(uiState: SearchUiState) {
     var state by remember { mutableStateOf(uiState) }
-    var selectedResult by remember { mutableStateOf(uiState.results.firstOrNull()) }
+    var selectedResult by remember { mutableStateOf<SearchResultItem?>(null) }
     SearchScreen(
         uiState = state,
         onQueryChange = { state = state.copy(query = it) },
@@ -611,7 +610,7 @@ private fun sampleSearchUiState() = SearchUiState(
     query = stringResource(R.string.preview_search_query),
     selectedFilter = SearchFilter.Songs,
     history = sampleSearchHistory(),
-    results = sampleSearchResults()
+    results = androidx.paging.PagingData.from(sampleSearchResults())
 )
 
 @Composable

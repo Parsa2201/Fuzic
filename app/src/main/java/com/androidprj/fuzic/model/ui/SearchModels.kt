@@ -1,6 +1,7 @@
 package com.androidprj.fuzic.model.ui
 
 import androidx.annotation.StringRes
+import androidx.paging.PagingData
 import com.androidprj.fuzic.R
 
 data class SearchUiState(
@@ -8,7 +9,7 @@ data class SearchUiState(
     val selectedFilter: SearchFilter = SearchFilter.Songs,
     val filters: List<SearchFilter> = SearchFilter.entries,
     val history: List<String> = emptyList(),
-    val results: List<SearchResultItem> = emptyList(),
+    val results: PagingData<SearchResultItem> = PagingData.empty(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 ) {
@@ -19,7 +20,7 @@ data class SearchUiState(
         get() = query.isBlank() && !isLoading && errorMessage == null && history.isEmpty()
 
     val shouldShowNoResults: Boolean
-        get() = query.isNotBlank() && !isLoading && errorMessage == null && results.isEmpty()
+        get() = false
 }
 
 data class SearchResultItem(
