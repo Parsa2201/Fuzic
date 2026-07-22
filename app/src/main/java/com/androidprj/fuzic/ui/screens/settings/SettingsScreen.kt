@@ -46,6 +46,7 @@ import com.androidprj.fuzic.model.ui.SettingsOverlay
 import com.androidprj.fuzic.model.ui.SettingsUiState
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 
@@ -269,7 +270,7 @@ private fun SettingsLoadingContent(modifier: Modifier = Modifier) {
                     .fillMaxWidth()
                     .padding(vertical = MaterialTheme.spacing.small)
                     .height(SettingsSizes.LoadingRowHeight)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .fuzicShimmer(MaterialTheme.shapes.medium),
             )
         }
     }

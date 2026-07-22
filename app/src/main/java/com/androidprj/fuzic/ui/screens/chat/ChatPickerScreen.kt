@@ -1,24 +1,34 @@
 package com.androidprj.fuzic.ui.screens.chat
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.fuzicShimmer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.androidprj.fuzic.di.IoDispatcher
@@ -26,6 +36,7 @@ import com.androidprj.fuzic.repository.ChatRepository
 import com.androidprj.fuzic.util.StringProvider
 import com.androidprj.fuzic.model.ui.FollowUser
 import com.androidprj.fuzic.ui.theme.FuzicTheme
+import com.androidprj.fuzic.ui.theme.spacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -56,9 +67,30 @@ fun ChatPickerScreen(uiState: ChatPickerUiState, onBackClick: () -> Unit, onConv
         DetailTopAppBar(stringResource(R.string.share_to_chat_title), onBackClick)
         when {
             uiState.errorMessage != null -> ScreenMessage(Icons.Default.Share, stringResource(R.string.share_to_chat_title), uiState.errorMessage)
-            uiState.isLoading -> CircularProgressIndicator()
+            uiState.isLoading -> ChatPickerLoadingContent()
             !uiState.isLoading && uiState.conversations.isEmpty() -> ScreenMessage(Icons.Default.Share, stringResource(R.string.share_to_chat_title), stringResource(R.string.share_to_chat_empty))
             else -> LazyColumn { items(uiState.conversations, key = { it.id }) { conversation -> ListItem(headlineContent = { Text(conversation.participant.displayName) }, supportingContent = { Text(conversation.lastMessagePreview) }, modifier = Modifier.fillMaxWidth().clickable { onConversationClick(conversation) }) } }
+        }
+    }
+}
+
+@Composable
+private fun ChatPickerLoadingContent() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(MaterialTheme.spacing.medium),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+    ) {
+        repeat(5) {
+            Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
+                Spacer(Modifier.size(48.dp).fuzicShimmer(CircleShape))
+                Column(
+                    modifier = Modifier.width(180.dp),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+                ) {
+                    Spacer(Modifier.fillMaxWidth(0.5f).height(16.dp).fuzicShimmer())
+                    Spacer(Modifier.fillMaxWidth(0.8f).height(12.dp).fuzicShimmer())
+                }
+            }
         }
     }
 }

@@ -69,6 +69,7 @@ import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.previewArtworkUri
+import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 import kotlinx.coroutines.flow.flowOf
@@ -490,7 +491,7 @@ private fun ChatComposer(
 private fun ChatLoading() {
     Column(Modifier.fillMaxWidth().padding(MaterialTheme.spacing.medium), verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
         repeat(5) {
-            Spacer(Modifier.fillMaxWidth().size(width = 1.dp, height = 64.dp).background(MaterialTheme.colorScheme.surfaceVariant))
+            Spacer(Modifier.fillMaxWidth().size(width = 1.dp, height = 64.dp).fuzicShimmer(MaterialTheme.shapes.medium))
         }
     }
 }

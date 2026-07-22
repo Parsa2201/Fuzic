@@ -24,8 +24,8 @@ import com.androidprj.fuzic.ui.theme.FuzicTheme
 fun Modifier.fuzicShimmer(shape: Shape = MaterialTheme.shapes.medium): Modifier {
     val transition = rememberInfiniteTransition(label = "fuzicShimmer")
     val shimmerOffset by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 900f,
+        initialValue = -320f,
+        targetValue = 960f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 1200),
             repeatMode = RepeatMode.Restart
@@ -41,8 +41,8 @@ fun Modifier.fuzicShimmer(shape: Shape = MaterialTheme.shapes.medium): Modifier 
     return clip(shape).background(
         brush = Brush.linearGradient(
             colors = colors,
-            start = Offset(shimmerOffset - 900f, shimmerOffset - 900f),
-            end = Offset(shimmerOffset, shimmerOffset)
+        start = Offset(shimmerOffset - 320f, 0f),
+        end = Offset(shimmerOffset, 0f)
         )
     )
 }

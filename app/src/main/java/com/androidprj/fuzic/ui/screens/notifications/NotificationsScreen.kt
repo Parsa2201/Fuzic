@@ -51,6 +51,7 @@ import com.androidprj.fuzic.model.ui.NotificationType
 import com.androidprj.fuzic.model.ui.NotificationsUiState
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
@@ -287,20 +288,13 @@ private fun NotificationsLoadingContent(modifier: Modifier = Modifier) {
             .padding(MaterialTheme.spacing.medium),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
     ) {
-        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         repeat(5) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(MaterialTheme.spacing.extraLarge),
-                )
-            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(MaterialTheme.spacing.extraLarge)
+                    .fuzicShimmer(MaterialTheme.shapes.medium),
+            )
         }
     }
 }
