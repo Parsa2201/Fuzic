@@ -19,7 +19,6 @@ import com.androidprj.fuzic.repository.MusicRepository
 import com.androidprj.fuzic.repository.NotificationRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
 import com.androidprj.fuzic.repository.PlaylistDetailsRepository
-import com.androidprj.fuzic.repository.PlayerRepository
 import com.androidprj.fuzic.repository.PremiumRepository
 import com.androidprj.fuzic.repository.SettingsRepository
 import com.androidprj.fuzic.repository.SearchRepository
@@ -99,12 +98,6 @@ abstract class RepositoryModule {
     abstract fun bindDownloadRepository(
         downloadRepositoryImpl: DownloadRepositoryImpl
     ): DownloadRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindPlayerRepository(
-        playerRepositoryImpl: PlayerRepositoryImpl
-    ): PlayerRepository
 
     @Binds
     @Singleton
