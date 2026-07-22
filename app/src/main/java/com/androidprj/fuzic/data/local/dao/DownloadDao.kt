@@ -20,4 +20,7 @@ interface DownloadDao {
 
     @Query("UPDATE downloads SET isDownloadInProgress = :inProgress WHERE songId = :songId")
     suspend fun updateProgressState(songId: String, inProgress: Boolean)
+
+    @Query("SELECT * FROM downloads WHERE songId = :songId")
+    suspend fun getDownload(songId: String): DownloadedSongEntity?
 }

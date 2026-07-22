@@ -44,23 +44,39 @@ class DownloadWorker @AssistedInject constructor(
             )
             downloadDao.insert(entity)
 
-            // Simulate actual downloading since we don't have real audio URLs yet
-            // Normally: download from audioUrl, save to Context.filesDir
-            // Since this is integration, we can write a dummy file or fetch from supabase storage
+            // Perform real download
             val localFile = File(context.filesDir, "downloads/$songId.mp3")
             localFile.parentFile?.mkdirs()
             
-            // if audioUrl is a supabase storage path, we can download it. For now just create a stub.
+            var totalBytes = 0L
             if (!localFile.exists()) {
                 localFile.createNewFile()
-                FileOutputStream(localFile).use { it.write("stub_audio_data".toByteArray()) }
+                java.net.URL(audioUrl).openStream().use { input ->
+                    FileOutputStream(localFile).use { output ->
+                        val buffer = ByteArray(8192)
+                        var bytesRead: Int
+                        while (input.read(buffer).also { bytesRead = it } != -1) {
+                            output.write(buffer, 0, bytesRead)
+                            totalBytes += bytesRead
+                        }
+                    }
+                }
+            } else {
+                totalBytes = localFile.length()
+            }
+            
+            // Format file size
+            val fileSizeLabel = if (totalBytes > 0) {
+                String.format("%.1f MB", totalBytes / (1024.0 * 1024.0))
+            } else {
+                "0 MB"
             }
             
             // Update state to completed
             val updatedEntity = entity.copy(
                 isDownloadInProgress = false,
                 localFilePath = localFile.absolutePath,
-                fileSizeLabel = "3.2 MB" // Mock size
+                fileSizeLabel = fileSizeLabel
             )
             downloadDao.insert(updatedEntity)
             

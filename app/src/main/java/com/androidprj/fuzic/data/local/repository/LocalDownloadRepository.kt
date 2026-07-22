@@ -14,9 +14,13 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import java.io.File
 
+import com.androidprj.fuzic.repository.PremiumRepository
+import kotlinx.coroutines.flow.first
+
 class LocalDownloadRepository @Inject constructor(
     private val downloadDao: DownloadDao,
-    private val workManager: WorkManager
+    private val workManager: WorkManager,
+    private val premiumRepository: PremiumRepository
 ) : DownloadRepository {
 
     override fun observeDownloads(sortOption: DownloadSortOption): Flow<List<DownloadedSongItem>> {
@@ -43,6 +47,11 @@ class LocalDownloadRepository @Inject constructor(
 
     override suspend fun enqueueDownload(request: DownloadRequest): Result<Unit> {
         return try {
+            val isPremium = premiumRepository.observePremiumStatus().first()
+            if (!isPremium) {
+                return Result.failure(Exception("Premium subscription is required to download songs."))
+            }
+            
             val data = Data.Builder()
                 .putString("songId", request.song.id)
                 .putString("title", request.song.title)
@@ -64,8 +73,9 @@ class LocalDownloadRepository @Inject constructor(
 
     override suspend fun deleteDownload(downloadId: String): Result<Unit> {
         return try {
+            val entity = downloadDao.getDownload(downloadId)
+            entity?.localFilePath?.let { File(it).delete() }
             downloadDao.delete(downloadId)
-            // also remove the file physically (in real app, we would resolve path)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -73,12 +83,24 @@ class LocalDownloadRepository @Inject constructor(
     }
 
     override suspend fun restoreDownload(downloadId: String): Result<Unit> {
-        // Simple mock restore
-        return Result.success(Unit)
+        // Since we physically delete the file, restore would need to re-download. 
+        // For now, this could just return success or failure.
+        return Result.failure(Exception("Not implemented"))
     }
 
     override suspend fun removeDownloadFile(downloadId: String): Result<Unit> {
-        // Physical deletion placeholder
-        return Result.success(Unit)
+        return try {
+            val entity = downloadDao.getDownload(downloadId)
+            entity?.localFilePath?.let { File(it).delete() }
+            // Remove file path from DB, but keep entity? The review says: "Delete the physical file before/with the Room entry".
+            // Since deleteDownload does both, removeDownloadFile might do the same or just clear the path.
+            // We'll clear the path and mark not downloaded.
+            entity?.let {
+                downloadDao.insert(it.copy(localFilePath = null, isDownloadInProgress = false, fileSizeLabel = "0 MB"))
+            }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

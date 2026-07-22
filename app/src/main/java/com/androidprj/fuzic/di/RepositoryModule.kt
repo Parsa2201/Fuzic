@@ -24,13 +24,9 @@ import com.androidprj.fuzic.repository.PremiumRepository
 import com.androidprj.fuzic.repository.SettingsRepository
 import com.androidprj.fuzic.repository.SearchRepository
 import com.androidprj.fuzic.repository.UserRepository
-import com.androidprj.fuzic.repository.SettingsRepository
-import com.androidprj.fuzic.repository.PremiumRepository
-import com.androidprj.fuzic.repository.SearchRepository
 import com.androidprj.fuzic.data.settings.LocalSettingsRepository
 import com.androidprj.fuzic.data.settings.LocalPremiumRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteSearchRepository
-import com.androidprj.fuzic.repository.DownloadRepository
 import com.androidprj.fuzic.data.local.repository.LocalDownloadRepository
 import dagger.Binds
 import dagger.Module

@@ -30,6 +30,15 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.catch
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.emitAll
+import io.github.jan.supabase.realtime.broadcastFlow
 import java.util.UUID
 import javax.inject.Inject
 import com.androidprj.fuzic.model.remote.RecentConversationDto
@@ -59,9 +68,14 @@ class RemoteChatRepository @Inject constructor(
     override fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>> {
         val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: return flowOf(PagingData.empty())
         
+        val scope = CoroutineScope(Dispatchers.IO)
         // Sync in background
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             syncChatHistory(conversationId)
+        }
+        
+        scope.launch {
+            observeMessageInserts(conversationId).collect {}
         }
         
         return Pager(
@@ -72,7 +86,22 @@ class RemoteChatRepository @Inject constructor(
         }
     }
 
-    override fun observeTypingStatus(conversationId: String): Flow<TypingStatus?> = flowOf(null)
+    override fun observeTypingStatus(conversationId: String): Flow<TypingStatus?> = flow {
+        val channel = supabaseClient.channel("typing:$conversationId")
+        channel.subscribe(blockUntilSubscribed = false)
+        
+        channel.broadcastFlow<kotlinx.serialization.json.JsonObject>(event = "typing")
+            .collect { payload ->
+                val isTyping = payload["isTyping"]?.jsonPrimitive?.booleanOrNull ?: false
+                val userId = payload["userId"]?.jsonPrimitive?.content ?: ""
+                
+                if (isTyping) {
+                    emit(TypingStatus(conversationId = conversationId, userId = userId, updatedAtEpochMillis = System.currentTimeMillis()))
+                } else {
+                    emit(null)
+                }
+            }
+    }
 
     override suspend fun sendTextMessage(
         conversationId: String,
@@ -109,7 +138,19 @@ class RemoteChatRepository @Inject constructor(
     }
 
     override suspend fun setTyping(conversationId: String, isTyping: Boolean): Result<Unit> {
-        return Result.success(Unit)
+        return try {
+            val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
+            val channel = supabaseClient.channel("typing:$conversationId")
+            
+            val payload = buildJsonObject {
+                put("userId", currentUserId)
+                put("isTyping", isTyping)
+            }
+            channel.broadcast(event = "typing", message = payload)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun refreshConversation(conversationId: String): Result<Unit> {
@@ -193,12 +234,14 @@ class RemoteChatRepository @Inject constructor(
         }
     }
 
-    private fun observeMessageInserts(conversationId: String): Flow<ChatMessage> {
+    private fun observeMessageInserts(conversationId: String): Flow<ChatMessage> = flow {
         val currentUserId = supabaseClient.auth.currentUserOrNull()?.id 
             ?: throw Exception("Not logged in")
             
         val channel = supabaseClient.channel("public:messages")
-        return channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+        channel.subscribe(blockUntilSubscribed = false)
+        
+        val changeFlow = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
             table = "messages"
         }.map { it.decodeRecord<MessageDto>() }
          .filter { message -> message.conversationId == conversationId }
@@ -207,6 +250,8 @@ class RemoteChatRepository @Inject constructor(
              chatDao.insertMessage(it) // Write directly to cache
              it.toChatMessage(currentUserId) 
          }
+         
+        emitAll(changeFlow)
     }
 
     @kotlinx.serialization.Serializable
