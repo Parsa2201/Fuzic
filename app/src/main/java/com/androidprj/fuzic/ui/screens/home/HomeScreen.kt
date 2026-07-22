@@ -55,6 +55,7 @@ import com.androidprj.fuzic.model.ui.FeaturedMusicItem
 import com.androidprj.fuzic.model.ui.HomeMusicSection
 import com.androidprj.fuzic.model.ui.HomeQuickAction
 import com.androidprj.fuzic.model.ui.HomeUiState
+import com.androidprj.fuzic.model.ui.MusicItemType
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.SectionHeader
@@ -223,7 +224,7 @@ private fun DailyPicksCarousel(
         ) { page ->
             DailyPickCard(
                 item = items[page],
-                onClick = { onItemClick(items[page]) }
+                onClick = items[page].navigationClick(onItemClick),
             )
         }
     }
@@ -246,14 +247,14 @@ private fun DailyPicksCarouselPreview() {
 @Composable
 private fun DailyPickCard(
     item: FeaturedMusicItem,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1.7f)
-            .clickable(onClick = onClick),
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
         Box(
@@ -428,7 +429,7 @@ private fun MusicCarouselSection(
             items(section.items) { item ->
                 MusicCard(
                     item = item,
-                    onClick = { onItemClick(item) }
+                    onClick = item.navigationClick(onItemClick),
                 )
             }
         }
@@ -452,13 +453,13 @@ private fun MusicCarouselSectionPreview() {
 @Composable
 private fun MusicCard(
     item: FeaturedMusicItem,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .width(HomeSizes.MusicCardWidth)
-            .clickable(onClick = onClick)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
     ) {
         MusicArtwork(
             artworkUrl = item.artworkUrl,
@@ -485,6 +486,10 @@ private fun MusicCard(
         )
     }
 }
+
+private fun FeaturedMusicItem.navigationClick(
+    onItemClick: (FeaturedMusicItem) -> Unit,
+): (() -> Unit)? = if (type == MusicItemType.Album) null else ({ onItemClick(this) })
 
 @Preview(name = "Music card", showBackground = true)
 @Composable
