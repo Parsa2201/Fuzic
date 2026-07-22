@@ -32,13 +32,29 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
+import com.androidprj.fuzic.model.remote.RecentConversationDto
+import com.androidprj.fuzic.model.mapper.toChatConversation
 
 class RemoteChatRepository @Inject constructor(
     private val supabaseClient: SupabaseClient,
     private val chatDao: ChatDao
 ) : ChatRepository {
 
-    override fun observeConversations(): Flow<List<ChatConversation>> = flowOf(emptyList())
+    override fun observeConversations(): Flow<List<ChatConversation>> = flow {
+        val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: return@flow
+        try {
+            val conversations = supabaseClient.postgrest["recent_conversations"]
+                .select {
+                    filter { eq("user_id", currentUserId) }
+                }
+                .decodeList<RecentConversationDto>()
+                .map { it.toChatConversation() }
+            emit(conversations)
+        } catch (e: Exception) {
+            // Emit empty or handle error
+            emit(emptyList())
+        }
+    }
 
     override fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>> {
         val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: return flowOf(PagingData.empty())

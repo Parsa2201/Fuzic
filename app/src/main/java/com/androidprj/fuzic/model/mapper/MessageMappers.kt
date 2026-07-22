@@ -3,6 +3,9 @@ package com.androidprj.fuzic.model.mapper
 import com.androidprj.fuzic.data.local.entity.ChatMessageEntity
 import com.androidprj.fuzic.model.remote.MessageDto
 import com.androidprj.fuzic.model.ui.ChatMessage
+import com.androidprj.fuzic.model.ui.ChatConversation
+import com.androidprj.fuzic.model.remote.RecentConversationDto
+import com.androidprj.fuzic.model.ui.FollowUser
 import com.androidprj.fuzic.model.ui.ChatMessageStatus
 import com.androidprj.fuzic.model.ui.ChatMessageType
 import kotlinx.datetime.Instant
@@ -70,5 +73,29 @@ fun ChatMessage.toChatMessageEntity(conversationId: String, currentUserId: Strin
         sharedSongId = sharedSongId ?: this.song?.id,
         status = this.status,
         createdAtEpochMillis = System.currentTimeMillis()
+    )
+}
+
+fun RecentConversationDto.toChatConversation(): ChatConversation {
+    val epochMillis = try {
+        this.lastMessageTime?.let { Instant.parse(it).toEpochMilliseconds() } ?: System.currentTimeMillis()
+    } catch (e: Exception) {
+        System.currentTimeMillis()
+    }
+    
+    return ChatConversation(
+        id = this.conversationId,
+        participant = FollowUser(
+            id = this.otherUserId,
+            displayName = this.otherUserName ?: "Unknown",
+            username = this.otherUserUsername ?: "unknown",
+            avatarUrl = this.otherUserAvatarUrl,
+            isFollowing = false,
+            isCurrentUser = false
+        ),
+        lastMessagePreview = this.lastMessagePreview ?: "",
+        lastMessageTimeLabel = formatTime(epochMillis),
+        unreadCount = this.unreadCount,
+        isOnline = false // Will be updated via presence
     )
 }
