@@ -47,6 +47,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +69,7 @@ import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.previewArtworkUri
+import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 import kotlinx.coroutines.flow.flowOf
@@ -186,7 +188,8 @@ fun ChatDetailScreen(
             )
             else -> {
                 val listState = rememberLazyListState()
-                val pagedMessages = flowOf(uiState.messages).collectAsLazyPagingItems()
+                val messagesFlow = remember(uiState.messages) { flowOf(uiState.messages) }
+                val pagedMessages = messagesFlow.collectAsLazyPagingItems()
                 val visibleUnreadMessages = pagedMessages.itemSnapshotList.items.filter {
                     !it.isMine && it.status != ChatMessageStatus.Read
                 }
@@ -488,7 +491,7 @@ private fun ChatComposer(
 private fun ChatLoading() {
     Column(Modifier.fillMaxWidth().padding(MaterialTheme.spacing.medium), verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
         repeat(5) {
-            Spacer(Modifier.fillMaxWidth().size(width = 1.dp, height = 64.dp).background(MaterialTheme.colorScheme.surfaceVariant))
+            Spacer(Modifier.fillMaxWidth().size(width = 1.dp, height = 64.dp).fuzicShimmer(MaterialTheme.shapes.medium))
         }
     }
 }
@@ -593,6 +596,68 @@ private fun ChatDetailSendingPreview() {
                 )),
             ),
             {}, {}, {}, {}, {}, {},
+        )
+    }
+}
+
+@Preview(name = "Chat detail message types - English", showBackground = true)
+@Preview(name = "Chat detail message types - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ChatDetailMessageTypesPreview() {
+    FuzicTheme {
+        ChatDetailScreen(
+            uiState = sampleChatDetailState().copy(
+                messages = androidx.paging.PagingData.empty(),
+                optimisticMessages = listOf(
+                        ChatMessage(
+                            id = "incoming-text",
+                            senderId = "raha",
+                            text = "I found a new playlist for you.",
+                            status = ChatMessageStatus.Delivered,
+                            timeLabel = "10:30",
+                            isMine = false,
+                        ),
+                        ChatMessage(
+                            id = "sent-text",
+                            senderId = "me",
+                            text = "Nice, send it over!",
+                            status = ChatMessageStatus.Sent,
+                            timeLabel = "10:31",
+                            isMine = true,
+                        ),
+                        ChatMessage(
+                            id = "read-text",
+                            senderId = "me",
+                            text = "Added it to my library.",
+                            status = ChatMessageStatus.Read,
+                            timeLabel = "10:32",
+                            isMine = true,
+                        ),
+                        ChatMessage(
+                            id = "song-share",
+                            senderId = "raha",
+                            type = ChatMessageType.SongShare,
+                            song = sampleSong(),
+                            status = ChatMessageStatus.Delivered,
+                            timeLabel = "10:33",
+                            isMine = false,
+                        ),
+                        ChatMessage(
+                            id = "sending-text",
+                            senderId = "me",
+                            text = "Listening now!",
+                            status = ChatMessageStatus.Sending,
+                            timeLabel = "10:34",
+                            isMine = true,
+                        ),
+                    ),
+            ),
+            onBackClick = {},
+            onDraftChange = {},
+            onSendClick = {},
+            onShareSongClick = {},
+            onSongClick = {},
+            onRetryClick = {},
         )
     }
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.di.IoDispatcher
 import com.androidprj.fuzic.model.ui.AppLanguageOption
+import com.androidprj.fuzic.model.ui.AppFontScale
 import com.androidprj.fuzic.model.ui.AppThemeOption
 import com.androidprj.fuzic.model.ui.SettingsOverlay
 import com.androidprj.fuzic.model.ui.SettingsUiState
@@ -26,9 +27,11 @@ sealed interface SettingsIntent {
     data object Retry : SettingsIntent
     data object ShowThemeOptions : SettingsIntent
     data object ShowLanguageOptions : SettingsIntent
+    data object ShowFontSizeOptions : SettingsIntent
     data object DismissOverlay : SettingsIntent
     data class ThemeSelected(val option: AppThemeOption) : SettingsIntent
     data class LanguageSelected(val option: AppLanguageOption) : SettingsIntent
+    data class FontScaleSelected(val option: AppFontScale) : SettingsIntent
     data object ShowLogoutConfirmation : SettingsIntent
     data object DismissLogoutConfirmation : SettingsIntent
     data object ConfirmLogout : SettingsIntent
@@ -53,9 +56,11 @@ class SettingsViewModel @Inject constructor(
             SettingsIntent.Retry -> observeSettings()
             SettingsIntent.ShowThemeOptions -> _uiState.update { it.copy(selectedOverlay = SettingsOverlay.Theme) }
             SettingsIntent.ShowLanguageOptions -> _uiState.update { it.copy(selectedOverlay = SettingsOverlay.Language) }
+            SettingsIntent.ShowFontSizeOptions -> _uiState.update { it.copy(selectedOverlay = SettingsOverlay.FontSize) }
             SettingsIntent.DismissOverlay -> _uiState.update { it.copy(selectedOverlay = SettingsOverlay.None) }
             is SettingsIntent.ThemeSelected -> setTheme(intent.option)
             is SettingsIntent.LanguageSelected -> setLanguage(intent.option)
+            is SettingsIntent.FontScaleSelected -> setFontScale(intent.option)
             SettingsIntent.ShowLogoutConfirmation -> _uiState.update { it.copy(isLogoutConfirmationVisible = true) }
             SettingsIntent.DismissLogoutConfirmation -> _uiState.update { it.copy(isLogoutConfirmationVisible = false) }
             SettingsIntent.ConfirmLogout -> logout()
@@ -79,6 +84,7 @@ class SettingsViewModel @Inject constructor(
                         it.copy(
                             theme = settings.theme,
                             language = settings.language,
+                            fontScale = settings.fontScale,
                             isLoading = false,
                             errorMessage = null,
                         )
@@ -128,6 +134,18 @@ class SettingsViewModel @Inject constructor(
                             errorMessage = it.message ?: stringProvider.get(R.string.settings_error_title),
                         )
                     },
+                )
+            }
+        }
+    }
+
+    private fun setFontScale(option: AppFontScale) {
+        viewModelScope.launch {
+            val result = withContext(ioDispatcher) { settingsRepository.setFontScale(option) }
+            _uiState.update { current ->
+                result.fold(
+                    onSuccess = { current.copy(fontScale = option, selectedOverlay = SettingsOverlay.None, errorMessage = null) },
+                    onFailure = { current.copy(selectedOverlay = SettingsOverlay.None, errorMessage = it.message ?: stringProvider.get(R.string.settings_error_title)) },
                 )
             }
         }

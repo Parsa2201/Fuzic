@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -41,11 +42,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.model.ui.AppLanguageOption
+import com.androidprj.fuzic.model.ui.AppFontScale
 import com.androidprj.fuzic.model.ui.AppThemeOption
 import com.androidprj.fuzic.model.ui.SettingsOverlay
 import com.androidprj.fuzic.model.ui.SettingsUiState
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 
@@ -55,11 +58,13 @@ fun SettingsRoute(
     onBackClick: () -> Unit,
     onThemeClick: () -> Unit,
     onLanguageClick: () -> Unit,
+    onFontSizeClick: () -> Unit = {},
     onLogoutClick: () -> Unit,
     onLogoutConfirm: () -> Unit,
     onLogoutDismiss: () -> Unit,
     onThemeSelected: (AppThemeOption) -> Unit,
     onLanguageSelected: (AppLanguageOption) -> Unit,
+    onFontScaleSelected: (AppFontScale) -> Unit = {},
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -68,11 +73,13 @@ fun SettingsRoute(
         onBackClick = onBackClick,
         onThemeClick = onThemeClick,
         onLanguageClick = onLanguageClick,
+        onFontSizeClick = onFontSizeClick,
         onLogoutClick = onLogoutClick,
         onLogoutConfirm = onLogoutConfirm,
         onLogoutDismiss = onLogoutDismiss,
         onThemeSelected = onThemeSelected,
         onLanguageSelected = onLanguageSelected,
+        onFontScaleSelected = onFontScaleSelected,
         onRetryClick = onRetryClick,
         modifier = modifier,
     )
@@ -84,11 +91,13 @@ fun SettingsScreen(
     onBackClick: () -> Unit,
     onThemeClick: () -> Unit,
     onLanguageClick: () -> Unit,
+    onFontSizeClick: () -> Unit = {},
     onLogoutClick: () -> Unit,
     onLogoutConfirm: () -> Unit,
     onLogoutDismiss: () -> Unit,
     onThemeSelected: (AppThemeOption) -> Unit,
     onLanguageSelected: (AppLanguageOption) -> Unit,
+    onFontScaleSelected: (AppFontScale) -> Unit = {},
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -119,6 +128,7 @@ fun SettingsScreen(
                 uiState = uiState,
                 onThemeClick = onThemeClick,
                 onLanguageClick = onLanguageClick,
+                onFontSizeClick = onFontSizeClick,
                 onLogoutClick = onLogoutClick,
             )
         }
@@ -133,6 +143,11 @@ fun SettingsScreen(
             selected = uiState.language,
             onDismiss = onLanguageClick,
             onSelected = onLanguageSelected,
+        )
+        SettingsOverlay.FontSize -> FontSizeSelectionDialog(
+            selected = uiState.fontScale,
+            onDismiss = onFontSizeClick,
+            onSelected = onFontScaleSelected,
         )
         SettingsOverlay.None -> Unit
     }
@@ -161,6 +176,7 @@ private fun SettingsContent(
     uiState: SettingsUiState,
     onThemeClick: () -> Unit,
     onLanguageClick: () -> Unit,
+    onFontSizeClick: () -> Unit,
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -179,6 +195,12 @@ private fun SettingsContent(
                     title = stringResource(R.string.settings_theme_title),
                     value = uiState.theme.label(),
                     onClick = onThemeClick,
+                )
+                SettingsRow(
+                    icon = Icons.Default.TextFields,
+                    title = stringResource(R.string.settings_font_size_title),
+                    value = uiState.fontScale.label(),
+                    onClick = onFontSizeClick,
                 )
             }
         }
@@ -211,6 +233,39 @@ private fun SettingsContent(
         }
     }
 }
+
+@Composable
+private fun FontSizeSelectionDialog(
+    selected: AppFontScale,
+    onDismiss: () -> Unit,
+    onSelected: (AppFontScale) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_font_size_title)) },
+        text = {
+            Column {
+                AppFontScale.entries.forEach { option ->
+                    ListItem(
+                        headlineContent = { Text(option.label()) },
+                        trailingContent = { RadioButton(selected = option == selected, onClick = { onSelected(option) }) },
+                        modifier = Modifier.clickable { onSelected(option) },
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+@Composable
+private fun AppFontScale.label(): String = stringResource(
+    when (this) {
+        AppFontScale.Small -> R.string.settings_font_size_small
+        AppFontScale.Default -> R.string.settings_font_size_default
+        AppFontScale.Large -> R.string.settings_font_size_large
+    },
+)
 
 @Composable
 private fun SettingsSection(
@@ -269,7 +324,7 @@ private fun SettingsLoadingContent(modifier: Modifier = Modifier) {
                     .fillMaxWidth()
                     .padding(vertical = MaterialTheme.spacing.small)
                     .height(SettingsSizes.LoadingRowHeight)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .fuzicShimmer(MaterialTheme.shapes.medium),
             )
         }
     }

@@ -25,10 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.ui.theme.spacing
+import com.androidprj.fuzic.ui.theme.FuzicTheme
 
 @Composable
 fun DetailTopAppBar(
@@ -195,4 +197,20 @@ private object ContentDetailSizes {
     val TitlePlaceholderHeight = 32.dp
     val TextPlaceholderHeight = 16.dp
     const val SubtitlePlaceholderFraction = 0.6f
+}
+
+@Preview(name = "Content detail components - English", showBackground = true)
+@Preview(name = "Content detail components - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun ContentDetailComponentsPreview() {
+    FuzicTheme {
+        Column {
+            DetailTopAppBar(title = stringResource(R.string.liked_songs_title), onBackClick = {})
+            SongListItem(
+                song = SongItem("preview-song", stringResource(R.string.preview_song_midnight_drive), stringResource(R.string.preview_artist_luna_ray)),
+                onClick = {}, onMoreClick = {},
+            )
+            DetailLoadingContent()
+        }
+    }
 }

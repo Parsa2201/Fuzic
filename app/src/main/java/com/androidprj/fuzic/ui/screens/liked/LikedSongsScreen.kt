@@ -22,6 +22,7 @@ fun LikedSongsRoute(
     onSongClick: (SongItem) -> Unit,
     onSongMoreClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
+    onPlayAllClick: () -> Unit = {}, onShuffleClick: () -> Unit = {}, onRemoveClick: (SongItem) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LikedSongsScreen(
@@ -30,6 +31,7 @@ fun LikedSongsRoute(
         onSongClick = onSongClick,
         onSongMoreClick = onSongMoreClick,
         onRetryClick = onRetryClick,
+        onPlayAllClick = onPlayAllClick, onShuffleClick = onShuffleClick, onRemoveClick = onRemoveClick,
         modifier = modifier,
     )
 }
@@ -41,6 +43,9 @@ fun LikedSongsScreen(
     onSongClick: (SongItem) -> Unit,
     onSongMoreClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
+    onPlayAllClick: () -> Unit = {},
+    onShuffleClick: () -> Unit = {},
+    onRemoveClick: (SongItem) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     SongCollectionScreen(

@@ -3,6 +3,7 @@ package com.androidprj.fuzic.model.ui
 data class AppSettings(
     val theme: AppThemeOption = AppThemeOption.System,
     val language: AppLanguageOption = AppLanguageOption.System,
+    val fontScale: AppFontScale = AppFontScale.Default,
 )
 
 data class DownloadRequest(
