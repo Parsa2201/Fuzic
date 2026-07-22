@@ -49,20 +49,22 @@ class RemoteChatRepository @Inject constructor(
     private val chatDao: ChatDao
 ) : ChatRepository {
 
-    override fun observeConversations(): Flow<List<ChatConversation>> = flow {
-        val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: return@flow
-        try {
-            val conversations = supabaseClient.postgrest["recent_conversations"]
-                .select {
-                    filter { eq("user_id", currentUserId) }
+    override fun observeConversations(): Flow<PagingData<ChatConversation>> {
+        val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: return emptyFlow()
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            pagingSourceFactory = {
+                com.androidprj.fuzic.data.remote.paging.GenericSupabasePagingSource { offset, limit ->
+                    supabaseClient.postgrest["recent_conversations"]
+                        .select {
+                            filter { eq("user_id", currentUserId) }
+                            range(offset, offset + limit - 1)
+                        }
+                        .decodeList<RecentConversationDto>()
+                        .map { it.toChatConversation() }
                 }
-                .decodeList<RecentConversationDto>()
-                .map { it.toChatConversation() }
-            emit(conversations)
-        } catch (e: Exception) {
-            // Emit empty or handle error
-            emit(emptyList())
-        }
+            }
+        ).flow
     }
 
     override fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>> {

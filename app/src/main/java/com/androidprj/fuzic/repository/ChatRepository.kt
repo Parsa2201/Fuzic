@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
  * implementations may resolve them through realtime channels, local cache, or remote queries.
  */
 interface ChatRepository {
-    fun observeConversations(): Flow<List<ChatConversation>>
+    fun observeConversations(): Flow<PagingData<ChatConversation>>
     fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>>
     fun observeTypingStatus(conversationId: String): Flow<TypingStatus?>
     suspend fun sendTextMessage(conversationId: String, receiverId: String, text: String): Result<ChatMessage>

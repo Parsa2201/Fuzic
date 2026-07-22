@@ -10,47 +10,49 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 
 class RemoteInteractionRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) : InteractionRepository {
 
-    override suspend fun getRecentlyPlayed(userId: String, offset: Long, limit: Long): Result<List<SongItem>> {
-        return try {
-            val songs = supabaseClient.postgrest["interactions"]
-                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
-                    filter {
-                        eq("user_id", userId)
-                        eq("interaction_type", "play")
+    override fun observeRecentlyPlayed(userId: String): Flow<PagingData<SongItem>> {
+        return Pager(PagingConfig(pageSize = 20)) {
+            com.androidprj.fuzic.data.remote.paging.GenericSupabasePagingSource { offset, limit ->
+                supabaseClient.postgrest["interactions"]
+                    .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
+                        filter {
+                            eq("user_id", userId)
+                            eq("interaction_type", "play")
+                        }
+                        order("created_at", order = Order.DESCENDING)
+                        range(offset, offset + limit - 1)
                     }
-                    order("created_at", order = Order.DESCENDING)
-                    range(offset, offset + limit - 1)
-                }
-                .decodeList<SongWrapper>()
-                .map { it.song.toSongItem() }
-            Result.success(songs)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+                    .decodeList<SongWrapper>()
+                    .map { it.song.toSongItem() }
+            }
+        }.flow
     }
 
-    override suspend fun getLikedSongs(userId: String, offset: Long, limit: Long): Result<List<SongItem>> {
-        return try {
-            val songs = supabaseClient.postgrest["interactions"]
-                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
-                    filter {
-                        eq("user_id", userId)
-                        eq("interaction_type", "like")
+    override fun observeLikedSongs(userId: String): Flow<PagingData<SongItem>> {
+        return Pager(PagingConfig(pageSize = 20)) {
+            com.androidprj.fuzic.data.remote.paging.GenericSupabasePagingSource { offset, limit ->
+                supabaseClient.postgrest["interactions"]
+                    .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
+                        filter {
+                            eq("user_id", userId)
+                            eq("interaction_type", "like")
+                        }
+                        order("created_at", order = Order.DESCENDING)
+                        range(offset, offset + limit - 1)
                     }
-                    order("created_at", order = Order.DESCENDING)
-                    range(offset, offset + limit - 1)
-                }
-                .decodeList<SongWrapper>()
-                .map { it.song.toSongItem() }
-            Result.success(songs)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+                    .decodeList<SongWrapper>()
+                    .map { it.song.toSongItem() }
+            }
+        }.flow
     }
 
     override suspend fun recordPlay(songId: String): Result<Unit> {

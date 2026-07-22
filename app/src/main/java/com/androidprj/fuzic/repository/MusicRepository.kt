@@ -2,11 +2,14 @@ package com.androidprj.fuzic.repository
 
 import com.androidprj.fuzic.model.ui.SongItem
 
+import kotlinx.coroutines.flow.Flow
+import androidx.paging.PagingData
+
 interface MusicRepository {
-    suspend fun getDailyPicks(offset: Long = 0, limit: Long = 20): Result<List<SongItem>>
-    suspend fun getTrendingSongs(offset: Long = 0, limit: Long = 20): Result<List<SongItem>>
-    suspend fun getNewReleases(offset: Long = 0, limit: Long = 20): Result<List<SongItem>>
-    suspend fun getMostPopular(offset: Long = 0, limit: Long = 20): Result<List<SongItem>>
+    fun observeDailyPicks(): Flow<PagingData<SongItem>>
+    fun observeTrendingSongs(): Flow<PagingData<SongItem>>
+    fun observeNewReleases(): Flow<PagingData<SongItem>>
+    fun observeMostPopular(): Flow<PagingData<SongItem>>
     suspend fun getSongById(songId: String): Result<SongItem>
-    suspend fun searchSongs(query: String, offset: Long = 0, limit: Long = 20): Result<List<SongItem>>
+    fun searchSongs(query: String): Flow<PagingData<SongItem>>
 }
