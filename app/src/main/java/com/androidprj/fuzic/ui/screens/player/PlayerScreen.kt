@@ -1,8 +1,10 @@
 package com.androidprj.fuzic.ui.screens.player
 
 import androidx.compose.animation.core.RepeatMode as AnimationRepeatMode
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -65,8 +67,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -93,6 +97,7 @@ import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 import kotlin.math.abs
 import kotlin.math.sin
+import kotlinx.coroutines.isActive
 
 @Composable
 fun PlayerRoute(
@@ -253,6 +258,7 @@ private fun PlayerContent(
     artworkModifier: Modifier = Modifier,
 ) {
     val song = uiState.currentSong ?: return
+    val artworkRotation = rememberArtworkRotation(isPlaying = uiState.isPlaying)
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -281,7 +287,9 @@ private fun PlayerContent(
         DetailArtwork(
             artworkUrl = song.artworkUrl,
             contentDescription = song.title,
-            modifier = artworkModifier.size(PlayerSizes.CoverSize),
+            modifier = artworkModifier
+                .size(PlayerSizes.CoverSize)
+                .graphicsLayer { rotationZ = artworkRotation },
         )
         Spacer(Modifier.height(MaterialTheme.spacing.medium))
         Text(
@@ -346,6 +354,26 @@ private fun PlayerContent(
             onPlaybackSpeedClick = onPlaybackSpeedClick,
         )
     }
+}
+
+@Composable
+private fun rememberArtworkRotation(isPlaying: Boolean): Float {
+    val rotation = androidx.compose.runtime.remember { Animatable(0f) }
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            while (isActive) {
+                rotation.animateTo(
+                    targetValue = rotation.value + PlayerSizes.ArtworkRotationDegrees,
+                    animationSpec = tween(
+                        durationMillis = PlayerSizes.ArtworkRotationDurationMillis,
+                        easing = LinearEasing,
+                    ),
+                )
+                rotation.snapTo(rotation.value % PlayerSizes.ArtworkRotationDegrees)
+            }
+        }
+    }
+    return rotation.value
 }
 
 @Composable
@@ -1071,6 +1099,8 @@ private object PlayerSizes {
     val PlayButtonSize = 72.dp
     val PlayIconSize = 36.dp
     val TransportIconSize = 32.dp
+    const val ArtworkRotationDegrees = 360f
+    const val ArtworkRotationDurationMillis = 12_000
 }
 
 private const val thirtyTwo = 32
