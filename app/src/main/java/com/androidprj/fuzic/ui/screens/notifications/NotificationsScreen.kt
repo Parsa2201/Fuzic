@@ -38,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -111,7 +112,8 @@ private fun NotificationsContent(
     onMarkAllReadClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val pagedNotifications = flowOf(uiState.notifications).collectAsLazyPagingItems()
+    val notificationsFlow = remember(uiState.notifications) { flowOf(uiState.notifications) }
+    val pagedNotifications = notificationsFlow.collectAsLazyPagingItems()
     val snapshot = pagedNotifications.itemSnapshotList.items
     val unreadCount = snapshot.count { !it.isRead }
     LazyColumn(

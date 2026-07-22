@@ -104,7 +104,8 @@ fun SearchScreen(
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val pagedResults = flowOf(uiState.results).collectAsLazyPagingItems()
+    val resultsFlow = remember(uiState.results) { flowOf(uiState.results) }
+    val pagedResults = resultsFlow.collectAsLazyPagingItems()
     LazyColumn(
         modifier = modifier
             .fillMaxSize()

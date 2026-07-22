@@ -47,6 +47,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -186,7 +187,8 @@ fun ChatDetailScreen(
             )
             else -> {
                 val listState = rememberLazyListState()
-                val pagedMessages = flowOf(uiState.messages).collectAsLazyPagingItems()
+                val messagesFlow = remember(uiState.messages) { flowOf(uiState.messages) }
+                val pagedMessages = messagesFlow.collectAsLazyPagingItems()
                 val visibleUnreadMessages = pagedMessages.itemSnapshotList.items.filter {
                     !it.isMine && it.status != ChatMessageStatus.Read
                 }
@@ -604,8 +606,8 @@ private fun ChatDetailMessageTypesPreview() {
     FuzicTheme {
         ChatDetailScreen(
             uiState = sampleChatDetailState().copy(
-                messages = androidx.paging.PagingData.from(
-                    listOf(
+                messages = androidx.paging.PagingData.empty(),
+                optimisticMessages = listOf(
                         ChatMessage(
                             id = "incoming-text",
                             senderId = "raha",
@@ -648,7 +650,6 @@ private fun ChatDetailMessageTypesPreview() {
                             isMine = true,
                         ),
                     ),
-                ),
             ),
             onBackClick = {},
             onDraftChange = {},
