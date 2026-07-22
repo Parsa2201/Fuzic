@@ -1,11 +1,11 @@
 # Spotify-Like Music Streaming App — Project SPEC
 
-**Author:** Sina (responsible for SPEC.md maintenance)
+**Author:** Sina (responsible for SPEC.md maintenance, **Media Playback chapter only** — chapter ownership is set per section)
 **Date:** 19 Tir 1405 (10 Jul 2026)
 **Course:** Mobile Device Programming, Amirkabir University of Technology
 **Prof:** Dr. Masoumeh Taromirad
 **Deadline:** 29 Tir 1405 (20 Jul 2026)
-**Document status:** Draft — to be revised after team meeting on 19 Tir 20:00.
+**Disclaimer:** This document is the legacy feature spec. The current source of truth for responsibilities is the Eraser diagrams (file: "Android Project", team: Parsa's Team 2) — see AGENTS.md → "Service-lane split (post Phase 1)". Spec sections still describe the feature surface; ownership lives in the diagrams.
 
 ---
 
@@ -290,7 +290,7 @@ Show the current user's profile, follow stats, premium status, and provide acces
 - Standard `LazyColumn` for the profile sections.
 - Each tappable row is a navigation entry.
 - Stats use the shared theme typography.
-- [TBD by team — who owns the Profile tab UI; Sina planned to own follow lists + settings but not the rest]
+- **Ownership:** Profile tab UI is reassigned out of Sina's lane (see AGENTS.md "Service-lane split"). The Follow Lists screens and the Settings screen, which Sina previously planned to own, are part of the Chat Track / later-phase deliverables and no longer belong to the playback slice.
 
 ### 11.5 Edge cases
 - No avatar set → default avatar.
@@ -367,6 +367,20 @@ Differentiate free vs premium users. The only behavioral difference is offline d
 - User has `isPremium: boolean` field.
 - Persistence: stored on the backend (Supabase) and cached in DataStore for offline access.
 
+### 12.4.1 Ownership note (per diagrams)
+
+Per the Development Dependency Graph diagram, the Playback Track (Sina) owns Media3 Controller, Playback State, Mini Player Logic, Full Player Logic, and Notification Controls. The full-player Canvas-drawn visualizer is part of Full Player Logic and is therefore Sina's.
+
+The PlayerController service exposes a public Playback API that:
+
+- Streams from URL if no local file exists for the songId.
+- Plays local file (under app-private storage) when one exists.
+- Exposes playback state (current song, queue, position, duration, playing/paused, shuffle, repeat, speed, sleep timer).
+- Exposes controls (play, pause, seekTo, next, prev, skipToIndex, setShuffle, setRepeat, setSpeed, setQueue).
+- Exposes a media-session integration for lock-screen / notification controls.
+
+Callers (Home, Search, Downloads, Playlists, the later-phase Chat SongShareCard) only depend on that public Playback API — never on Media3 internals.
+
 ### 13.4 Technical approach
 - Premium check lives in a `UserService` (or `SubscriptionService`).
 - Download button visibility is driven by `isPremium` from the ViewModel.
@@ -383,6 +397,8 @@ Differentiate free vs premium users. The only behavioral difference is offline d
 ---
 
 ## 14. Feature: Real-Time Chat (Direct Messages)
+
+**Lane:** Chat Track (Development Dependency Graph → pink group). Out of Sina's lane for this project. Awaiting reassignment after Phase 1. The shared-media playback path in §14.4 ("Share-song-as-message") calls the public PlayerController API (§12.4.1); chat never touches Media3 internals.
 
 ### 14.1 Goal
 Allow users to send and receive direct messages in real time, with read receipts, typing indicators, and the ability to share songs inline.
@@ -477,6 +493,8 @@ Collection: conversations (or derived from messages)
 
 ## 15. Feature: Follow System
 
+**Lane:** Chat Track (later phase, paired with the Chat Track per Development Dependency Graph). Was previously assigned to Sina; the service-lane split reassigned this out of the Playback Track.
+
 ### 15.1 Goal
 Let users search for other users, follow/unfollow them, and view lists of who they follow and who follows them.
 
@@ -527,6 +545,8 @@ Collection: follows
 
 ## 16. Feature: Settings
 
+**Lane:** UI Track / Screen Integration Track (per Development Dependency Graph). Was previously planned under Sina's slice; the service-lane split reassigned this out of the Playback Track.
+
 ### 16.1 Goal
 Allow the user to change app language, theme, and log out.
 
@@ -562,17 +582,19 @@ Allow the user to change app language, theme, and log out.
 
 ## 17. Feature: Local Data (Room)
 
-| Table | Used for | Owner |
-|---|---|---|
-| `messages` | Offline chat history cache | Sina (chat) |
-| `search_history` | Saved search queries (music + user search) | [TBD] |
-| `downloads` | Downloaded song metadata + file path | [TBD] |
-| `liked_songs` | Liked songs | [TBD] |
-| `recently_played` | Recently played songs | [TBD] |
-| `playlists` | Local cache of playlists | [TBD] |
-| `chat_search_history` | Saved user search queries (follow system) | Sina (follow) |
+Expected Room tables. Final ownership per lane is recorded in AGENTS.md → "Local Data". This spec section keeps the schema shape only.
 
-**Schema decisions are TBD by team.** Sina is drafting tentative schemas in his slice-specific notes.
+| Table | Used for | Lane |
+|---|---|---|
+| `messages` | Offline chat history cache | Chat Track (later phase) |
+| `search_history` | Saved search queries (music + user search) | UI / Search Track |
+| `downloads` | Downloaded song metadata + file path | Playback Track (Sina) |
+| `liked_songs` | Liked songs | Playback Track (Sina) |
+| `recently_played` | Recently played songs | Playback Track (Sina) |
+| `playlists` | Local cache of playlists | Backend Track (Bagher) |
+| `chat_search_history` | Saved user search queries (follow system) | Chat Track (later phase) |
+
+**Schema decisions are made per-lane in PRs.** Sina drafts tentative schemas only for the Playback Track tables (`downloads`, `liked_songs`, `recently_played`) since those are his lane.
 
 ---
 
@@ -607,7 +629,9 @@ Sub-navigation: standard back-stack within each tab.
 
 Cross-cutting screens (chat, settings, follow lists, full-player) are reached from multiple entry points.
 
-**Sina's slice contributes these destinations:** [TBD after team meeting — depends on who owns what]
+**Sina's Playback Track contributes these navigation destinations:** full-player screen (reachable from mini-player shared-element transition and from any tab that opens the queue — Home, Search, Downloads, Playlists, later Chat SongShareCard).
+
+Chat Track destinations (chat list, chat detail, follow lists, settings, song-share composable routes) are not part of Sina's Playback Track and are owned by the assignee of that lane.
 
 ---
 
@@ -619,20 +643,22 @@ Per the course spec:
 
 ---
 
-## 21. Open Questions (to resolve at 19 Tir 20:00 team meeting)
+## 21. Open Questions (carried from the original planning pass)
 
-1. **Supabase Realtime:** Are the `messages`, `conversations`, and `typing` tables added to the `supabase_realtime` publication? Who confirms with Bagher?
-2. **Shared `MaterialTheme`:** Which teammate owns the design system file?
-3. **Shared services (UserService, AuthService, PlayerService, ThemeManager):** Who owns each?
-4. **Profile tab ownership:** Sina planned to own the follow lists + settings entry, but not the rest of the Profile tab. Confirm split.
-5. **Logout policy:** Does logging out clear Sina's offline chat cache?
-6. **Logout behavior on cached songs:** What happens to downloads on logout?
-7. **Search endpoint:** Backend owner (Bagher) to confirm which Supabase tables/columns are searchable and which Postgres full-text indexes exist (or need to be added).
-8. **Song catalog minimum:** Spec requires at least 50 real songs. Who curates the list? Where do audio files live?
-9. **Git workflow:** Branch strategy (trunk-based? feature branches?), PR review rules, daily sync time.
-10. **Code style / formatter:** ktlint? detekt? Standard Android Studio formatter?
-11. **Paging 3 in chat history v1:** Spec requires it for long lists, but Sina's slice can defer to a v1.5 if time-constrained. Confirm.
-12. **Visualizer:** Canvas-drawn waveform in the full player. Who owns this?
+> Status note: the answers below are populated against the current Eraser diagrams. Anything still genuinely unresolved stays below as an Open Question.
+
+1. **Supabase Realtime:** Are the `messages`, `conversations`, and `typing` tables added to the `supabase_realtime` publication? Who confirms with Bagher? *(still open — needed by the Chat Track owner, not by Sina)*
+2. **Shared `MaterialTheme`:** Which teammate owns the design system file? *(open)*
+3. **Shared services (UserService, AuthService, PlayerService, ThemeManager):** Who owns each? *(partly resolved: `PlayerService` / `PlayerController` is Sina, per §12.4.1; the other three still open)*
+4. ~~**Profile tab ownership:** Sina planned to own the follow lists + settings entry, but not the rest of the Profile tab. Confirm split.~~ **Resolved:** Profile tab UI and the follow-lists / Settings entry are no longer in Sina's lane (Chat Track / later phase). See §11.4.
+5. **Logout policy:** Does logging out clear offline chat cache? *(open — Chat Track territory)*
+6. **Logout behavior on cached songs:** What happens to downloads on logout? *(open; the download-row lifecycle in §17 is Sina's since downloads are in his lane, but the logout decision is a product call)*
+7. **Search endpoint:** Backend owner (Bagher) to confirm which Supabase tables/columns are searchable and which Postgres full-text indexes exist (or need to be added). *(open)*
+8. **Song catalog minimum:** Spec requires at least 50 real songs. Who curates the list? Where do audio files live? *(open; playback consumes the URLs regardless of who curates)*
+9. **Git workflow:** Branch strategy (trunk-based? feature branches?), PR review rules, daily sync time. *(open)*
+10. **Code style / formatter:** ktlint? detekt? Standard Android Studio formatter? *(open)*
+11. **Paging 3 in chat history v1:** Spec requires it for long lists; chat can defer to a v1.5 if time-constrained. *(open — Chat Track call)*
+12. ~~**Visualizer:** Canvas-drawn waveform in the full player. Who owns this?~~ **Resolved:** Playback Track (Sina) owns it, as part of Full Player Logic (§12.4.1).
 
 ---
 
@@ -642,4 +668,4 @@ Per the course spec:
 
 ---
 
-**End of SPEC.md draft v2. Sina will edit after the 19 Tir 20:00 team meeting to resolve the open questions and assign feature ownership.**
+**End of SPEC.md.** Feature surface stays in this document; service-lane ownership lives in the Eraser diagrams and AGENTS.md's "Service-lane split (post Phase 1)". Update via PR when a feature spec changes.
