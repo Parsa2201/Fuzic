@@ -193,9 +193,15 @@ fun ChatDetailScreen(
                 LaunchedEffect(visibleUnreadMessages.map(ChatMessage::id)) {
                     onVisibleUnreadMessages(visibleUnreadMessages)
                 }
+                LaunchedEffect(pagedMessages.itemCount, uiState.optimisticMessages.size) {
+                    if (pagedMessages.itemCount > 0 || uiState.optimisticMessages.isNotEmpty()) {
+                        listState.animateScrollToItem(0)
+                    }
+                }
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     state = listState,
+                    reverseLayout = true,
                     contentPadding = PaddingValues(MaterialTheme.spacing.medium),
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                 ) {
@@ -208,7 +214,7 @@ fun ChatDetailScreen(
                             )
                         }
                     } else {
-                        items(uiState.optimisticMessages, key = { "optimistic-${it.id}" }) { message ->
+                        items(uiState.optimisticMessages.asReversed(), key = { "optimistic-${it.id}" }) { message ->
                             ChatMessageBubble(
                                 message = message,
                                 onSongClick = onSongClick,
