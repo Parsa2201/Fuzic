@@ -9,4 +9,5 @@ interface InteractionRepository {
     suspend fun recordPlay(songId: String): Result<Unit>
     suspend fun likeSong(songId: String): Result<Unit>
     suspend fun unlikeSong(songId: String): Result<Unit>
+    suspend fun removeRecentlyPlayed(songId: String): Result<Unit>
 }

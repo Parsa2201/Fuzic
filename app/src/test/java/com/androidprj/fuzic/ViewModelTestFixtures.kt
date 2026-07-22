@@ -514,6 +514,7 @@ internal class FakeInteractionRepository(
         unlikeCalls++
         return Result.success(Unit)
     }
+    override suspend fun removeRecentlyPlayed(songId: String): Result<Unit> = Result.success(Unit)
 }
 
 internal class FakeSearchRepository(

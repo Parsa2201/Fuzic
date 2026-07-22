@@ -14,6 +14,8 @@
     <string name="action_retry">Retry</string>
     <string name="action_view_all">View all</string>
     <string name="action_remove">Remove</string>
+    <string name="collection_play_all">Play all</string>
+    <string name="collection_shuffle">Shuffle</string>
     <string name="home_daily_picks">Daily picks</string>
     <string name="home_quick_action_liked_songs">Liked songs</string>
     <string name="home_quick_action_recently_played">Recently played</string>

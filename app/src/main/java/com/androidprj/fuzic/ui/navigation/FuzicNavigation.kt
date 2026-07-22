@@ -679,6 +679,9 @@ fun FuzicNavigation(
                     onSongClick = { navController.navigate(SongDestination(it.id)) },
                     onSongMoreClick = { songActionTarget = it },
                     onRetryClick = { viewModel.onIntent(SongCollectionIntent.Retry) },
+                    onPlayAllClick = { playerViewModel.onIntent(PlayerIntent.PlayQueue(uiState.songs)) },
+                    onShuffleClick = { playerViewModel.onIntent(PlayerIntent.PlayQueue(uiState.songs)); playerViewModel.onIntent(PlayerIntent.ToggleShuffle) },
+                    onRemoveClick = { viewModel.onIntent(SongCollectionIntent.Remove(it.id)) },
                 )
             }
             composable<RecentlyPlayedDestination> {
@@ -690,6 +693,9 @@ fun FuzicNavigation(
                     onSongClick = { navController.navigate(SongDestination(it.id)) },
                     onSongMoreClick = { songActionTarget = it },
                     onRetryClick = { viewModel.onIntent(SongCollectionIntent.Retry) },
+                    onPlayAllClick = { playerViewModel.onIntent(PlayerIntent.PlayQueue(uiState.songs)) },
+                    onShuffleClick = { playerViewModel.onIntent(PlayerIntent.PlayQueue(uiState.songs)); playerViewModel.onIntent(PlayerIntent.ToggleShuffle) },
+                    onRemoveClick = { viewModel.onIntent(SongCollectionIntent.Remove(it.id)) },
                 )
             }
             composable<ArtistsDestination> {

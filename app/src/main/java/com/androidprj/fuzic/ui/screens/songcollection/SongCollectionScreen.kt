@@ -2,6 +2,8 @@ package com.androidprj.fuzic.ui.screens.songcollection
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,6 +39,9 @@ fun SongCollectionScreen(
     onSongClick: (SongItem) -> Unit,
     onSongMoreClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
+    onPlayAllClick: () -> Unit = {},
+    onShuffleClick: () -> Unit = {},
+    onRemoveClick: (SongItem) -> Unit = {},
     emptyIcon: ImageVector,
     emptyTitle: String,
     emptyMessage: String,
@@ -75,11 +80,17 @@ fun SongCollectionScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(MaterialTheme.spacing.medium),
             ) {
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
+                        Button(onClick = onPlayAllClick) { Text(stringResource(R.string.collection_play_all)) }
+                        Button(onClick = onShuffleClick) { Text(stringResource(R.string.collection_shuffle)) }
+                    }
+                }
                 items(uiState.songs, key = { it.id }) { song ->
                     SongListItem(
                         song = song,
                         onClick = { onSongClick(song) },
-                        onMoreClick = { onSongMoreClick(song) },
+                        onMoreClick = { onRemoveClick(song) },
                     )
                 }
             }

@@ -14,6 +14,8 @@
     <string name="action_retry">تلاش دوباره</string>
     <string name="action_view_all">مشاهده همه</string>
     <string name="action_remove">حذف</string>
+    <string name="collection_play_all">پخش همه</string>
+    <string name="collection_shuffle">پخش تصادفی</string>
     <string name="home_daily_picks">پیشنهادهای امروز</string>
     <string name="home_quick_action_liked_songs">آهنگ های پسندیده</string>
     <string name="home_quick_action_recently_played">پخش شده های اخیر</string>

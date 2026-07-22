@@ -63,13 +63,21 @@ class RemoteInteractionRepository @Inject constructor(
     }
 
     override suspend fun unlikeSong(songId: String): Result<Unit> {
+        return deleteInteraction(songId, "like")
+    }
+
+    override suspend fun removeRecentlyPlayed(songId: String): Result<Unit> {
+        return deleteInteraction(songId, "play")
+    }
+
+    private suspend fun deleteInteraction(songId: String, type: String): Result<Unit> {
         return try {
             val userId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
             supabaseClient.postgrest["interactions"].delete {
                 filter {
                     eq("user_id", userId)
                     eq("song_id", songId)
-                    eq("interaction_type", "like")
+                    eq("interaction_type", type)
                 }
             }
             Result.success(Unit)
