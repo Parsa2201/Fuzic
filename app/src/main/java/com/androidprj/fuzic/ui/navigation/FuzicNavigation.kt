@@ -630,11 +630,13 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onThemeClick = { viewModel.onIntent(SettingsIntent.ShowThemeOptions) },
                     onLanguageClick = { viewModel.onIntent(SettingsIntent.ShowLanguageOptions) },
+                    onFontSizeClick = { viewModel.onIntent(SettingsIntent.ShowFontSizeOptions) },
                     onLogoutClick = { viewModel.onIntent(SettingsIntent.ShowLogoutConfirmation) },
                     onLogoutConfirm = { viewModel.onIntent(SettingsIntent.ConfirmLogout) },
                     onLogoutDismiss = { viewModel.onIntent(SettingsIntent.DismissLogoutConfirmation) },
                     onThemeSelected = { viewModel.onIntent(SettingsIntent.ThemeSelected(it)) },
                     onLanguageSelected = { viewModel.onIntent(SettingsIntent.LanguageSelected(it)) },
+                    onFontScaleSelected = { viewModel.onIntent(SettingsIntent.FontScaleSelected(it)) },
                     onRetryClick = { viewModel.onIntent(SettingsIntent.Retry) },
                 )
             }

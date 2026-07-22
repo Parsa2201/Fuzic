@@ -5,6 +5,7 @@ import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.model.ui.ChatMessage
 import com.androidprj.fuzic.model.ui.ChatMessageType
 import com.androidprj.fuzic.model.ui.AppLanguageOption
+import com.androidprj.fuzic.model.ui.AppFontScale
 import com.androidprj.fuzic.model.ui.AppSettings
 import com.androidprj.fuzic.model.ui.AppThemeOption
 import com.androidprj.fuzic.model.ui.DownloadRequest
@@ -190,6 +191,7 @@ internal class FakeSettingsRepository(
     val settings = MutableStateFlow(initialSettings)
     var themeResult: Result<Unit> = Result.success(Unit)
     var languageResult: Result<Unit> = Result.success(Unit)
+    var fontScaleResult: Result<Unit> = Result.success(Unit)
     var clearResult: Result<Unit> = Result.success(Unit)
     var setThemeCalls = 0
     var setLanguageCalls = 0
@@ -205,6 +207,9 @@ internal class FakeSettingsRepository(
         setLanguageCalls++
         return languageResult.onSuccess { settings.value = settings.value.copy(language = language) }
     }
+
+    override suspend fun setFontScale(fontScale: AppFontScale): Result<Unit> =
+        fontScaleResult.onSuccess { settings.value = settings.value.copy(fontScale = fontScale) }
 
     override suspend fun clearSettings(): Result<Unit> = clearResult
 }
