@@ -10,6 +10,7 @@ import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.player.PlayerController
 import com.androidprj.fuzic.player.queue.PlaybackQueue
+import com.androidprj.fuzic.player.timer.SleepTimer
 import com.androidprj.fuzic.repository.PlayerRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,7 +18,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,8 +30,9 @@ import kotlinx.coroutines.withContext
  * Media3-backed [PlayerRepository] owning the single [PlayerUiState] snapshot
  * for the whole app. Every transport call hops to the injected IO dispatcher
  * for cooperative cancellation and then to [Dispatchers.Main] because Media3's
- * controller API is main-thread only. Sleep timer (playback-05) and visualizer
- * frames (playback-06) intentionally return controlled failures today.
+ * controller API is main-thread only. Visualizer frames (playback-06) still
+ * intentionally return an empty flow; the sleep timer (playback-05) and
+ * 250 ms progress polling ticker are wired here.
  */
 @Singleton
 class Media3PlayerRepository @Inject constructor(
@@ -76,12 +77,33 @@ class Media3PlayerRepository @Inject constructor(
         resolveSong = ::toSongItemOrNull,
     )
 
-    // Placeholder progress-polling job. playback-05 replaces this with a
-    // real ticker; today PlayerUiState defaults supply the labels.
-    private val progressPollingJob: Job = scope.launch { /* no-op until playback-05 */ }
+    // Sleep-timer mirror. Held as a flow so future analytics/state-sync
+    // observers don't need to scrape PlayerUiState. Updated on every
+    // setSleepTimer(...) call (immediately after the expiry callback or
+    // cancel command) so the UI's "stop in N minutes" chip stays in sync.
+    private val sleepTimerMinutesMirror: MutableStateFlow<Int?> = MutableStateFlow(null)
+
+    // Sleep timer helper. Owns a single replaceable Job in the repository
+    // scope; expiry pauses playback via the PlayerController. Not a Hilt
+    // binding because it needs both the long-lived scope above and a
+    // callback that hops to Main before calling Media3's controller.
+    private val sleepTimer: SleepTimer = SleepTimer(
+        scope = scope,
+        onExpire = ::pausePlaybackForSleepTimer,
+    )
+
+    // 250 ms progress-polling ticker. Lives in its own file so the
+    // repository stays under the 350-line soft cap; restartable via
+    // Media3ProgressPoller#start if external code ever needs to reset
+    // the loop.
+    private val progressPoller = Media3ProgressPoller(
+        playerController = playerController,
+        playerState = playerState,
+    )
 
     init {
         scope.launch { playerController.addListener(listener) }
+        progressPoller.start(scope)
     }
 
     override suspend fun play(song: SongItem): Result<Unit> = runOnMain {
@@ -200,8 +222,32 @@ class Media3PlayerRepository @Inject constructor(
         Result.success(Unit)
     }
 
-    override suspend fun setSleepTimer(minutes: Int?): Result<Unit> =
-        Result.failure(UnsupportedOperationException("sleep timer lands in playback-05"))
+    override suspend fun setSleepTimer(minutes: Int?): Result<Unit> = runOnMain {
+        if (minutes == null) {
+            // The user explicitly turned the timer off — cancel any armed
+            // job, then drop both mirrors back to null.
+            sleepTimer.cancel()
+            sleepTimerMinutesMirror.value = null
+            playerState.update { it.copy(sleepTimerMinutes = null) }
+            return@runOnMain Result.success(Unit)
+        }
+        // Update the UI *before* arming the timer so the chip renders
+        // immediately even when the user picks a long duration. The
+        // expiry callback below resets both mirrors atomically.
+        sleepTimerMinutesMirror.value = minutes
+        playerState.update { it.copy(sleepTimerMinutes = minutes) }
+        sleepTimer.start(
+            minutes = minutes,
+            onExpireResult = { result ->
+                // Clear the mirrors regardless of success/failure of the
+                // expiry callback itself — the user expects the chip to
+                // disappear once the timer has fired.
+                sleepTimerMinutesMirror.value = null
+                playerState.update { it.copy(sleepTimerMinutes = null) }
+            },
+        )
+        Result.success(Unit)
+    }
 
     override suspend fun addToQueue(song: SongItem): Result<Unit> = runOnMain {
         val url = song.audioUrl
@@ -256,6 +302,16 @@ class Media3PlayerRepository @Inject constructor(
         Result.failure(t)
     }
 
+    /** Expire callback for the [SleepTimer]. Hops to Main because
+     * MediaController#pause is main-thread only. Failure here is allowed
+     * to bubble — SleepTimer reports it via its onExpireResult callback,
+     * which the repository uses to clear its mirrors. */
+    private suspend fun pausePlaybackForSleepTimer() {
+        withContext(Dispatchers.Main) {
+            playerController.controller().pause()
+        }
+    }
+
     // Recover the original SongItem from the MediaItem Media3 just handed us.
     // PlaybackQueue is the source of truth for *which* songs exist; the map
     // provides the lookup key (MediaItem.mediaId is the song id).
@@ -288,14 +344,5 @@ class Media3PlayerRepository @Inject constructor(
         RepeatMode.Off -> Player.REPEAT_MODE_OFF
         RepeatMode.All -> Player.REPEAT_MODE_ALL
         RepeatMode.One -> Player.REPEAT_MODE_ONE
-    }
-
-    // "mm:ss" formatter for elapsed/duration labels. Reserved for playback-05.
-    private fun toProgressLabel(positionMs: Long, durationMs: Long): String {
-        val safePosition = positionMs.coerceAtLeast(0L)
-        val totalSeconds = safePosition / 1000L
-        val minutes = totalSeconds / 60L
-        val seconds = totalSeconds % 60L
-        return "%d:%02d".format(minutes, seconds)
     }
 }
