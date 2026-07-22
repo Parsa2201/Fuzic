@@ -82,11 +82,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.LayoutDirection
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.model.ui.PlayerOverlay
 import com.androidprj.fuzic.model.ui.PlayerUiState
@@ -547,6 +549,7 @@ private fun PlayerTransportControls(
     onRepeatClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -565,10 +568,10 @@ private fun PlayerTransportControls(
                 },
             )
         }
-        IconButton(onClick = onNextClick) {
+        IconButton(onClick = if (isRtl) onNextClick else onPreviousClick) {
             Icon(
-                Icons.Default.SkipNext,
-                contentDescription = stringResource(R.string.player_next),
+                imageVector = if (isRtl) Icons.Default.SkipNext else Icons.Default.SkipPrevious,
+                contentDescription = stringResource(if (isRtl) R.string.player_next else R.string.player_previous),
                 modifier = Modifier.size(PlayerSizes.TransportIconSize),
             )
         }
@@ -588,10 +591,10 @@ private fun PlayerTransportControls(
                 )
             }
         }
-        IconButton(onClick = onPreviousClick) {
+        IconButton(onClick = if (isRtl) onPreviousClick else onNextClick) {
             Icon(
-                Icons.Default.SkipPrevious,
-                contentDescription = stringResource(R.string.player_previous),
+                imageVector = if (isRtl) Icons.Default.SkipPrevious else Icons.Default.SkipNext,
+                contentDescription = stringResource(if (isRtl) R.string.player_previous else R.string.player_next),
                 modifier = Modifier.size(PlayerSizes.TransportIconSize),
             )
         }
