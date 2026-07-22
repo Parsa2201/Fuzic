@@ -2,6 +2,7 @@ package com.androidprj.fuzic.ui.screens.player
 
 import androidx.compose.animation.core.RepeatMode as AnimationRepeatMode
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.LinearEasing
@@ -68,10 +69,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -79,6 +82,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -97,7 +101,13 @@ import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 import kotlin.math.abs
 import kotlin.math.sin
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
+import androidx.core.graphics.drawable.toBitmap
+import coil.imageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 
 @Composable
 fun PlayerRoute(
@@ -176,10 +186,23 @@ fun PlayerScreen(
     modifier: Modifier = Modifier,
     artworkModifier: Modifier = Modifier,
 ) {
+    val defaultBackground = MaterialTheme.colorScheme.background
+    val artworkColor by rememberDominantArtworkColor(uiState.currentSong?.artworkUrl)
+    val animatedArtworkColor by animateColorAsState(
+        targetValue = artworkColor ?: defaultBackground,
+        label = "playerArtworkGradient",
+    )
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        animatedArtworkColor.copy(alpha = PlayerSizes.ArtworkGradientAlpha),
+                        defaultBackground,
+                    ),
+                ),
+            ),
     ) {
         when {
             uiState.errorMessage != null -> PlayerMessage(
@@ -354,6 +377,46 @@ private fun PlayerContent(
             onPlaybackSpeedClick = onPlaybackSpeedClick,
         )
     }
+}
+
+@Composable
+private fun rememberDominantArtworkColor(artworkUrl: String?): androidx.compose.runtime.State<Color?> {
+    val context = LocalContext.current
+    return produceState<Color?>(initialValue = null, artworkUrl) {
+        value = artworkUrl?.takeIf(String::isNotBlank)?.let { url ->
+            withContext(Dispatchers.IO) {
+                val request = ImageRequest.Builder(context)
+                    .data(url)
+                    .allowHardware(false)
+                    .build()
+                val result = context.imageLoader.execute(request)
+                (result as? SuccessResult)?.drawable?.toBitmap()?.let(::averageArtworkColor)
+            }
+        }
+    }
+}
+
+private fun averageArtworkColor(bitmap: android.graphics.Bitmap): Color {
+    val sampleStep = (minOf(bitmap.width, bitmap.height) / PlayerSizes.ArtworkColorSampleCount)
+        .coerceAtLeast(1)
+    var red = 0L
+    var green = 0L
+    var blue = 0L
+    var samples = 0L
+    for (x in 0 until bitmap.width step sampleStep) {
+        for (y in 0 until bitmap.height step sampleStep) {
+            val color = bitmap.getPixel(x, y)
+            red += android.graphics.Color.red(color)
+            green += android.graphics.Color.green(color)
+            blue += android.graphics.Color.blue(color)
+            samples++
+        }
+    }
+    return Color(
+        red = red.toFloat() / samples / 255f,
+        green = green.toFloat() / samples / 255f,
+        blue = blue.toFloat() / samples / 255f,
+    )
 }
 
 @Composable
@@ -1101,6 +1164,8 @@ private object PlayerSizes {
     val TransportIconSize = 32.dp
     const val ArtworkRotationDegrees = 360f
     const val ArtworkRotationDurationMillis = 12_000
+    const val ArtworkGradientAlpha = 0.42f
+    const val ArtworkColorSampleCount = 32
 }
 
 private const val thirtyTwo = 32
