@@ -20,6 +20,8 @@ import com.androidprj.fuzic.repository.SearchRepository
 import com.androidprj.fuzic.data.settings.LocalSettingsRepository
 import com.androidprj.fuzic.data.settings.LocalPremiumRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteSearchRepository
+import com.androidprj.fuzic.repository.DownloadRepository
+import com.androidprj.fuzic.data.local.repository.LocalDownloadRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -65,6 +67,12 @@ abstract class RepositoryModule {
     abstract fun bindFollowRepository(
         remoteFollowRepository: RemoteFollowRepository
     ): FollowRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDownloadRepository(
+        localDownloadRepository: LocalDownloadRepository
+    ): DownloadRepository
 
     @Binds
     @Singleton
