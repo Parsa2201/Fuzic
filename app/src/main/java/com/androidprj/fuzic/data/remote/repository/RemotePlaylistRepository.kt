@@ -14,7 +14,6 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import javax.inject.Inject
-import java.util.UUID
 
 class RemotePlaylistRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
@@ -56,8 +55,6 @@ class RemotePlaylistRepository @Inject constructor(
 
     override suspend fun getPlaylistSongs(playlistId: String, offset: Long, limit: Long): Result<List<SongItem>> {
         return try {
-            // Note: In Supabase, you can use inner joins. 
-            // For simplicity with the standard SDK, we fetch pivot table then songs, or use select("..., songs(*)")
             val songs = supabaseClient.postgrest["playlist_songs"]
                 .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
                     filter { eq("playlist_id", playlistId) }

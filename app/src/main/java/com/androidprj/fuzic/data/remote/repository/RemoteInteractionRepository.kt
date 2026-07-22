@@ -10,7 +10,6 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import javax.inject.Inject
-import java.util.UUID
 
 class RemoteInteractionRepository @Inject constructor(
     private val supabaseClient: SupabaseClient

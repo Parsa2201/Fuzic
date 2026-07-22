@@ -11,5 +11,10 @@ data class SongDto(
     @SerialName("cover_image_url") val coverImageUrl: String? = null,
     @SerialName("audio_url") val audioUrl: String? = null,
     @SerialName("play_count") val playCount: Int = 0,
-    @SerialName("release_date") val releaseDate: String? = null
+    @SerialName("release_date") val releaseDate: String? = null,
+    @SerialName("duration_seconds") val durationSeconds: Int? = null,
+    @SerialName("album_name") val albumName: String? = null,
+    @SerialName("is_explicit") val isExplicit: Boolean = false,
+    @SerialName("artist_id") val artistId: String? = null,
+    @SerialName("album_id") val albumId: String? = null
 )

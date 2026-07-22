@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 data class PlaylistDto(
     val id: String,
     val title: String,
+    val description: String? = null,
     @SerialName("cover_image_url") val coverImageUrl: String? = null,
     @SerialName("owner_id") val ownerId: String,
     val type: String? = null,
