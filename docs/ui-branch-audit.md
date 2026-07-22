@@ -39,7 +39,7 @@ Before this can be treated as feature-complete, prioritize fixing the confirmed 
 - Centralize shell visibility (`showShell`, mini-player visibility, top bar) as route metadata or helper functions. The two manual boolean chains will drift as destinations grow.
 - Establish an explicit authenticated root/start destination. The app always starts at Welcome and redirects later; restoration and a slow current-user flow can produce visible onboarding flashes. On logout, clear the entire authenticated stack rather than only relying on a later `currentUser == null` redirect.
 - Add one-time UI events (`SharedFlow`/`Channel`) for navigation and snackbars. At present, the root graph infers completion from retained state (`isComplete`) and performs side effects in `LaunchedEffect`; returning to a destination can replay a snackbar/pop.
-- The spec calls for a shared-element mini-player → full-player transition. The mini-player currently navigates normally; implement the transition after choosing the approved Compose API/version.
+- **Done:** the root shell now uses Compose shared transitions for the mini-player artwork and the full-player cover. Navigation remains Navigation Compose 2 with the existing type-safe `FullPlayerDestination` route.
 
 ### Screen/UI completion
 

@@ -1,5 +1,8 @@
 package com.androidprj.fuzic.ui.navigation
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -208,6 +211,7 @@ private val topLevelDestinations = listOf(
     ProfileDestination,
 )
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FuzicNavigation(
     modifier: Modifier = Modifier,
@@ -242,6 +246,7 @@ fun FuzicNavigation(
         currentDestination?.hasRoute(EditProfileDestination::class) == true ||
         currentDestination?.hasRoute(AddToPlaylistDestination::class) == true ||
         currentDestination?.hasRoute(ChatPickerDestination::class) == true
+    val isFullPlayerOpen = currentDestination?.hasRoute(FullPlayerDestination::class) == true
 
     LaunchedEffect(currentUser, showShell) {
         if (currentUser == null && showShell) {
@@ -251,62 +256,71 @@ fun FuzicNavigation(
         }
     }
 
-    NavigationSuiteScaffold(
-        modifier = modifier.fillMaxSize(),
-        navigationSuiteItems = {
-            if (showShell) {
-                MainTab.entries.forEachIndexed { index, tab ->
-                    item(
-                        selected = index == selectedTab.ordinal,
-                        onClick = {
-                            navController.navigate(topLevelDestinations[index]) {
-                                launchSingleTop = true
-                                restoreState = true
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                            }
-                        },
-                        icon = { Icon(tab.icon, contentDescription = stringResource(tab.labelRes)) },
-                        label = { Text(stringResource(tab.labelRes)) },
-                    )
-                }
-            }
-        },
-    ) {
-    Scaffold(
-        topBar = {
-            if (showShell) {
-                FuzicTopAppBar(
-                    onProfileClick = { navController.navigate(ProfileDestination) },
-                    onNotificationsClick = { navController.navigate(NotificationsDestination) },
-                    onSettingsClick = { navController.navigate(SettingsDestination) },
-                )
-            }
-        },
-        bottomBar = {
-            if (!hideMiniPlayer) {
-                playerUiState.currentSong?.let { song ->
-                    MiniPlayer(
-                        uiState = MiniPlayerUiState(
-                            title = song.title,
-                            artist = song.artist,
-                            artworkUrl = song.artworkUrl,
-                            isPlaying = playerUiState.isPlaying,
-                        ),
-                        onClick = { navController.navigate(FullPlayerDestination) },
-                        onPlayPauseClick = { playerViewModel.onIntent(PlayerIntent.TogglePlayPause) },
-                    )
-                }
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = WelcomeDestination,
-            modifier = Modifier.padding(paddingValues),
-        ) {
+    SharedTransitionLayout {
+        AnimatedContent(
+            targetState = isFullPlayerOpen,
+            label = "full_player_transition",
+        ) { fullPlayerVisible ->
+            NavigationSuiteScaffold(
+                modifier = modifier.fillMaxSize(),
+                navigationSuiteItems = {
+                    if (showShell) {
+                        MainTab.entries.forEachIndexed { index, tab ->
+                            item(
+                                selected = index == selectedTab.ordinal,
+                                onClick = {
+                                    navController.navigate(topLevelDestinations[index]) {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                    }
+                                },
+                                icon = { Icon(tab.icon, contentDescription = stringResource(tab.labelRes)) },
+                                label = { Text(stringResource(tab.labelRes)) },
+                            )
+                        }
+                    }
+                },
+            ) {
+            Scaffold(
+                topBar = {
+                    if (showShell) {
+                        FuzicTopAppBar(
+                            onProfileClick = { navController.navigate(ProfileDestination) },
+                            onNotificationsClick = { navController.navigate(NotificationsDestination) },
+                            onSettingsClick = { navController.navigate(SettingsDestination) },
+                        )
+                    }
+                },
+                bottomBar = {
+                    if (!hideMiniPlayer || !fullPlayerVisible) {
+                        playerUiState.currentSong?.let { song ->
+                            MiniPlayer(
+                                uiState = MiniPlayerUiState(
+                                    title = song.title,
+                                    artist = song.artist,
+                                    artworkUrl = song.artworkUrl,
+                                    isPlaying = playerUiState.isPlaying,
+                                ),
+                                onClick = { navController.navigate(FullPlayerDestination) },
+                                onPlayPauseClick = { playerViewModel.onIntent(PlayerIntent.TogglePlayPause) },
+                                artworkModifier = Modifier.sharedElement(
+                                    sharedContentState = rememberSharedContentState("player-artwork-${song.id}"),
+                                    animatedVisibilityScope = this@AnimatedContent,
+                                ),
+                            )
+                        }
+                    }
+                },
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+            ) { paddingValues ->
+                NavHost(
+                    navController = navController,
+                    startDestination = WelcomeDestination,
+                    modifier = Modifier.padding(paddingValues),
+                ) {
             composable<WelcomeDestination> {
                 LaunchedEffect(currentUser) {
                     if (currentUser != null) {
@@ -613,6 +627,12 @@ fun FuzicNavigation(
                     onOverlayDismiss = { playerViewModel.onIntent(PlayerIntent.DismissOverlay) },
                     onSleepTimerSelected = { playerViewModel.onIntent(PlayerIntent.SleepTimerSelected(it)) },
                     onPlaybackSpeedSelected = { playerViewModel.onIntent(PlayerIntent.PlaybackSpeedSelected(it)) },
+                    artworkModifier = Modifier.sharedElement(
+                        sharedContentState = rememberSharedContentState(
+                            "player-artwork-${playerUiState.currentSong?.id}",
+                        ),
+                        animatedVisibilityScope = this@AnimatedContent,
+                    ),
                 )
             }
             composable<LikedSongsDestination> {
@@ -768,6 +788,8 @@ fun FuzicNavigation(
                     onFollowClick = { viewModel.onIntent(FollowListIntent.ToggleFollow(it)) },
                     onRetryClick = { viewModel.onIntent(FollowListIntent.Retry) },
                 )
+            }
+                }
             }
         }
     }

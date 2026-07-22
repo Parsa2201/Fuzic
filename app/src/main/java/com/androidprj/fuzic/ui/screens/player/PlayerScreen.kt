@@ -116,6 +116,7 @@ fun PlayerRoute(
     onPlaybackSpeedSelected: (Float) -> Unit,
     onPlaylistSelected: (String) -> Unit = {},
     modifier: Modifier = Modifier,
+    artworkModifier: Modifier = Modifier,
 ) {
     PlayerScreen(
         uiState = uiState,
@@ -139,6 +140,7 @@ fun PlayerRoute(
         onPlaybackSpeedSelected = onPlaybackSpeedSelected,
         onPlaylistSelected = onPlaylistSelected,
         modifier = modifier,
+        artworkModifier = artworkModifier,
     )
 }
 
@@ -166,6 +168,7 @@ fun PlayerScreen(
     onPlaybackSpeedSelected: (Float) -> Unit,
     onPlaylistSelected: (String) -> Unit = {},
     modifier: Modifier = Modifier,
+    artworkModifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
@@ -198,6 +201,7 @@ fun PlayerScreen(
                 onQueueClick = onQueueClick,
                 onSleepTimerClick = onSleepTimerClick,
                 onPlaybackSpeedClick = onPlaybackSpeedClick,
+                artworkModifier = artworkModifier,
             )
         }
 
@@ -245,6 +249,7 @@ private fun PlayerContent(
     onSleepTimerClick: () -> Unit,
     onPlaybackSpeedClick: () -> Unit,
     modifier: Modifier = Modifier,
+    artworkModifier: Modifier = Modifier,
 ) {
     val song = uiState.currentSong ?: return
     Column(
@@ -275,7 +280,7 @@ private fun PlayerContent(
         DetailArtwork(
             artworkUrl = song.artworkUrl,
             contentDescription = song.title,
-            modifier = Modifier.size(PlayerSizes.CoverSize),
+            modifier = artworkModifier.size(PlayerSizes.CoverSize),
         )
         Spacer(Modifier.height(MaterialTheme.spacing.medium))
         Text(
