@@ -68,6 +68,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.produceState
@@ -349,11 +350,13 @@ private fun PlayerContent(
                 .height(PlayerSizes.VisualizerHeight),
         )
         Spacer(Modifier.height(MaterialTheme.spacing.small))
-        Slider(
-            value = uiState.progress.coerceIn(0f, 1f),
-            onValueChange = onSeek,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Slider(
+                value = uiState.progress.coerceIn(0f, 1f),
+                onValueChange = onSeek,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
