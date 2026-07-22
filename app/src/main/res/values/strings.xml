@@ -201,6 +201,7 @@
     <string name="playlists_cover_label">Playlist cover</string>
     <string name="playlists_cover_default">Use generated cover</string>
     <string name="playlists_cover_option">Choose cover</string>
+    <string name="playlists_pick_cover">Choose image</string>
     <string name="player_share_to_chat">Share to chat</string>
     <string name="player_share_to_chat_description">Send this song to a conversation.</string>
     <string name="player_copy_song_link">Copy song link</string>
