@@ -127,6 +127,35 @@ The top app bar appears on all main screens:
 
 ---
 
+## PDF Source Addendum — Mandatory Requirements Not To Miss
+
+This section is transcribed from the original course requirements PDF, `Android Project.pdf`, reviewed on 22 July 2026. It exists to make the source-PDF requirements visible during implementation. If another part of this markdown accidentally omits one of these items, this addendum still applies.
+
+### App-wide UI motion and loading
+
+- The app must use fluid, polished motion throughout: smooth screen transitions and visible scale feedback when buttons are pressed.
+- Every loading list/card area must use animated shimmer skeletons. Static tinted placeholders and spinners are not substitutes for the required list/card loading treatment.
+
+### Additional media-playback requirements
+
+- Handle Android audio focus: pause or duck for calls/other audio, then resume appropriately.
+- Use ExoPlayer `CacheDataSource` (or an equivalent Media3 cache) so streamed audio is cached for replay and seeking.
+- Crossfade between consecutive tracks.
+- Display the now-playing cover as a CD-style disc that rotates while playing and stops while paused.
+- Derive a dynamic full-player background gradient from the dominant cover-art color, using Palette API or an equivalent image-palette approach.
+
+### Settings and premium requirements
+
+- Persist a user-selected font-size preference in DataStore alongside language, theme, and premium state.
+- Provide a demonstrative premium purchase/renewal flow that makes the user premium after successful completion; premium users can download, while free users receive an upgrade prompt.
+
+### Social and library sub-pages
+
+- Users must be able to view and play public playlists belonging to followed users.
+- Liked Songs and Recently Played need more than a plain list: provide an engaging header, Play All/Shuffle action, and quick item removal such as swipe-to-dismiss.
+
+---
+
 ## 7. Feature: Home Tab
 
 ### 7.1 Goal
