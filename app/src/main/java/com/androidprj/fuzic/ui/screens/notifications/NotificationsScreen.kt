@@ -19,6 +19,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.FollowTheSigns
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Favorite
@@ -257,7 +258,7 @@ private fun NotificationLeadingIcon(
 ) {
     val icon = when (notification.type) {
         NotificationType.NewRelease -> Icons.Default.LibraryMusic
-        NotificationType.Follow -> Icons.Default.FollowTheSigns
+        NotificationType.Follow -> Icons.AutoMirrored.Filled.FollowTheSigns
         NotificationType.Playlist -> Icons.Default.Favorite
         NotificationType.Premium -> Icons.Default.WorkspacePremium
         NotificationType.System -> Icons.Default.Campaign
