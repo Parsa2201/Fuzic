@@ -520,6 +520,7 @@ fun FuzicNavigation(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
                     onRetryClick = viewModel::retry,
+                    onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
                 )
             }
             composable<SongDestination> { entry ->

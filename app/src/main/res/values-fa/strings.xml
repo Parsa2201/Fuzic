@@ -240,6 +240,7 @@
     <string name="loading">در حال بارگذاری…</string>
     <string name="user_profile_title">پروفایل</string>
     <string name="user_profile_error">پروفایل بارگیری نشد.</string>
+    <string name="user_profile_public_playlists">پلی‌لیست‌های عمومی</string>
     <string name="add_to_playlist_title">افزودن به پلی‌لیست</string>
     <string name="add_to_playlist_empty">هنوز پلی‌لیستی ندارید.</string>
     <string name="add_to_playlist_error">پلی‌لیست به‌روزرسانی نشد.</string>
