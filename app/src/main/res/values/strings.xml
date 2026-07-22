@@ -201,6 +201,7 @@
     <string name="playlists_cover_label">Playlist cover</string>
     <string name="playlists_cover_default">Use generated cover</string>
     <string name="playlists_cover_option">Choose cover</string>
+    <string name="playlists_pick_cover">Choose image</string>
     <string name="player_share_to_chat">Share to chat</string>
     <string name="player_share_to_chat_description">Send this song to a conversation.</string>
     <string name="player_copy_song_link">Copy song link</string>
@@ -223,4 +224,28 @@
     <string name="preview_notification_playlist_message">The songs you saved were added to Late Night.</string>
     <string name="preview_notification_two_days">2 days ago</string>
     <string name="preview_notifications_error_message">Notifications could not be loaded.</string>
+    <string name="ui_action_unavailable">This action is not available yet.</string>
+    <string name="notification_target_unavailable">This notification has no destination.</string>
+    <string name="edit_profile_title">Edit profile</string>
+    <string name="edit_profile_display_name">Display name</string>
+    <string name="edit_profile_username">Username</string>
+    <string name="edit_profile_avatar_url">Avatar URL</string>
+    <string name="edit_profile_save">Save changes</string>
+    <string name="edit_profile_error">Profile could not be updated.</string>
+    <string name="password_recovery_title">Reset password</string>
+    <string name="password_recovery_message">Enter your email and we will send reset instructions.</string>
+    <string name="password_recovery_submit">Send instructions</string>
+    <string name="password_recovery_success">Password reset instructions were sent.</string>
+    <string name="password_recovery_error">Password reset could not be requested.</string>
+    <string name="loading">Loading…</string>
+    <string name="user_profile_title">Profile</string>
+    <string name="user_profile_error">Profile could not be loaded.</string>
+    <string name="add_to_playlist_title">Add to playlist</string>
+    <string name="add_to_playlist_empty">You do not have any playlists yet.</string>
+    <string name="add_to_playlist_error">Playlist could not be updated.</string>
+    <string name="add_to_playlist_success">Song added to playlist.</string>
+    <string name="share_to_chat_title">Share to chat</string>
+    <string name="share_to_chat_empty">There are no conversations to share with.</string>
+    <string name="share_to_chat_error">Song could not be shared.</string>
+    <string name="share_to_chat_success">Song shared.</string>
 </resources>

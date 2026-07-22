@@ -2,6 +2,7 @@ package com.androidprj.fuzic.data.remote.repository
 
 import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.repository.AuthRepository
+import com.androidprj.fuzic.repository.PasswordRecoveryRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -13,7 +14,11 @@ import kotlinx.serialization.json.put
 
 class RemoteAuthRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
-) : AuthRepository {
+) : AuthRepository, PasswordRecoveryRepository {
+
+    override suspend fun requestPasswordReset(email: String): Result<Unit> = runCatching {
+        supabaseClient.auth.resetPasswordForEmail(email)
+    }
 
     override suspend fun login(email: String, password: String): Result<Unit> {
         return try {

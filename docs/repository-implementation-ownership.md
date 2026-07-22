@@ -40,18 +40,24 @@ Repositories are app-facing contracts used by ViewModels. They should expose pro
 | `SearchRepository` | Bagher | Supabase search queries, Room search history, Paging 3 | Unified search over songs, artists, playlists, users plus persisted search history | Debounce stays in ViewModel/use case; backend fields and history DAO stay here. |
 | `DownloadRepository` | Bagher, with Sina coordination | Room downloads table, app-private file storage, WorkManager, Supabase Storage/audio URLs | Observe downloads, enqueue/delete/restore downloads, remove audio file | Bagher owns metadata/work/storage. Sina should use downloaded file availability when choosing local vs streaming playback. |
 | `ChatRepository` | Bagher | Supabase messages/conversations/typing, Realtime, Room message cache | Conversations, paged messages, typing status, sending text/song messages, read receipts, refresh | This is the single source of truth for chat. Conversation ids are app-level identifiers. |
-| `NotificationRepository` | Bagher | Supabase notifications table or derived backend events, Paging 3, optional local cache | Paged notifications and read state | Implementation can use stored notifications or backend-generated events; UI should not care. |
+| `NotificationRepository` | Bagher | Supabase notifications table or derived backend events, Paging 3, optional local cache | Paged notifications and read state | Map each actionable notification to `NotificationTarget`; UI must never parse backend deep-link payloads. |
 | `SettingsRepository` | Bagher | DataStore Preferences | Observe and update theme/language/settings | Should support instant UI updates through `Flow<AppSettings>`. |
 | `PremiumRepository` | Bagher | Supabase user premium status, billing integration stub, DataStore cache | Observe premium status, plans, purchase/restore operations | If real billing is deferred, keep the same contract and return controlled results from the implementation. |
 | `PlayerRepository` | Sina | Media3/ExoPlayer service/controller, MediaSession, notification controls, visualizer source | Playback state, queue, play/pause/seek/skip, shuffle/repeat, speed, sleep timer, visualizer frames | Do not expose ExoPlayer or service binding details. It may call Bagher-owned repositories to record plays or resolve download/local file data. |
 
 ## Coordination Points
 
+### Password Recovery Binding
+
+The password-recovery screen and route are complete as UI, but the production request must only be connected after Bagher provides a `PasswordRecoveryRepository` implementation and Hilt binding. Do not add an in-memory or UI-owned replacement merely to make the request appear to succeed.
+
 ### Playback And Downloads
 
 Sina's player implementation should decide whether to play a local downloaded file or a stream URL without changing `PlayerRepository`. Bagher's `DownloadRepository` should expose enough download metadata for the player/service layer to resolve downloaded files internally or through a small service collaborator.
 
 Do not add file paths or WorkManager ids to UI models unless a screen truly needs to display them.
+
+`MusicRepository` should populate `SongItem.audioUrl` when a song is eligible for streaming or download. It is an opaque app-facing source URL, not a Supabase Storage path contract; the UI passes it to `DownloadRepository` only when requesting an offline download.
 
 ### Playback And Interactions
 
@@ -64,6 +70,10 @@ Premium checks should be handled before enqueueing or inside `DownloadRepository
 ### Chat Song Sharing
 
 `ChatRepository.sendSongMessage(...)` only receives a `songId`. The implementation decides how to store and hydrate the song card. Do not make ViewModels know message table columns or join strategy.
+
+### Notification Targets
+
+Bagher's `NotificationRepository` implementation must map supported backend notification payloads to the optional `NotificationTarget` on `NotificationItem`. Supported targets are song, playlist, artist, user profile, conversation, and premium. System or malformed notifications should return a null target; the UI will mark them read and show an unavailable message rather than attempting to interpret backend-specific data.
 
 ### Profile Stats
 

@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,6 +46,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,6 +70,7 @@ import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun ChatListRoute(
@@ -127,6 +131,7 @@ fun ChatDetailRoute(
     onShareSongClick: () -> Unit,
     onSongClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
+    onVisibleUnreadMessages: (List<ChatMessage>) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     ChatDetailScreen(
@@ -137,6 +142,7 @@ fun ChatDetailRoute(
         onShareSongClick = onShareSongClick,
         onSongClick = onSongClick,
         onRetryClick = onRetryClick,
+        onVisibleUnreadMessages = onVisibleUnreadMessages,
         modifier = modifier,
     )
 }
@@ -150,6 +156,7 @@ fun ChatDetailScreen(
     onShareSongClick: () -> Unit,
     onSongClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
+    onVisibleUnreadMessages: (List<ChatMessage>) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val conversation = uiState.conversation
@@ -179,13 +186,26 @@ fun ChatDetailScreen(
             )
             else -> {
                 val listState = rememberLazyListState()
+                val pagedMessages = flowOf(uiState.messages).collectAsLazyPagingItems()
+                val visibleUnreadMessages = pagedMessages.itemSnapshotList.items.filter {
+                    !it.isMine && it.status != ChatMessageStatus.Read
+                }
+                LaunchedEffect(visibleUnreadMessages.map(ChatMessage::id)) {
+                    onVisibleUnreadMessages(visibleUnreadMessages)
+                }
+                LaunchedEffect(pagedMessages.itemCount, uiState.optimisticMessages.size) {
+                    if (pagedMessages.itemCount > 0 || uiState.optimisticMessages.isNotEmpty()) {
+                        listState.animateScrollToItem(0)
+                    }
+                }
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     state = listState,
+                    reverseLayout = true,
                     contentPadding = PaddingValues(MaterialTheme.spacing.medium),
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                 ) {
-                    if (uiState.isEmpty) {
+                    if (pagedMessages.itemCount == 0 && uiState.optimisticMessages.isEmpty()) {
                         item {
                             ChatStateMessage(
                                 icon = Icons.Default.MusicNote,
@@ -194,7 +214,17 @@ fun ChatDetailScreen(
                             )
                         }
                     } else {
-                        items(uiState.messages, key = { it.id }) { message ->
+                        items(uiState.optimisticMessages.asReversed(), key = { "optimistic-${it.id}" }) { message ->
+                            ChatMessageBubble(
+                                message = message,
+                                onSongClick = onSongClick,
+                            )
+                        }
+                        items(
+                            count = pagedMessages.itemCount,
+                            key = pagedMessages.itemKey { it.id },
+                        ) { index ->
+                            val message = pagedMessages[index] ?: return@items
                             ChatMessageBubble(
                                 message = message,
                                 onSongClick = onSongClick,
@@ -532,7 +562,7 @@ private fun ChatDetailOfflinePreview() {
 @Composable
 private fun ChatDetailEmptyPreview() {
     FuzicTheme {
-        ChatDetailScreen(sampleChatDetailState().copy(messages = emptyList()), {}, {}, {}, {}, {}, {})
+        ChatDetailScreen(sampleChatDetailState().copy(messages = androidx.paging.PagingData.empty()), {}, {}, {}, {}, {}, {})
     }
 }
 
@@ -542,7 +572,7 @@ private fun ChatDetailSendingPreview() {
     FuzicTheme {
         ChatDetailScreen(
             sampleChatDetailState().copy(
-                messages = listOf(
+                messages = androidx.paging.PagingData.from(listOf(
                     ChatMessage(
                         id = "sending",
                         senderId = "me",
@@ -560,7 +590,7 @@ private fun ChatDetailSendingPreview() {
                         timeLabel = "10:33",
                         isMine = true,
                     ),
-                ),
+                )),
             ),
             {}, {}, {}, {}, {}, {},
         )
@@ -598,7 +628,7 @@ private fun sampleConversations() = listOf(
 @Composable
 private fun sampleChatDetailState() = ChatDetailUiState(
     conversation = sampleConversations().first(),
-    messages = listOf(
+    messages = androidx.paging.PagingData.from(listOf(
         ChatMessage(
             id = "one",
             senderId = "raha",
@@ -614,7 +644,7 @@ private fun sampleChatDetailState() = ChatDetailUiState(
             timeLabel = "10:31",
             isMine = true,
         ),
-    ),
+    )),
     draft = "",
 )
 

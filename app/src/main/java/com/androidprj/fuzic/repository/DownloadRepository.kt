@@ -5,6 +5,7 @@ import com.androidprj.fuzic.model.ui.DownloadSortOption
 import com.androidprj.fuzic.model.ui.DownloadedSongItem
 import kotlinx.coroutines.flow.Flow
 
+/** Download mutations and summaries; long list UI must use [PagedDownloadRepository]. */
 interface DownloadRepository {
     fun observeDownloads(sortOption: DownloadSortOption): Flow<List<DownloadedSongItem>>
     suspend fun enqueueDownload(request: DownloadRequest): Result<Unit>

@@ -30,4 +30,5 @@ data class PlayerUiState(
     val queue: List<SongItem> = emptyList(),
     val sleepTimerMinutes: Int? = null,
     val errorMessage: String? = null,
+    val visualizerAmplitudes: List<Float> = emptyList(),
 )

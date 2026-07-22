@@ -8,6 +8,8 @@ data class SongItem(
     val album: String? = null,
     val durationLabel: String? = null,
     val isExplicit: Boolean = false,
+    /** Stream/download source resolved by the catalog repository; never a storage implementation detail. */
+    val audioUrl: String? = null,
 )
 
 data class SongDetailsUiState(

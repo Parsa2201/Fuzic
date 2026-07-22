@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Campaign
@@ -55,6 +57,7 @@ import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun NotificationsRoute(
@@ -96,12 +99,6 @@ fun NotificationsScreen(
             },
             modifier = modifier,
         )
-        uiState.isEmpty -> ScreenMessage(
-            icon = Icons.Default.Notifications,
-            title = stringResource(R.string.notifications_empty_title),
-            message = stringResource(R.string.notifications_empty_message),
-            modifier = modifier,
-        )
         else -> NotificationsContent(
             uiState = uiState,
             onNotificationClick = onNotificationClick,
@@ -118,6 +115,9 @@ private fun NotificationsContent(
     onMarkAllReadClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val pagedNotifications = flowOf(uiState.notifications).collectAsLazyPagingItems()
+    val snapshot = pagedNotifications.itemSnapshotList.items
+    val unreadCount = snapshot.count { !it.isRead }
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -127,11 +127,24 @@ private fun NotificationsContent(
     ) {
         item {
             NotificationsHeader(
-                unreadCount = uiState.unreadCount,
+                unreadCount = unreadCount,
                 onMarkAllReadClick = onMarkAllReadClick,
             )
         }
-        items(uiState.notifications, key = { it.id }) { notification ->
+        if (pagedNotifications.itemCount == 0) {
+            item {
+                ScreenMessage(
+                    icon = Icons.Default.Notifications,
+                    title = stringResource(R.string.notifications_empty_title),
+                    message = stringResource(R.string.notifications_empty_message),
+                )
+            }
+        }
+        items(
+            count = pagedNotifications.itemCount,
+            key = pagedNotifications.itemKey { it.id },
+        ) { index ->
+            val notification = pagedNotifications[index] ?: return@items
             NotificationRow(
                 notification = notification,
                 onClick = { onNotificationClick(notification) },
@@ -296,7 +309,7 @@ private fun NotificationsLoadingContent(modifier: Modifier = Modifier) {
 
 @Composable
 private fun sampleNotificationsState() = NotificationsUiState(
-    notifications = listOf(
+    notifications = androidx.paging.PagingData.from(listOf(
         NotificationItem(
         id = "release",
             title = stringResource(R.string.preview_notification_release_title),
@@ -320,7 +333,7 @@ private fun sampleNotificationsState() = NotificationsUiState(
             type = NotificationType.Playlist,
             isRead = true,
         ),
-    ),
+    )),
 )
 
 @Preview(name = "Notifications - English", showBackground = true)

@@ -201,6 +201,7 @@
     <string name="playlists_cover_label">کاور پلی‌لیست</string>
     <string name="playlists_cover_default">استفاده از کاور تولیدشده</string>
     <string name="playlists_cover_option">انتخاب کاور</string>
+    <string name="playlists_pick_cover">انتخاب تصویر</string>
     <string name="player_share_to_chat">اشتراک‌گذاری در چت</string>
     <string name="player_share_to_chat_description">این آهنگ را برای یک گفت‌وگو بفرست.</string>
     <string name="player_copy_song_link">کپی لینک آهنگ</string>
@@ -223,4 +224,28 @@
     <string name="preview_notification_playlist_message">آهنگ‌های ذخیره‌شده به پلی‌لیست شبانه اضافه شدند.</string>
     <string name="preview_notification_two_days">۲ روز پیش</string>
     <string name="preview_notifications_error_message">اعلان‌ها بارگذاری نشدند.</string>
+    <string name="ui_action_unavailable">این اقدام هنوز در دسترس نیست.</string>
+    <string name="notification_target_unavailable">این اعلان مقصدی ندارد.</string>
+    <string name="edit_profile_title">ویرایش پروفایل</string>
+    <string name="edit_profile_display_name">نام نمایشی</string>
+    <string name="edit_profile_username">نام کاربری</string>
+    <string name="edit_profile_avatar_url">نشانی تصویر پروفایل</string>
+    <string name="edit_profile_save">ذخیره تغییرات</string>
+    <string name="edit_profile_error">پروفایل به‌روزرسانی نشد.</string>
+    <string name="password_recovery_title">بازیابی گذرواژه</string>
+    <string name="password_recovery_message">ایمیل خود را وارد کنید تا دستورالعمل بازیابی ارسال شود.</string>
+    <string name="password_recovery_submit">ارسال دستورالعمل</string>
+    <string name="password_recovery_success">دستورالعمل بازیابی گذرواژه ارسال شد.</string>
+    <string name="password_recovery_error">درخواست بازیابی گذرواژه انجام نشد.</string>
+    <string name="loading">در حال بارگذاری…</string>
+    <string name="user_profile_title">پروفایل</string>
+    <string name="user_profile_error">پروفایل بارگیری نشد.</string>
+    <string name="add_to_playlist_title">افزودن به پلی‌لیست</string>
+    <string name="add_to_playlist_empty">هنوز پلی‌لیستی ندارید.</string>
+    <string name="add_to_playlist_error">پلی‌لیست به‌روزرسانی نشد.</string>
+    <string name="add_to_playlist_success">آهنگ به پلی‌لیست افزوده شد.</string>
+    <string name="share_to_chat_title">اشتراک‌گذاری در گفتگو</string>
+    <string name="share_to_chat_empty">گفتگویی برای اشتراک‌گذاری وجود ندارد.</string>
+    <string name="share_to_chat_error">آهنگ اشتراک‌گذاری نشد.</string>
+    <string name="share_to_chat_success">آهنگ اشتراک‌گذاری شد.</string>
 </resources>
