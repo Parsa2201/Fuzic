@@ -31,4 +31,12 @@ data class PlayerUiState(
     val sleepTimerMinutes: Int? = null,
     val errorMessage: String? = null,
     val visualizerAmplitudes: List<Float> = emptyList(),
+    /**
+     * Dominant color extracted from the current song's cover artwork, in
+     * ARGB form. `null` while the artwork is still loading or when no
+     * cover URL is present. UI Track consumes this for the full-player
+     * background gradient (§130 PDF Source Addendum). Updated by
+     * `Media3PlayerRepository` whenever [onMediaItemTransition] fires.
+     */
+    val dominantColor: Int? = null,
 )

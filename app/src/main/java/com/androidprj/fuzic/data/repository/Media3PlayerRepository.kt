@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import coil.ImageLoader
 import com.androidprj.fuzic.di.IoDispatcher
 import com.androidprj.fuzic.model.ui.AudioVisualizerFrame
 import com.androidprj.fuzic.model.ui.PlayerUiState
@@ -12,6 +13,7 @@ import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.player.PlayerController
 import com.androidprj.fuzic.player.audio.AudioProcessorRegistry
 import com.androidprj.fuzic.player.local.LocalPlaybackFileResolver
+import com.androidprj.fuzic.player.palette.DominantColorExtractor
 import com.androidprj.fuzic.player.queue.AutoSkipGate
 import com.androidprj.fuzic.player.queue.PlaybackQueue
 import com.androidprj.fuzic.player.timer.SleepTimer
@@ -46,6 +48,8 @@ class Media3PlayerRepository @Inject constructor(
     audioProcessorRegistry: AudioProcessorRegistry,
     private val localFileResolver: LocalPlaybackFileResolver,
     private val interactionRepository: InteractionRepository,
+    private val dominantColorExtractor: DominantColorExtractor,
+    private val imageLoader: ImageLoader,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     initialPlaybackQueue: PlaybackQueue = PlaybackQueue(),
 ) : PlayerRepository {
@@ -130,6 +134,24 @@ class Media3PlayerRepository @Inject constructor(
                 reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO
             ) {
                 recordedSongId = null
+            }
+            // Trigger the dominant-color recompute on every transition. Null
+            // mediaItem first clears the field so the UI fades to a default
+            // background while a new cover loads. Otherwise we capture the
+            // current artwork URL and let the IO scope resolve it offline
+            // the audio thread.
+            val artworkUrl = toSongItemOrNull(mediaItem)?.artworkUrl
+            if (artworkUrl == null) {
+                playerState.update { it.copy(dominantColor = null) }
+            } else {
+                scope.launch {
+                    val color = runCatching {
+                        dominantColorExtractor.extract(artworkUrl, imageLoader, ioDispatcher)
+                    }.getOrNull()
+                    if (color != null) {
+                        playerState.update { it.copy(dominantColor = color) }
+                    }
+                }
             }
         }
     }
