@@ -178,6 +178,7 @@ private fun FuzicMainTabContent(
         MainTab.Search -> SearchScreen(
             uiState = sampleSearchUiState(),
             onQueryChange = {},
+            onSearchSubmit = {},
             onFilterClick = {},
             onHistoryClick = {},
             onHistoryDeleteClick = {},

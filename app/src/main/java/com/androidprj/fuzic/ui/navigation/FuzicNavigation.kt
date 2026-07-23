@@ -486,6 +486,7 @@ fun FuzicNavigation(
                 SearchScreen(
                     uiState = uiState,
                     onQueryChange = { viewModel.onIntent(SearchIntent.QueryChanged(it)) },
+                    onSearchSubmit = { viewModel.onIntent(SearchIntent.SubmitSearch) },
                     onFilterClick = { viewModel.onIntent(SearchIntent.FilterSelected(it)) },
                     onHistoryClick = { viewModel.onIntent(SearchIntent.HistorySelected(it)) },
                     onHistoryDeleteClick = { viewModel.onIntent(SearchIntent.DeleteHistory(it)) },

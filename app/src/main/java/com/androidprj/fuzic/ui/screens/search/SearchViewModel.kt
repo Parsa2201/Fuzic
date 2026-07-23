@@ -32,6 +32,7 @@ sealed interface SearchIntent {
     data class ResultSelected(val item: SearchResultItem) : SearchIntent
     data object Retry : SearchIntent
     data object ClearError : SearchIntent
+    data object SubmitSearch : SearchIntent
 }
 
 @HiltViewModel
@@ -68,6 +69,7 @@ class SearchViewModel @Inject constructor(
             is SearchIntent.ResultSelected -> mutateHistory { searchRepository.saveSearchQuery(intent.item.title) }
             SearchIntent.Retry -> scheduleSearch(immediate = true)
             SearchIntent.ClearError -> _uiState.update { it.copy(errorMessage = null) }
+            SearchIntent.SubmitSearch -> mutateHistory { searchRepository.saveSearchQuery(_uiState.value.query) }
         }
     }
 
@@ -103,7 +105,6 @@ class SearchViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             runCatching { searchRepository.search(query, _uiState.value.selectedFilter) }
                 .onSuccess { results ->
-                    searchRepository.saveSearchQuery(query)
                     results.collect { pagingData ->
                         _uiState.update { state -> state.copy(results = pagingData, isLoading = false, errorMessage = null) }
                     }

@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -82,6 +85,7 @@ fun SearchRoute(
     SearchScreen(
         uiState = uiState,
         onQueryChange = onQueryChange,
+        onSearchSubmit = {}, // This is no longer used since FuzicNavigation calls SearchScreen directly, but we provide empty lambda just in case
         onFilterClick = onFilterClick,
         onHistoryClick = onHistoryClick,
         onHistoryDeleteClick = onHistoryDeleteClick,
@@ -96,6 +100,7 @@ fun SearchRoute(
 fun SearchScreen(
     uiState: SearchUiState,
     onQueryChange: (String) -> Unit,
+    onSearchSubmit: () -> Unit,
     onFilterClick: (SearchFilter) -> Unit,
     onHistoryClick: (String) -> Unit,
     onHistoryDeleteClick: (String) -> Unit,
@@ -116,7 +121,8 @@ fun SearchScreen(
         item {
             SearchInput(
                 query = uiState.query,
-                onQueryChange = onQueryChange
+                onQueryChange = onQueryChange,
+                onSearch = onSearchSubmit
             )
         }
         item {
@@ -173,6 +179,7 @@ fun SearchScreen(
 private fun SearchInput(
     query: String,
     onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     OutlinedTextField(
@@ -180,6 +187,8 @@ private fun SearchInput(
         onValueChange = onQueryChange,
         modifier = modifier.fillMaxWidth(),
         singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
         leadingIcon = {
             Icon(Icons.Default.Search, contentDescription = null)
         },
@@ -508,6 +517,7 @@ private fun SearchInputPreview() {
         SearchInput(
             query = query,
             onQueryChange = { query = it },
+            onSearch = {},
             modifier = Modifier.padding(MaterialTheme.spacing.medium)
         )
     }
@@ -597,6 +607,7 @@ private fun SearchPreviewState(uiState: SearchUiState) {
     SearchScreen(
         uiState = state,
         onQueryChange = { state = state.copy(query = it) },
+        onSearchSubmit = {},
         onFilterClick = { state = state.copy(selectedFilter = it) },
         onHistoryClick = { state = state.copy(query = it) },
         onHistoryDeleteClick = { query -> state = state.copy(history = state.history - query) },
