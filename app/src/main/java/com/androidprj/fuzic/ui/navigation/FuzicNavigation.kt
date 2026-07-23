@@ -8,10 +8,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -288,7 +290,9 @@ fun FuzicNavigation(
                     }
                 },
             ) {
+            val isWelcomeDestination = currentDestination?.hasRoute(WelcomeDestination::class) == true
             Scaffold(
+                contentWindowInsets = if (isWelcomeDestination) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
                 topBar = {
                     if (showShell) {
                         FuzicTopAppBar(
@@ -320,7 +324,7 @@ fun FuzicNavigation(
                 },
                 snackbarHost = { SnackbarHost(snackbarHostState) },
             ) { paddingValues ->
-                val navHostModifier = if (currentDestination?.hasRoute(WelcomeDestination::class) == true) {
+                val navHostModifier = if (isWelcomeDestination) {
                     Modifier
                 } else {
                     Modifier.padding(paddingValues)
