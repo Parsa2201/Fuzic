@@ -16,8 +16,14 @@ import io.github.jan.supabase.postgrest.postgrest
 import javax.inject.Inject
 import java.util.UUID
 
+import android.content.Context
+import android.net.Uri
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.jan.supabase.storage.storage
+
 class RemotePlaylistRepository @Inject constructor(
-    private val supabaseClient: SupabaseClient
+    private val supabaseClient: SupabaseClient,
+    @ApplicationContext private val appContext: Context
 ) : PlaylistRepository {
 
     override suspend fun getGlobalPlaylists(offset: Long, limit: Long): Result<List<PlaylistItem>> {
@@ -74,12 +80,24 @@ class RemotePlaylistRepository @Inject constructor(
     override suspend fun createPlaylist(request: CreatePlaylistRequest): Result<PlaylistItem> {
         return try {
             val userId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
+            
+            var finalCoverUrl = request.coverImageUrl
+            if (finalCoverUrl != null && finalCoverUrl.startsWith("content://")) {
+                val imageBytes = appContext.contentResolver.openInputStream(Uri.parse(finalCoverUrl))
+                    ?.use { it.readBytes() }
+                    ?: throw Exception("Failed to read selected cover image")
+                val path = "$userId/${UUID.randomUUID()}.jpg"
+                val bucket = supabaseClient.storage.from("covers")
+                bucket.upload(path, imageBytes) { upsert = true }
+                finalCoverUrl = bucket.publicUrl(path)
+            }
+            
             val newPlaylist = InsertPlaylistDto(
                 title = request.title,
                 ownerId = userId,
                 type = USER_PLAYLIST_TYPE,
                 isPublic = request.visibility == PlaylistVisibility.Public,
-                coverImageUrl = request.coverImageUrl
+                coverImageUrl = finalCoverUrl
             )
             val result = supabaseClient.postgrest["playlists"]
                 .insert(newPlaylist) { select() }

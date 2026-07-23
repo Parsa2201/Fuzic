@@ -13,6 +13,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.postgrest
+import com.androidprj.fuzic.model.remote.PlaylistDto
+import com.androidprj.fuzic.model.remote.UserDto
+import com.androidprj.fuzic.model.mapper.toSongItem
 
 private fun unavailable(): Result<Unit> = Result.failure(IllegalStateException("Repository implementation is not configured"))
 private fun <T> unavailableValue(): Result<T> = Result.failure(IllegalStateException("Repository implementation is not configured"))
@@ -52,7 +57,45 @@ private val Context.settingsDataStore by preferencesDataStore(name = "app_settin
     }
 }
 
-@Singleton class PlaylistDetailsRepositoryImpl @Inject constructor() : PlaylistDetailsRepository { override suspend fun getPlaylistDetails(playlistId: String) = unavailableValue<PlaylistDetails>() }
+@Singleton class PlaylistDetailsRepositoryImpl @Inject constructor(
+    private val supabaseClient: SupabaseClient
+) : PlaylistDetailsRepository { 
+    override suspend fun getPlaylistDetails(playlistId: String): Result<PlaylistDetails> {
+        return try {
+            val playlist = supabaseClient.postgrest["playlists"]
+                .select { filter { eq("id", playlistId) } }
+                .decodeSingle<PlaylistDto>()
+                
+            val owner = supabaseClient.postgrest["users"]
+                .select { filter { eq("id", playlist.ownerId) } }
+                .decodeSingleOrNull<UserDto>()
+                
+            val songs = supabaseClient.postgrest["playlist_songs"]
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("song_id, songs(*)")) {
+                    filter { eq("playlist_id", playlistId) }
+                }
+                .decodeList<SongWrapper>()
+                .map { it.song.toSongItem() }
+
+            Result.success(PlaylistDetails(
+                id = playlist.id,
+                title = playlist.title,
+                description = "",
+                artworkUrl = playlist.coverImageUrl,
+                ownerName = owner?.name ?: owner?.username ?: "Unknown",
+                songs = songs
+            ))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    @kotlinx.serialization.Serializable
+    private data class SongWrapper(
+        @kotlinx.serialization.SerialName("songs") val song: com.androidprj.fuzic.model.remote.SongDto
+    )
+}
+
 @Singleton class ArtistRepositoryImpl @Inject constructor() : ArtistRepository { override suspend fun getArtist(artistId: String) = unavailableValue<ArtistItem>(); override suspend fun getArtistDetails(artistId: String) = unavailableValue<ArtistDetails>(); override fun observeArtists() = flowOf(PagingData.empty<ArtistCollectionItem>()) }
 
 @Singleton class NotificationRepositoryImpl @Inject constructor() : NotificationRepository { override fun observeNotifications() = flowOf(PagingData.empty<NotificationItem>()); override suspend fun markNotificationAsRead(notificationId: String) = unavailable(); override suspend fun markAllNotificationsAsRead() = unavailable() }
