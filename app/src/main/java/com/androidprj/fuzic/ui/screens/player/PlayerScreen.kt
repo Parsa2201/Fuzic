@@ -11,6 +11,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,7 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Album
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Favorite
@@ -71,6 +74,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,6 +91,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -107,6 +113,7 @@ import kotlin.math.abs
 import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.core.graphics.drawable.toBitmap
 import coil.imageLoader
@@ -191,6 +198,17 @@ fun PlayerScreen(
     artworkModifier: Modifier = Modifier,
 ) {
     val defaultBackground = MaterialTheme.colorScheme.background
+    val density = LocalDensity.current
+    val coroutineScope = rememberCoroutineScope()
+    val minimizeOffset = remember { Animatable(0f) }
+    val minimizeThresholdPx = with(density) { PlayerMotion.MinimizeThreshold.toPx() }
+    val minimizeDragState = rememberDraggableState { delta ->
+        if (delta > 0f) {
+            coroutineScope.launch {
+                minimizeOffset.snapTo(minimizeOffset.value + delta)
+            }
+        }
+    }
     val artworkColor by rememberDominantArtworkColor(uiState.currentSong?.artworkUrl)
     val animatedArtworkColor by animateColorAsState(
         targetValue = artworkColor ?: defaultBackground,
@@ -199,6 +217,25 @@ fun PlayerScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .graphicsLayer { translationY = minimizeOffset.value }
+            .draggable(
+                enabled = uiState.selectedOverlay == PlayerOverlay.None,
+                state = minimizeDragState,
+                orientation = Orientation.Vertical,
+                onDragStopped = { velocity ->
+                    coroutineScope.launch {
+                        if (minimizeOffset.value >= minimizeThresholdPx ||
+                            velocity >= PlayerMotion.MinimizeVelocityThreshold
+                        ) {
+                            // Preserve the finger's current position while navigation
+                            // completes the shared-artwork transition to the mini-player.
+                            onCloseClick()
+                        } else {
+                            minimizeOffset.animateTo(0f, tween(PlayerMotion.SnapBackDurationMillis))
+                        }
+                    }
+                },
+            )
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
@@ -305,8 +342,8 @@ private fun PlayerContent(
             )
             IconButton(onClick = onCloseClick) {
                 Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(R.string.player_close),
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = stringResource(R.string.player_minimize),
                 )
             }
         }
@@ -1174,6 +1211,12 @@ private object PlayerSizes {
     const val ArtworkRotationDurationMillis = 12_000
     const val ArtworkGradientAlpha = 0.42f
     const val ArtworkColorSampleCount = 32
+}
+
+private object PlayerMotion {
+    val MinimizeThreshold = 96.dp
+    const val MinimizeVelocityThreshold = 1_000f
+    const val SnapBackDurationMillis = 180
 }
 
 private const val thirtyTwo = 32

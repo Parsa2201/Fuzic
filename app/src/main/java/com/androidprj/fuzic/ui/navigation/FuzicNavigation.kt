@@ -365,6 +365,7 @@ fun FuzicNavigation(
                                     isPlaying = playerUiState.isPlaying,
                                 ),
                                 onClick = { navController.navigate(FullPlayerDestination) },
+                                onExpandDrag = { navController.navigate(FullPlayerDestination) },
                                 onPlayPauseClick = { playerViewModel.onIntent(PlayerIntent.TogglePlayPause) },
                                 // NavigationSuiteScaffold reserves the system navigation area when the
                                 // tab bar is visible. Screens outside that shell still need this inset
@@ -726,7 +727,22 @@ fun FuzicNavigation(
                     onRetryClick = { viewModel.onIntent(SettingsIntent.Retry) },
                 )
             }
-            composable<FullPlayerDestination> {
+            composable<FullPlayerDestination>(
+                enterTransition = {
+                    fadeIn(animationSpec = tween(PlayerTransition.DurationMillis)) +
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Up,
+                            animationSpec = tween(PlayerTransition.DurationMillis),
+                        )
+                },
+                popExitTransition = {
+                    fadeOut(animationSpec = tween(PlayerTransition.DurationMillis)) +
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Down,
+                            animationSpec = tween(PlayerTransition.DurationMillis),
+                        )
+                },
+            ) {
                 PlayerScreen(
                     uiState = playerUiState,
                     onCloseClick = { navController.popBackStack() },
@@ -973,6 +989,10 @@ private fun PlaylistsDestinationContent(navController: NavHostController) {
 
 private object NavigationMotion {
     const val DurationMillis = 220
+}
+
+private object PlayerTransition {
+    const val DurationMillis = 500
 }
 
 private fun navigateForItem(controller: NavHostController, id: String, type: MusicItemType) {

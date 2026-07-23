@@ -20,6 +20,7 @@
     <string name="player_share">اشتراک گذاری در چت</string>
     <string name="player_add_to_playlist">افزودن به پلی لیست</string>
     <string name="player_close">بستن پخش کننده</string>
+    <string name="player_minimize">کوچک کردن پخش‌کننده</string>
     <string name="player_empty_title">آهنگی در حال پخش نیست</string>
     <string name="player_empty_message">برای شروع شنیدن یک آهنگ انتخاب کن.</string>
     <string name="player_error_title">پخش کننده در دسترس نیست</string>
