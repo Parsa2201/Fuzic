@@ -151,6 +151,10 @@ data object DownloadsDestination
 @Serializable
 data object PlaylistsDestination
 
+/** Home quick action that reuses the playlist browser without selecting the Playlists tab. */
+@Serializable
+data object HomePlaylistsDestination
+
 @Serializable
 data object ProfileDestination
 
@@ -264,6 +268,7 @@ fun FuzicNavigation(
     val isProfileSubDestination = currentDestination?.hasRoute(LikedSongsDestination::class) == true ||
         currentDestination?.hasRoute(RecentlyPlayedDestination::class) == true ||
         currentDestination?.hasRoute(ArtistsDestination::class) == true ||
+        currentDestination?.hasRoute(HomePlaylistsDestination::class) == true ||
         currentDestination?.hasRoute(ChatListDestination::class) == true ||
         currentDestination?.hasRoute(ChatDetailDestination::class) == true ||
         currentDestination?.hasRoute(FollowSearchDestination::class) == true ||
@@ -453,7 +458,7 @@ fun FuzicNavigation(
                         when (action) {
                             HomeQuickAction.LikedSongs -> navController.navigate(LikedSongsDestination)
                             HomeQuickAction.RecentlyPlayed -> navController.navigate(RecentlyPlayedDestination)
-                            HomeQuickAction.MyPlaylists -> navController.navigate(PlaylistsDestination)
+                            HomeQuickAction.MyPlaylists -> navController.navigate(HomePlaylistsDestination)
                             HomeQuickAction.TopArtists -> navController.navigate(ArtistsDestination)
                         }
                     },
@@ -497,18 +502,10 @@ fun FuzicNavigation(
                 )
             }
             composable<PlaylistsDestination> {
-                val viewModel: PlaylistsViewModel = hiltViewModel()
-                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                PlaylistsScreen(
-                    uiState = uiState,
-                    onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
-                    onNewPlaylistClick = { viewModel.onIntent(PlaylistsIntent.ShowCreate) },
-                    onCreateNameChange = { viewModel.onIntent(PlaylistsIntent.NameChanged(it)) },
-                    onCreateCoverSelected = { viewModel.onIntent(PlaylistsIntent.CoverChanged(it)) },
-                    onCreateConfirmClick = { viewModel.onIntent(PlaylistsIntent.Create) },
-                    onCreateDismissClick = { viewModel.onIntent(PlaylistsIntent.DismissCreate) },
-                    onRetryClick = { viewModel.onIntent(PlaylistsIntent.Retry) },
-                )
+                PlaylistsDestinationContent(navController)
+            }
+            composable<HomePlaylistsDestination> {
+                PlaylistsDestinationContent(navController)
             }
             composable<ProfileDestination> { entry ->
                 val viewModel: ProfileViewModel = hiltViewModel()
@@ -943,6 +940,22 @@ private fun SessionRestoreScreen(modifier: Modifier = Modifier) {
     ) {
         CircularProgressIndicator()
     }
+}
+
+@Composable
+private fun PlaylistsDestinationContent(navController: NavHostController) {
+    val viewModel: PlaylistsViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    PlaylistsScreen(
+        uiState = uiState,
+        onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
+        onNewPlaylistClick = { viewModel.onIntent(PlaylistsIntent.ShowCreate) },
+        onCreateNameChange = { viewModel.onIntent(PlaylistsIntent.NameChanged(it)) },
+        onCreateCoverSelected = { viewModel.onIntent(PlaylistsIntent.CoverChanged(it)) },
+        onCreateConfirmClick = { viewModel.onIntent(PlaylistsIntent.Create) },
+        onCreateDismissClick = { viewModel.onIntent(PlaylistsIntent.DismissCreate) },
+        onRetryClick = { viewModel.onIntent(PlaylistsIntent.Retry) },
+    )
 }
 
 private object NavigationMotion {
