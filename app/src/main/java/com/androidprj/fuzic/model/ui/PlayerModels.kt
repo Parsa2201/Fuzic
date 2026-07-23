@@ -31,4 +31,6 @@ data class PlayerUiState(
     val sleepTimerMinutes: Int? = null,
     val errorMessage: String? = null,
     val visualizerAmplitudes: List<Float> = emptyList(),
+    val isPremiumUser: Boolean = false,
+    val actionErrorMessage: String? = null,
 )

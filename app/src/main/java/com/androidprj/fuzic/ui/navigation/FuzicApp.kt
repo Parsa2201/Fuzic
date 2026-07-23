@@ -135,7 +135,8 @@ fun FuzicAppShell(
                     MiniPlayer(
                         uiState = uiState,
                         onClick = {},
-                        onPlayPauseClick = {}
+                        onPlayPauseClick = {},
+                        onCloseClick = {}
                     )
                 }
             }
