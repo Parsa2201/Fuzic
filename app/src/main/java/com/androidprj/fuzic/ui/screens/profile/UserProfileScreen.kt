@@ -2,18 +2,20 @@ package com.androidprj.fuzic.ui.screens.profile
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -39,6 +41,7 @@ import com.androidprj.fuzic.repository.UserRepository
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.spacing
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.util.StringProvider
@@ -203,7 +206,7 @@ fun UserProfileScreen(
     Column(modifier.fillMaxSize()) {
         DetailTopAppBar(title = stringResource(R.string.user_profile_title), onBackClick = onBackClick)
         when {
-            uiState.isLoading -> CircularProgressIndicator(Modifier.padding(MaterialTheme.spacing.large))
+            uiState.isLoading -> UserProfileLoadingContent()
             uiState.errorMessage != null -> ScreenMessage(
                 icon = Icons.Default.ErrorOutline,
                 title = stringResource(R.string.user_profile_title),
@@ -289,6 +292,62 @@ fun UserProfileScreen(
                 title = stringResource(R.string.profile_empty_title),
                 message = stringResource(R.string.profile_empty_message),
             )
+        }
+    }
+}
+
+@Composable
+private fun UserProfileLoadingContent(modifier: Modifier = Modifier) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(MaterialTheme.spacing.large),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+    ) {
+        item {
+            Box(
+                modifier = Modifier
+                    .size(MaterialTheme.spacing.extraLarge * 6)
+                    .fuzicShimmer(CircleShape),
+            )
+        }
+        item {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(MaterialTheme.spacing.extraLarge * 4)
+                        .height(MaterialTheme.spacing.medium)
+                        .fuzicShimmer(MaterialTheme.shapes.small),
+                )
+                Box(
+                    modifier = Modifier
+                        .width(MaterialTheme.spacing.extraLarge * 3)
+                        .height(MaterialTheme.spacing.small)
+                        .fuzicShimmer(MaterialTheme.shapes.small),
+                )
+            }
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(MaterialTheme.spacing.large)
+                        .fuzicShimmer(MaterialTheme.shapes.medium),
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(MaterialTheme.spacing.large)
+                        .fuzicShimmer(MaterialTheme.shapes.medium),
+                )
+            }
         }
     }
 }
