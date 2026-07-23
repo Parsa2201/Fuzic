@@ -1,5 +1,7 @@
 package com.androidprj.fuzic.di
 
+import android.content.Context
+import coil.ImageLoader
 import com.androidprj.fuzic.data.repository.Media3PlayerRepository
 import com.androidprj.fuzic.player.local.NoopPlaybackDownloadLookup
 import com.androidprj.fuzic.player.local.PlaybackDownloadLookup
@@ -9,6 +11,7 @@ import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -55,3 +58,21 @@ object PlaybackQueueModule {
     @Provides
     fun providePlaybackQueue(): PlaybackQueue = PlaybackQueue()
 }
+
+/**
+ * Provides the process-scoped Coil [ImageLoader] for [Media3PlayerRepository]'s
+ * dominant-color extractor. Coil is already on the classpath via the
+ * Compose integration; this binding avoids introducing
+ * `coil-singleton` as a new dependency.
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+object ImageLoaderModule {
+
+    @Provides
+    @Singleton
+    fun provideImageLoader(
+        @ApplicationContext context: Context,
+    ): ImageLoader = ImageLoader.Builder(context).build()
+}
+

@@ -290,6 +290,8 @@ internal class FakePlayerRepository(
     var toggleCalls = 0
     var nextCalls = 0
     var previousCalls = 0
+    var skipToIndexCalls = 0
+    var lastSkipToIndex: Int? = null
     var seekCalls = 0
     var lastSeekProgress: Float? = null
     var lastRepeatMode: RepeatMode? = null
@@ -326,6 +328,14 @@ internal class FakePlayerRepository(
         return commandResult
     }
 
+    override suspend fun skipToIndex(index: Int): Result<Unit> {
+        skipToIndexCalls++
+        lastSkipToIndex = index
+        return commandResult.onSuccess {
+            _playerState.value = _playerState.value.copy(currentSong = _playerState.value.currentSong)
+        }
+    }
+
     override suspend fun setShuffleEnabled(enabled: Boolean): Result<Unit> {
         lastShuffleEnabled = enabled
         return commandResult.onSuccess { _playerState.value = _playerState.value.copy(isShuffleEnabled = enabled) }
@@ -350,6 +360,25 @@ internal class FakePlayerRepository(
     override suspend fun removeFromQueue(songId: String): Result<Unit> = commandResult
     override suspend fun clearQueue(): Result<Unit> = commandResult
     override suspend fun stop(): Result<Unit> = commandResult.onSuccess { _playerState.value = PlayerUiState() }
+
+    var setCrossfadeDurationMsCalls = 0
+    var lastCrossfadeDurationMs: Int? = null
+
+    override suspend fun setCrossfadeDurationMs(milliseconds: Int): Result<Unit> {
+        setCrossfadeDurationMsCalls++
+        lastCrossfadeDurationMs = milliseconds
+        if (milliseconds < 0) {
+            return commandResult.fold(
+                onSuccess = {
+                    Result.failure(
+                        IllegalArgumentException("crossfade duration must be >= 0 (was $milliseconds)"),
+                    )
+                },
+                onFailure = { Result.failure(it) },
+            )
+        }
+        return commandResult
+    }
 }
 
 internal class FakeMusicRepository(

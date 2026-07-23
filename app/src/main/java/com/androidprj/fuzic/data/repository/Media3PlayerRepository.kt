@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import coil.ImageLoader
 import com.androidprj.fuzic.di.IoDispatcher
 import com.androidprj.fuzic.model.ui.AudioVisualizerFrame
 import com.androidprj.fuzic.model.ui.PlayerUiState
@@ -11,7 +12,10 @@ import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.player.PlayerController
 import com.androidprj.fuzic.player.audio.AudioProcessorRegistry
+import com.androidprj.fuzic.player.crossfade.CrossfadeController
 import com.androidprj.fuzic.player.local.LocalPlaybackFileResolver
+import com.androidprj.fuzic.player.palette.DominantColorExtractor
+import com.androidprj.fuzic.player.queue.AutoSkipGate
 import com.androidprj.fuzic.player.queue.PlaybackQueue
 import com.androidprj.fuzic.player.timer.SleepTimer
 import com.androidprj.fuzic.repository.InteractionRepository
@@ -45,6 +49,9 @@ class Media3PlayerRepository @Inject constructor(
     audioProcessorRegistry: AudioProcessorRegistry,
     private val localFileResolver: LocalPlaybackFileResolver,
     private val interactionRepository: InteractionRepository,
+    private val dominantColorExtractor: DominantColorExtractor,
+    private val imageLoader: ImageLoader,
+    private val crossfadeController: CrossfadeController,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     initialPlaybackQueue: PlaybackQueue = PlaybackQueue(),
 ) : PlayerRepository {
@@ -86,6 +93,13 @@ class Media3PlayerRepository @Inject constructor(
     private val scope: CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    // Single-shot gate for the auto-skip behaviour in play(song). Extracted
+    // so the consume/reset semantics are pure-Kotlin testable. Reset by
+    // every successful play / playQueue / addToQueue / clearQueue and by
+    // onMediaItemTransition (so a natural Media3 auto-advance re-arms the
+    // gate for the next manual play() call).
+    private val autoSkipGate = AutoSkipGate()
+
     private val recordPlayScope: CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -122,6 +136,24 @@ class Media3PlayerRepository @Inject constructor(
                 reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO
             ) {
                 recordedSongId = null
+            }
+            // Trigger the dominant-color recompute on every transition. Null
+            // mediaItem first clears the field so the UI fades to a default
+            // background while a new cover loads. Otherwise we capture the
+            // current artwork URL and let the IO scope resolve it offline
+            // the audio thread.
+            val artworkUrl = toSongItemOrNull(mediaItem)?.artworkUrl
+            if (artworkUrl == null) {
+                playerState.update { it.copy(dominantColor = null) }
+            } else {
+                scope.launch {
+                    val color = runCatching {
+                        dominantColorExtractor.extract(artworkUrl, imageLoader, ioDispatcher)
+                    }.getOrNull()
+                    if (color != null) {
+                        playerState.update { it.copy(dominantColor = color) }
+                    }
+                }
             }
         }
     }
@@ -176,14 +208,32 @@ class Media3PlayerRepository @Inject constructor(
 
     override suspend fun play(song: SongItem): Result<Unit> = runOnMain {
         // Prefer a local download before the catalog stream URL so offline
-        // playback works without consuming network. Both null is a real
-        // failure (caller cannot play a song with no source at all).
+        // playback works without consuming network.
         val source = resolveSource(song)
         if (source.isNullOrEmpty()) {
-            return@runOnMain Result.failure(
-                IllegalArgumentException("song has no audioUrl or downloaded file"),
-            )
+            // Both a downloaded file AND the catalog URL are absent. Try
+            // once to advance to the next queue item (e.g. an offline
+            // corrupted download row with no fallback URL). Surface the
+            // skip via PlayerUiState.errorMessage so the UI can show a
+            // snackbar; the AutoSkipGate enforces single-shot semantics so
+            // a queue of unplayable songs doesn't loop forever.
+            return@runOnMain if (autoSkipGate.tryConsume()) {
+                val controller = playerController.controller()
+                runCatching { controller.seekToNextMediaItem() }
+                    .onFailure { autoSkipGate.reset() }
+                playerState.update {
+                    it.copy(errorMessage = "Skipped: no playable source")
+                }
+                Result.success(Unit)
+            } else {
+                Result.failure(
+                    IllegalStateException("no playable source and no next item"),
+                )
+            }
         }
+        // We have a playable source; clear the auto-skip gate so a future
+        // no-source call can attempt its single skip again.
+        autoSkipGate.reset()
         val controller = playerController.controller()
         // Stash the SongItem before issuing transport commands so the
         // subsequent onMediaItemTransition callback can recover it.
@@ -224,6 +274,8 @@ class Media3PlayerRepository @Inject constructor(
         val playable = resolved.map { it.first }
         val safeIndex = startIndex.coerceIn(0, playable.lastIndex)
         val mediaItems = resolved.map { (song, source) -> buildMediaItem(song, source) }
+        // Re-arm the auto-skip gate on every queue replacement.
+        autoSkipGate.reset()
         val controller = playerController.controller()
         controller.setMediaItems(mediaItems, safeIndex, 0L)
         controller.prepare()
@@ -247,6 +299,17 @@ class Media3PlayerRepository @Inject constructor(
 
     override suspend fun skipToNext(): Result<Unit> = runOnMain {
         playerController.controller().seekToNextMediaItem()
+        Result.success(Unit)
+    }
+
+    override suspend fun skipToIndex(index: Int): Result<Unit> = runOnMain {
+        val controller = playerController.controller()
+        if (index < 0 || index >= controller.mediaItemCount) {
+            return@runOnMain Result.failure(
+                IllegalArgumentException("skipToIndex out of bounds: $index"),
+            )
+        }
+        controller.seekTo(index, C.TIME_UNSET)
         Result.success(Unit)
     }
 
@@ -274,8 +337,19 @@ class Media3PlayerRepository @Inject constructor(
         val controller = playerController.controller()
         controller.stop()
         controller.clearMediaItems()
+        crossfadeController.cancel()
         Result.success(Unit)
     }
+
+    /**
+     * Configure the crossfade duration in milliseconds. 0 disables
+     * crossfade. Negative values are rejected with [Result.failure]. The
+     * actual dual-player wiring lands in a follow-up increment; today
+     * the duration is recorded on the controller so a future
+     * `FuzicPlaybackService` refactor can pick it up unchanged.
+     */
+    override suspend fun setCrossfadeDurationMs(milliseconds: Int): Result<Unit> =
+        crossfadeController.setCrossfadeDurationMs(milliseconds)
 
     override suspend fun setShuffleEnabled(enabled: Boolean): Result<Unit> = runOnMain {
         // Per spec: update Media3 first, then the logical queue. Media3's
@@ -336,6 +410,9 @@ class Media3PlayerRepository @Inject constructor(
                 IllegalArgumentException("song has no audioUrl or downloaded file"),
             )
         }
+        // Re-arm the auto-skip gate on every successful queue mutation so
+        // a future broken play() can still attempt a single skip.
+        autoSkipGate.reset()
         val controller = playerController.controller()
         controller.addMediaItem(buildMediaItem(song, source))
         songByMediaId[song.id] = song
@@ -362,6 +439,8 @@ class Media3PlayerRepository @Inject constructor(
     }
 
     override suspend fun clearQueue(): Result<Unit> = runOnMain {
+        // Re-arm the auto-skip gate when the user wipes the queue.
+        autoSkipGate.reset()
         val controller = playerController.controller()
         controller.clearMediaItems()
         songByMediaId.clear()

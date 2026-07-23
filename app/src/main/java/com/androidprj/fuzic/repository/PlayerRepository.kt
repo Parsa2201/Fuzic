@@ -16,6 +16,7 @@ interface PlayerRepository {
     suspend fun seekTo(progress: Float): Result<Unit>
     suspend fun skipToPrevious(): Result<Unit>
     suspend fun skipToNext(): Result<Unit>
+    suspend fun skipToIndex(index: Int): Result<Unit>
     suspend fun setShuffleEnabled(enabled: Boolean): Result<Unit>
     suspend fun setRepeatMode(mode: RepeatMode): Result<Unit>
     suspend fun setPlaybackSpeed(speed: Float): Result<Unit>
@@ -24,4 +25,17 @@ interface PlayerRepository {
     suspend fun removeFromQueue(songId: String): Result<Unit>
     suspend fun clearQueue(): Result<Unit>
     suspend fun stop(): Result<Unit>
+
+    /**
+     * Configure the crossfade duration between consecutive tracks. 0
+     * disables crossfade; negative values return
+     * [Result.failure](IllegalArgumentException). The default for new
+     * media sessions is 0 (no crossfade) until the UI Track exposes a
+     * user-facing toggle.
+     *
+     * The actual dual-player crossfade wiring lands in a follow-up
+     * increment; this method today is a forward-compatible no-op that
+     * surfaces the public API.
+     */
+    suspend fun setCrossfadeDurationMs(milliseconds: Int): Result<Unit>
 }
