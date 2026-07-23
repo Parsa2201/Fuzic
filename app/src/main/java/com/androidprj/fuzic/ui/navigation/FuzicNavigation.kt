@@ -432,6 +432,7 @@ fun FuzicNavigation(
                     onForgotPasswordClick = { navController.navigate(PasswordRecoveryDestination) },
                     onSwitchModeClick = { viewModel.onIntent(AuthIntent.ToggleMode) },
                     onRetryClick = { viewModel.onIntent(AuthIntent.Retry) },
+                    onBackClick = { navController.popBackStack() },
                 )
             }
             composable<HomeDestination> {
@@ -791,6 +792,7 @@ fun FuzicNavigation(
                     },
                     onMarkAllReadClick = { viewModel.onIntent(NotificationsIntent.MarkAllRead) },
                     onRetryClick = { viewModel.onIntent(NotificationsIntent.Retry) },
+                    onBackClick = { navController.popBackStack() },
                 )
             }
             composable<PremiumDestination> {
@@ -802,6 +804,7 @@ fun FuzicNavigation(
                     onUpgradeClick = { viewModel.onIntent(PremiumIntent.Upgrade) },
                     onRestoreClick = { viewModel.onIntent(PremiumIntent.RestorePurchase) },
                     onRetryClick = { viewModel.onIntent(PremiumIntent.Retry) },
+                    onBackClick = { navController.popBackStack() },
                 )
             }
             composable<ChatListDestination> {

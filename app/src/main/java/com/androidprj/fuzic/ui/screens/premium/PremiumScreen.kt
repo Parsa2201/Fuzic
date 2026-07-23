@@ -49,6 +49,7 @@ import com.androidprj.fuzic.model.ui.PremiumFeature
 import com.androidprj.fuzic.model.ui.PremiumPlan
 import com.androidprj.fuzic.model.ui.PremiumUiState
 import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
@@ -60,6 +61,7 @@ fun PremiumRoute(
     onUpgradeClick: () -> Unit,
     onRestoreClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     PremiumScreen(
@@ -68,6 +70,7 @@ fun PremiumRoute(
         onUpgradeClick = onUpgradeClick,
         onRestoreClick = onRestoreClick,
         onRetryClick = onRetryClick,
+        onBackClick = onBackClick,
         modifier = modifier,
     )
 }
@@ -79,31 +82,35 @@ fun PremiumScreen(
     onUpgradeClick: () -> Unit,
     onRestoreClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    when {
-        uiState.isLoading -> PremiumLoadingContent(modifier)
-        uiState.errorMessage != null -> ScreenMessage(
-            icon = Icons.Default.ErrorOutline,
-            title = stringResource(R.string.premium_error_title),
-            message = uiState.errorMessage,
-            action = {
-                Button(onClick = onRetryClick) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                    Spacer(Modifier.width(MaterialTheme.spacing.small))
-                    Text(stringResource(R.string.action_retry))
-                }
-            },
-            modifier = modifier,
-        )
-        uiState.isAlreadyPremium -> PremiumActiveContent(modifier)
-        else -> PremiumContent(
-            uiState = uiState,
-            onPlanSelected = onPlanSelected,
-            onUpgradeClick = onUpgradeClick,
-            onRestoreClick = onRestoreClick,
-            modifier = modifier,
-        )
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        DetailTopAppBar(stringResource(R.string.premium_title), onBackClick)
+        when {
+            uiState.isLoading -> PremiumLoadingContent(Modifier.weight(1f))
+            uiState.errorMessage != null -> ScreenMessage(
+                icon = Icons.Default.ErrorOutline,
+                title = stringResource(R.string.premium_error_title),
+                message = uiState.errorMessage,
+                action = {
+                    Button(onClick = onRetryClick) {
+                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Spacer(Modifier.width(MaterialTheme.spacing.small))
+                        Text(stringResource(R.string.action_retry))
+                    }
+                },
+                modifier = Modifier.weight(1f),
+            )
+            uiState.isAlreadyPremium -> PremiumActiveContent(Modifier.weight(1f))
+            else -> PremiumContent(
+                uiState = uiState,
+                onPlanSelected = onPlanSelected,
+                onUpgradeClick = onUpgradeClick,
+                onRestoreClick = onRestoreClick,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 

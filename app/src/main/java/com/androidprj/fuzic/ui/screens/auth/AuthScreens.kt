@@ -2,12 +2,14 @@ package com.androidprj.fuzic.ui.screens.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MarkEmailRead
@@ -191,6 +194,7 @@ fun AuthRoute(
     onForgotPasswordClick: () -> Unit,
     onSwitchModeClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     AuthScreen(
@@ -205,6 +209,7 @@ fun AuthRoute(
         onForgotPasswordClick,
         onSwitchModeClick,
         onRetryClick,
+        onBackClick,
         modifier,
     )
 }
@@ -222,16 +227,33 @@ fun AuthScreen(
     onForgotPasswordClick: () -> Unit,
     onSwitchModeClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(MaterialTheme.spacing.large),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(MaterialTheme.spacing.small),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.action_back),
+            )
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(MaterialTheme.spacing.large),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
         Icon(
             imageVector = Icons.Default.MusicNote,
             contentDescription = null,
@@ -291,6 +313,7 @@ fun AuthScreen(
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth().padding(top = MaterialTheme.spacing.medium),
             )
+        }
         }
     }
 }

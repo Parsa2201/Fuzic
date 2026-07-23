@@ -50,6 +50,7 @@ import com.androidprj.fuzic.model.ui.NotificationItem
 import com.androidprj.fuzic.model.ui.NotificationType
 import com.androidprj.fuzic.model.ui.NotificationsUiState
 import com.androidprj.fuzic.ui.components.MusicArtwork
+import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.components.previewArtworkUri
@@ -63,6 +64,7 @@ fun NotificationsRoute(
     onNotificationClick: (NotificationItem) -> Unit,
     onMarkAllReadClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     NotificationsScreen(
@@ -70,6 +72,7 @@ fun NotificationsRoute(
         onNotificationClick = onNotificationClick,
         onMarkAllReadClick = onMarkAllReadClick,
         onRetryClick = onRetryClick,
+        onBackClick = onBackClick,
         modifier = modifier,
     )
 }
@@ -80,29 +83,33 @@ fun NotificationsScreen(
     onNotificationClick: (NotificationItem) -> Unit,
     onMarkAllReadClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    when {
-        uiState.isLoading -> NotificationsLoadingContent(modifier)
-        uiState.errorMessage != null -> ScreenMessage(
-            icon = Icons.Default.ErrorOutline,
-            title = stringResource(R.string.notifications_error_title),
-            message = uiState.errorMessage,
-            action = {
-                Button(onClick = onRetryClick) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                    Spacer(Modifier.width(MaterialTheme.spacing.small))
-                    Text(stringResource(R.string.action_retry))
-                }
-            },
-            modifier = modifier,
-        )
-        else -> NotificationsContent(
-            uiState = uiState,
-            onNotificationClick = onNotificationClick,
-            onMarkAllReadClick = onMarkAllReadClick,
-            modifier = modifier,
-        )
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        DetailTopAppBar(stringResource(R.string.notifications_title), onBackClick)
+        when {
+            uiState.isLoading -> NotificationsLoadingContent(Modifier.weight(1f))
+            uiState.errorMessage != null -> ScreenMessage(
+                icon = Icons.Default.ErrorOutline,
+                title = stringResource(R.string.notifications_error_title),
+                message = uiState.errorMessage,
+                action = {
+                    Button(onClick = onRetryClick) {
+                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Spacer(Modifier.width(MaterialTheme.spacing.small))
+                        Text(stringResource(R.string.action_retry))
+                    }
+                },
+                modifier = Modifier.weight(1f),
+            )
+            else -> NotificationsContent(
+                uiState = uiState,
+                onNotificationClick = onNotificationClick,
+                onMarkAllReadClick = onMarkAllReadClick,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
