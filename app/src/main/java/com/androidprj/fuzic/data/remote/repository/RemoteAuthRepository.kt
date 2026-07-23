@@ -7,6 +7,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import kotlinx.serialization.json.buildJsonObject
@@ -57,7 +58,9 @@ class RemoteAuthRepository @Inject constructor(
     }
 
     override fun getCurrentUserFlow(): Flow<ProfileUser?> {
-        return supabaseClient.auth.sessionStatus.map { status ->
+        return supabaseClient.auth.sessionStatus
+            .filter { it !is io.github.jan.supabase.auth.status.SessionStatus.Initializing }
+            .map { status ->
             when (status) {
                 is io.github.jan.supabase.auth.status.SessionStatus.Authenticated -> {
                     val user = status.session.user

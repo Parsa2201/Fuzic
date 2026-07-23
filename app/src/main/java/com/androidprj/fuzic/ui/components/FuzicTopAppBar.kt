@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -34,6 +35,7 @@ import com.androidprj.fuzic.ui.theme.spacing
 
 @Composable
 fun FuzicTopAppBar(
+    avatarUrl: String?,
     onProfileClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -63,9 +65,11 @@ fun FuzicTopAppBar(
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = stringResource(R.string.shell_cd_profile)
+                    CircularMusicArtwork(
+                        artworkUrl = avatarUrl,
+                        fallbackIcon = Icons.Default.Person,
+                        contentDescription = stringResource(R.string.shell_cd_profile),
+                        modifier = Modifier.fillMaxSize(),
                     )
                 }
                 IconButton(onClick = onNotificationsClick) {
@@ -105,6 +109,7 @@ fun FuzicTopAppBar(
 private fun FuzicTopAppBarPreview() {
     FuzicTheme {
         FuzicTopAppBar(
+            avatarUrl = null,
             onProfileClick = {},
             onNotificationsClick = {},
             onSettingsClick = {}
@@ -117,6 +122,7 @@ private fun FuzicTopAppBarPreview() {
 private fun FuzicTopAppBarPersianPreview() {
     FuzicTheme {
         FuzicTopAppBar(
+            avatarUrl = null,
             onProfileClick = {},
             onNotificationsClick = {},
             onSettingsClick = {}

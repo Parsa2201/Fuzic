@@ -19,6 +19,27 @@ data class ProfileUser(
     val isPremium: Boolean = false
 )
 
+/** A local image selected by the system picker or captured by the camera. */
+data class AvatarUploadRequest(
+    val localUri: String,
+    val uploadId: String,
+)
+
+sealed interface AvatarEditorState {
+    data object None : AvatarEditorState
+    data class Existing(val url: String) : AvatarEditorState
+    data class Uploading(
+        val localUri: String,
+        val uploadId: String,
+        val progress: Float,
+    ) : AvatarEditorState
+    data class Uploaded(
+        val url: String,
+        val uploadId: String,
+    ) : AvatarEditorState
+    data class Removing(val url: String) : AvatarEditorState
+}
+
 data class ProfileStats(
     val followersLabel: String = "0",
     val followingLabel: String = "0",

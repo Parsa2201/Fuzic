@@ -3,19 +3,29 @@ package com.androidprj.fuzic
 import com.androidprj.fuzic.model.mapper.toProfileUser
 import com.androidprj.fuzic.model.remote.UserDto
 import com.androidprj.fuzic.model.ui.PlaylistSectionType
+import com.androidprj.fuzic.model.ui.AvatarEditorState
 import com.androidprj.fuzic.ui.screens.auth.AuthIntent
 import com.androidprj.fuzic.ui.screens.auth.AuthViewModel
 import com.androidprj.fuzic.ui.screens.home.HomeViewModel
 import com.androidprj.fuzic.ui.screens.playlists.PlaylistsIntent
 import com.androidprj.fuzic.ui.screens.playlists.PlaylistsViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileViewModel
+import com.androidprj.fuzic.ui.screens.profile.ProfileEditorIntent
+import com.androidprj.fuzic.ui.screens.profile.ProfileEditorViewModel
 import com.androidprj.fuzic.ui.screens.song.SongDetailsViewModel
+import com.androidprj.fuzic.ui.navigation.SessionUiState
+import com.androidprj.fuzic.ui.navigation.SessionViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -52,6 +62,17 @@ class ViewModelsTest {
         assertTrue(viewModel.uiState.value.emailErrorRes != null)
         assertTrue(viewModel.uiState.value.passwordErrorRes != null)
         assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun sessionWaitsForUserRestorationBeforeReportingReady() = runTest {
+        val viewModel = SessionViewModel(FakeAuthRepository())
+
+        assertEquals(SessionUiState.Restoring, viewModel.uiState.value)
+        val ready = async { viewModel.uiState.filterIsInstance<SessionUiState.Ready>().first() }
+        advanceUntilIdle()
+
+        assertEquals(testProfile, ready.await().currentUser)
     }
 
     @Test
@@ -182,6 +203,109 @@ class ViewModelsTest {
         assertEquals(testProfile, viewModel.uiState.value.profile)
         assertEquals("12", viewModel.uiState.value.stats.followersLabel)
         assertEquals("5", viewModel.uiState.value.stats.followingLabel)
+    }
+
+    @Test
+    fun profileEditorMarksSaveCompleteWithUpdatedProfile() = runTest {
+        val viewModel = ProfileEditorViewModel(
+            FakeAuthRepository(),
+            FakeUserRepository(),
+            dispatcher,
+            FakeStringProvider,
+        )
+        advanceUntilIdle()
+
+        viewModel.onIntent(ProfileEditorIntent.DisplayNameChanged("Parsa Updated"))
+        viewModel.onIntent(ProfileEditorIntent.UsernameChanged("parsa_updated"))
+        viewModel.onIntent(ProfileEditorIntent.Save)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isSaved)
+        assertEquals("Parsa Updated", viewModel.uiState.value.profile?.displayName)
+        assertEquals("parsa_updated", viewModel.uiState.value.profile?.username)
+    }
+
+    @Test
+    fun profileEditorUploadsAvatarBeforeEnablingSave() = runTest {
+        val repository = FakeUserRepository()
+        val viewModel = ProfileEditorViewModel(FakeAuthRepository(), repository, dispatcher, FakeStringProvider)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ProfileEditorIntent.AvatarSelected("content://gallery/avatar"))
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.avatar is AvatarEditorState.Uploaded)
+        assertTrue(viewModel.uiState.value.canSave)
+        assertEquals(1, repository.avatarUploadCalls)
+        viewModel.onIntent(ProfileEditorIntent.Save)
+        advanceUntilIdle()
+        assertEquals("https://example.test/avatars/user-1/new-avatar", repository.lastUpdatedProfile?.avatarUrl)
+    }
+
+    @Test
+    fun profileEditorKeepsSaveDisabledWhileAvatarIsUploading() = runTest {
+        val repository = FakeUserRepository().apply { avatarUploadGate = CompletableDeferred() }
+        val viewModel = ProfileEditorViewModel(FakeAuthRepository(), repository, dispatcher, FakeStringProvider)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ProfileEditorIntent.AvatarSelected("content://gallery/avatar"))
+        runCurrent()
+
+        assertTrue(viewModel.uiState.value.avatar is AvatarEditorState.Uploading)
+        assertFalse(viewModel.uiState.value.canSave)
+        repository.avatarUploadGate?.complete(Result.success("https://example.test/avatars/user-1/new-avatar"))
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.canSave)
+    }
+
+    @Test
+    fun profileEditorRestoresPreviousAvatarWhenUploadFails() = runTest {
+        val repository = FakeUserRepository().apply {
+            avatarUploadResult = Result.failure(IllegalStateException("upload failed"))
+        }
+        val viewModel = ProfileEditorViewModel(FakeAuthRepository(), repository, dispatcher, FakeStringProvider)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ProfileEditorIntent.AvatarSelected("content://gallery/avatar"))
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.avatar is AvatarEditorState.None)
+        assertEquals("upload failed", viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun profileEditorStagesExistingAvatarRemovalUntilSave() = runTest {
+        val oldAvatar = "https://example.test/storage/v1/object/public/avatars/user-1/old"
+        val repository = FakeUserRepository(profileResult = Result.success(testProfile.copy(avatarUrl = oldAvatar)))
+        val viewModel = ProfileEditorViewModel(FakeAuthRepository(), repository, dispatcher, FakeStringProvider)
+        advanceUntilIdle()
+
+        viewModel.onIntent(ProfileEditorIntent.DeleteAvatar)
+        assertTrue(viewModel.uiState.value.avatar is AvatarEditorState.Removing)
+        assertTrue(viewModel.uiState.value.canSave)
+        assertEquals(0, repository.avatarDeleteCalls)
+        viewModel.onIntent(ProfileEditorIntent.Save)
+        advanceUntilIdle()
+
+        assertNull(repository.lastUpdatedProfile?.avatarUrl)
+        assertEquals(1, repository.avatarDeleteCalls)
+    }
+
+    @Test
+    fun profileEditorDiscardRemovesNewUploadedAvatarBeforeLeaving() = runTest {
+        val repository = FakeUserRepository()
+        val viewModel = ProfileEditorViewModel(FakeAuthRepository(), repository, dispatcher, FakeStringProvider)
+        advanceUntilIdle()
+        viewModel.onIntent(ProfileEditorIntent.AvatarSelected("content://gallery/avatar"))
+        advanceUntilIdle()
+
+        viewModel.onIntent(ProfileEditorIntent.BackRequested)
+        assertTrue(viewModel.uiState.value.showDiscardConfirmation)
+        viewModel.onIntent(ProfileEditorIntent.DiscardChanges)
+        advanceUntilIdle()
+
+        assertEquals(1, repository.avatarDeleteCalls)
+        assertTrue(viewModel.uiState.value.shouldNavigateBack)
     }
 
     @Test

@@ -16,6 +16,7 @@ import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.model.ui.PlaylistDetails
 import com.androidprj.fuzic.model.ui.PremiumPlan
 import com.androidprj.fuzic.model.ui.ProfileUser
+import com.androidprj.fuzic.model.ui.AvatarUploadRequest
 import com.androidprj.fuzic.model.ui.AudioVisualizerFrame
 import com.androidprj.fuzic.model.ui.ArtistDetails
 import com.androidprj.fuzic.model.ui.ArtistItem
@@ -49,6 +50,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.CompletableDeferred
 
 internal val testSong = SongItem(
     id = "song-1",
@@ -156,6 +158,7 @@ internal class FakeAuthRepository(
     var currentUserId: String? = "user-1",
     var loginResult: Result<Unit> = Result.success(Unit),
     var signUpResult: Result<Unit> = Result.success(Unit),
+    var userFlow: Flow<ProfileUser?> = flowOf(testProfile),
 ) : AuthRepository {
     var loginCalls = 0
     var signUpCalls = 0
@@ -180,7 +183,7 @@ internal class FakeAuthRepository(
         return logoutResult
     }
 
-    override fun getCurrentUserFlow(): Flow<ProfileUser?> = flowOf(testProfile)
+    override fun getCurrentUserFlow(): Flow<ProfileUser?> = userFlow
 
     override suspend fun getCurrentUserId(): String? = currentUserId
 }
@@ -444,9 +447,34 @@ internal class FakeUserRepository(
         Result.success(listOf(testProfile.copy(id = "user-2", username = "nika", displayName = "Nika")))
     var searchCalls = 0
     var lastSearchQuery: String? = null
+    var avatarUploadResult: Result<String> = Result.success("https://example.test/avatars/user-1/new-avatar")
+    var avatarDeleteResult: Result<Unit> = Result.success(Unit)
+    var avatarUploadCalls = 0
+    var avatarDeleteCalls = 0
+    var pendingAvatarDeleteCalls = 0
+    var avatarUploadGate: CompletableDeferred<Result<String>>? = null
+    var updateProfileResult: Result<ProfileUser>? = null
+    var lastUpdatedProfile: ProfileUser? = null
 
     override suspend fun getUserProfile(userId: String) = profileResult
-    override suspend fun updateProfile(user: ProfileUser) = Result.success(user)
+    override suspend fun updateProfile(user: ProfileUser): Result<ProfileUser> {
+        lastUpdatedProfile = user
+        return updateProfileResult ?: Result.success(user)
+    }
+    override suspend fun uploadAvatar(userId: String, request: AvatarUploadRequest, onProgress: (Float) -> Unit): Result<String> {
+        avatarUploadCalls++
+        onProgress(0.5f)
+        onProgress(1f)
+        return avatarUploadGate?.await() ?: avatarUploadResult
+    }
+    override suspend fun deleteAvatar(userId: String, avatarUrl: String): Result<Unit> {
+        avatarDeleteCalls++
+        return avatarDeleteResult
+    }
+    override suspend fun deletePendingAvatar(userId: String, uploadId: String): Result<Unit> {
+        pendingAvatarDeleteCalls++
+        return avatarDeleteResult
+    }
     override suspend fun searchUsers(query: String): Result<List<ProfileUser>> {
         searchCalls++
         lastSearchQuery = query

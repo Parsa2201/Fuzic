@@ -7,10 +7,13 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -30,7 +33,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.MaterialTheme
 import com.androidprj.fuzic.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -220,6 +225,8 @@ private val topLevelDestinations = listOf(
     ProfileDestination,
 )
 
+private const val ProfileUpdatedResultKey = "profile_updated"
+
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FuzicNavigation(
@@ -230,24 +237,41 @@ fun FuzicNavigation(
     val scope = rememberCoroutineScope()
     val unavailableMessage = stringResource(R.string.ui_action_unavailable)
     val notificationTargetUnavailableMessage = stringResource(R.string.notification_target_unavailable)
+    val profileSavedMessage = stringResource(R.string.edit_profile_saved)
     val unavailableAction: (String) -> Unit = { message ->
         scope.launch { snackbarHostState.showSnackbar(message) }
     }
     val sessionViewModel: SessionViewModel = hiltViewModel()
-    val currentUser by sessionViewModel.currentUser.collectAsStateWithLifecycle()
+    val sessionUiState by sessionViewModel.uiState.collectAsStateWithLifecycle()
+    if (sessionUiState is SessionUiState.Restoring) {
+        SessionRestoreScreen(modifier)
+        return
+    }
+    val currentUser = (sessionUiState as SessionUiState.Ready).currentUser
+    var shellAvatarUrl by remember(currentUser?.id) { mutableStateOf(currentUser?.avatarUrl) }
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
     var songActionTarget by remember { mutableStateOf<SongItem?>(null) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = currentBackStackEntry?.destination
-    val selectedTab = topLevelDestinations.indexOfFirst { destination ->
+    val selectedMainTab = topLevelDestinations.indexOfFirst { destination ->
         currentDestination?.hasRoute(destination::class) == true
-    }.takeIf { it >= 0 }?.let(MainTab.entries::get) ?: MainTab.Home
-    val showShell = currentDestination?.hasRoute(HomeDestination::class) == true ||
+    }.takeIf { it >= 0 }?.let(MainTab.entries::get)
+    val isProfileSubDestination = currentDestination?.hasRoute(LikedSongsDestination::class) == true ||
+        currentDestination?.hasRoute(RecentlyPlayedDestination::class) == true ||
+        currentDestination?.hasRoute(ArtistsDestination::class) == true ||
+        currentDestination?.hasRoute(ChatListDestination::class) == true ||
+        currentDestination?.hasRoute(ChatDetailDestination::class) == true ||
+        currentDestination?.hasRoute(FollowSearchDestination::class) == true ||
+        currentDestination?.hasRoute(FollowListDestination::class) == true ||
+        currentDestination?.hasRoute(UserProfileDestination::class) == true
+    val selectedTab = selectedMainTab ?: if (isProfileSubDestination) MainTab.Profile else MainTab.Home
+    val isMainTabDestination = currentDestination?.hasRoute(HomeDestination::class) == true ||
         currentDestination?.hasRoute(SearchDestination::class) == true ||
         currentDestination?.hasRoute(DownloadsDestination::class) == true ||
         currentDestination?.hasRoute(PlaylistsDestination::class) == true ||
         currentDestination?.hasRoute(ProfileDestination::class) == true
+    val showBottomNavigation = isMainTabDestination || isProfileSubDestination
     val hideMiniPlayer = currentDestination?.hasRoute(WelcomeDestination::class) == true ||
         currentDestination?.hasRoute(AuthDestination::class) == true ||
         currentDestination?.hasRoute(PasswordRecoveryDestination::class) == true ||
@@ -257,8 +281,8 @@ fun FuzicNavigation(
         currentDestination?.hasRoute(ChatPickerDestination::class) == true
     val isFullPlayerOpen = currentDestination?.hasRoute(FullPlayerDestination::class) == true
 
-    LaunchedEffect(currentUser, showShell) {
-        if (currentUser == null && showShell) {
+    LaunchedEffect(currentUser, showBottomNavigation) {
+        if (currentUser == null && showBottomNavigation) {
             navController.navigate(WelcomeDestination) {
                 popUpTo(HomeDestination) { inclusive = true }
             }
@@ -272,13 +296,13 @@ fun FuzicNavigation(
         ) { fullPlayerVisible ->
             NavigationSuiteScaffold(
                 modifier = modifier.fillMaxSize(),
-                layoutType = if (showShell) {
+                layoutType = if (showBottomNavigation) {
                     NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
                 } else {
                     NavigationSuiteType.None
                 },
                 navigationSuiteItems = {
-                    if (showShell) {
+                    if (showBottomNavigation) {
                         MainTab.entries.forEachIndexed { index, tab ->
                             item(
                                 selected = index == selectedTab.ordinal,
@@ -302,11 +326,12 @@ fun FuzicNavigation(
             Scaffold(
                 contentWindowInsets = if (isWelcomeDestination) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
                 topBar = {
-                    if (showShell) {
+                    if (isMainTabDestination) {
                         FuzicTopAppBar(
+                            avatarUrl = shellAvatarUrl,
                             onProfileClick = { navController.navigate(ProfileDestination) },
                             onNotificationsClick = { navController.navigate(NotificationsDestination) },
-                            onSettingsClick = { navController.navigate(SettingsDestination) },
+                            onSettingsClick = { navController.navigate(SettingsDestination()) },
                         )
                     }
                 },
@@ -339,7 +364,7 @@ fun FuzicNavigation(
                 }
                 NavHost(
                     navController = navController,
-                    startDestination = WelcomeDestination,
+                    startDestination = if (currentUser != null) HomeDestination else WelcomeDestination,
                     modifier = navHostModifier,
                     enterTransition = {
                         fadeIn(animationSpec = tween(NavigationMotion.DurationMillis)) +
@@ -409,6 +434,7 @@ fun FuzicNavigation(
                     onForgotPasswordClick = { navController.navigate(PasswordRecoveryDestination) },
                     onSwitchModeClick = { viewModel.onIntent(AuthIntent.ToggleMode) },
                     onRetryClick = { viewModel.onIntent(AuthIntent.Retry) },
+                    onBackClick = { navController.popBackStack() },
                 )
             }
             composable<HomeDestination> {
@@ -478,9 +504,19 @@ fun FuzicNavigation(
                     onRetryClick = { viewModel.onIntent(PlaylistsIntent.Retry) },
                 )
             }
-            composable<ProfileDestination> {
+            composable<ProfileDestination> { entry ->
                 val viewModel: ProfileViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val profileUpdated by entry.savedStateHandle
+                    .getStateFlow(ProfileUpdatedResultKey, false)
+                    .collectAsStateWithLifecycle()
+                LaunchedEffect(profileUpdated) {
+                    if (profileUpdated) {
+                        entry.savedStateHandle[ProfileUpdatedResultKey] = false
+                        viewModel.retry()
+                        snackbarHostState.showSnackbar(profileSavedMessage)
+                    }
+                }
                 ProfileScreen(
                     uiState = uiState,
                     onEditProfileClick = { navController.navigate(EditProfileDestination) },
@@ -494,7 +530,7 @@ fun FuzicNavigation(
                             }
                             ProfileEntry.LikedSongs -> navController.navigate(LikedSongsDestination)
                             ProfileEntry.RecentlyPlayed -> navController.navigate(RecentlyPlayedDestination)
-                            ProfileEntry.Settings -> navController.navigate(SettingsDestination)
+                            ProfileEntry.Settings -> navController.navigate(SettingsDestination())
                             ProfileEntry.Chat -> navController.navigate(ChatListDestination)
                             ProfileEntry.Logout -> navController.navigate(SettingsDestination(showLogoutConfirmation = true))
                         }
@@ -518,14 +554,30 @@ fun FuzicNavigation(
             composable<EditProfileDestination> {
                 val viewModel: ProfileEditorViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(uiState.isSaved) {
+                    if (uiState.isSaved) {
+                        shellAvatarUrl = uiState.profile?.avatarUrl
+                        navController.previousBackStackEntry?.savedStateHandle?.set(ProfileUpdatedResultKey, true)
+                        navController.popBackStack()
+                    }
+                }
+                LaunchedEffect(uiState.shouldNavigateBack) {
+                    if (uiState.shouldNavigateBack) {
+                        viewModel.onIntent(ProfileEditorIntent.BackNavigationConsumed)
+                        navController.popBackStack()
+                    }
+                }
                 ProfileEditorScreen(
                     uiState = uiState,
-                    onBackClick = { navController.popBackStack() },
+                    onBackClick = { viewModel.onIntent(ProfileEditorIntent.BackRequested) },
                     onDisplayNameChange = { viewModel.onIntent(ProfileEditorIntent.DisplayNameChanged(it)) },
                     onUsernameChange = { viewModel.onIntent(ProfileEditorIntent.UsernameChanged(it)) },
-                    onAvatarUrlChange = { viewModel.onIntent(ProfileEditorIntent.AvatarUrlChanged(it)) },
+                    onAvatarSelected = { viewModel.onIntent(ProfileEditorIntent.AvatarSelected(it)) },
+                    onDeleteAvatarClick = { viewModel.onIntent(ProfileEditorIntent.DeleteAvatar) },
                     onSaveClick = { viewModel.onIntent(ProfileEditorIntent.Save) },
                     onRetryClick = { viewModel.onIntent(ProfileEditorIntent.Retry) },
+                    onDiscardChangesClick = { viewModel.onIntent(ProfileEditorIntent.DiscardChanges) },
+                    onDismissDiscardClick = { viewModel.onIntent(ProfileEditorIntent.DismissDiscardConfirmation) },
                 )
             }
             composable<UserProfileDestination> { entry ->
@@ -752,6 +804,7 @@ fun FuzicNavigation(
                     },
                     onMarkAllReadClick = { viewModel.onIntent(NotificationsIntent.MarkAllRead) },
                     onRetryClick = { viewModel.onIntent(NotificationsIntent.Retry) },
+                    onBackClick = { navController.popBackStack() },
                 )
             }
             composable<PremiumDestination> {
@@ -763,6 +816,7 @@ fun FuzicNavigation(
                     onUpgradeClick = { viewModel.onIntent(PremiumIntent.Upgrade) },
                     onRestoreClick = { viewModel.onIntent(PremiumIntent.RestorePurchase) },
                     onRetryClick = { viewModel.onIntent(PremiumIntent.Retry) },
+                    onBackClick = { navController.popBackStack() },
                 )
             }
             composable<ChatListDestination> {
@@ -869,6 +923,18 @@ fun FuzicNavigation(
             },
         )
     }
+    }
+}
+
+@Composable
+private fun SessionRestoreScreen(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator()
     }
 }
 

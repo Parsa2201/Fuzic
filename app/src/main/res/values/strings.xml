@@ -78,7 +78,6 @@
     <string name="preview_download_date_today">Today</string>
     <string name="preview_download_date_yesterday">Yesterday</string>
     <string name="preview_download_date_last_week">Last week</string>
-    <string name="action_cancel">Cancel</string>
     <string name="action_create">Create</string>
     <string name="playlists_title">Playlists</string>
     <string name="playlists_new_playlist">New playlist</string>
@@ -231,8 +230,18 @@
     <string name="edit_profile_title">Edit profile</string>
     <string name="edit_profile_display_name">Display name</string>
     <string name="edit_profile_username">Username</string>
-    <string name="edit_profile_avatar_url">Avatar URL</string>
+    <string name="edit_profile_avatar_change">Change photo</string>
+    <string name="edit_profile_avatar_gallery">Choose from gallery</string>
+    <string name="edit_profile_avatar_camera">Take a photo</string>
+    <string name="edit_profile_avatar_delete">Delete photo</string>
+    <string name="edit_profile_avatar_uploading">Uploading profile photo</string>
+    <string name="edit_profile_avatar_read_error">The selected photo could not be read.</string>
+    <string name="edit_profile_discard_title">Discard changes?</string>
+    <string name="edit_profile_discard_message">Your profile changes and any new photo will be discarded.</string>
+    <string name="edit_profile_discard_confirm">Discard</string>
+    <string name="action_cancel">Cancel</string>
     <string name="edit_profile_save">Save changes</string>
+    <string name="edit_profile_saved">Profile updated.</string>
     <string name="edit_profile_error">Profile could not be updated.</string>
     <string name="password_recovery_title">Reset password</string>
     <string name="password_recovery_message">Enter your email and we will send reset instructions.</string>
