@@ -24,7 +24,7 @@ object DatabaseModule {
             context,
             FuzicDatabase::class.java,
             "fuzic_database"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
@@ -33,5 +33,13 @@ object DatabaseModule {
         database: FuzicDatabase
     ): SearchHistoryDao {
         return database.searchHistoryDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideDownloadDao(
+        database: FuzicDatabase
+    ): com.androidprj.fuzic.data.local.dao.DownloadDao {
+        return database.downloadDao
     }
 }

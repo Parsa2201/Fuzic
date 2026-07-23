@@ -12,4 +12,6 @@ interface DownloadRepository {
     suspend fun deleteDownload(downloadId: String): Result<Unit>
     suspend fun restoreDownload(downloadId: String): Result<Unit>
     suspend fun removeDownloadFile(downloadId: String): Result<Unit>
+    /** Returns the local file path if [songId] is fully downloaded, null otherwise. */
+    suspend fun getLocalFilePath(songId: String): String?
 }

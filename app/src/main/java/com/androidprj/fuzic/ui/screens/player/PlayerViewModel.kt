@@ -51,10 +51,13 @@ sealed interface PlayerIntent {
     data object ClearError : PlayerIntent
     data class Download(val song: SongItem) : PlayerIntent
     data class PlayById(val songId: String) : PlayerIntent
+    /** Play a song from a local file, bypassing the network entirely. */
+    data class PlayLocalFile(val song: SongItem, val localFilePath: String) : PlayerIntent
 }
 
 sealed interface PlayerUiEvent {
     data object NavigateToPremium : PlayerUiEvent
+    data class ShowToast(val message: String) : PlayerUiEvent
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -146,6 +149,11 @@ class PlayerViewModel @Inject constructor(
             is PlayerIntent.Play -> runPlayerCommand { playerRepository.play(intent.song) }
             is PlayerIntent.PlayQueue -> runPlayerCommand { playerRepository.playQueue(intent.songs, intent.startIndex) }
             is PlayerIntent.PlayById -> playById(intent.songId)
+            is PlayerIntent.PlayLocalFile -> runPlayerCommand {
+                // Player service resolves local file automatically via LocalPlaybackFileResolver;
+                // we just need to pass the song with its ID so it can be looked up.
+                playerRepository.play(intent.song)
+            }
             PlayerIntent.TogglePlayPause -> runPlayerCommand { playerRepository.togglePlayPause() }
             PlayerIntent.Previous -> runPlayerCommand { playerRepository.skipToPrevious() }
             PlayerIntent.Next -> runPlayerCommand { playerRepository.skipToNext() }
@@ -172,6 +180,8 @@ class PlayerViewModel @Inject constructor(
             }
             result.onSuccess { song ->
                 if (song != null) {
+                    // LocalPlaybackFileResolver in Media3PlayerRepository automatically
+                    // prefers a local download over the remote stream URL.
                     runPlayerCommand { playerRepository.play(song) }
                 } else {
                     _uiState.update { it.copy(errorMessage = stringProvider.get(R.string.player_error_title)) }
@@ -207,14 +217,14 @@ class PlayerViewModel @Inject constructor(
                 audioUrl = song.audioUrl ?: ""
             )
             val result = withContext(ioDispatcher) {
-                kotlin.runCatching { downloadRepository.enqueueDownload(request) }
+                kotlin.runCatching { downloadRepository.enqueueDownload(request).getOrThrow() }
             }
-            if (result.isFailure) {
-                _uiState.update {
-                    it.copy(
-                        actionErrorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title),
-                    )
-                }
+            if (result.isSuccess) {
+                _uiEvents.send(PlayerUiEvent.ShowToast(stringProvider.get(R.string.download_started) ?: "Download started"))
+            } else {
+                val errorMsg = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title)
+                _uiEvents.send(PlayerUiEvent.ShowToast(errorMsg))
+                _uiState.update { it.copy(actionErrorMessage = errorMsg) }
             }
         }
     }

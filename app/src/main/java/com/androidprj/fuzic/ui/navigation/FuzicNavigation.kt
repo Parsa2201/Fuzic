@@ -246,7 +246,7 @@ fun FuzicNavigation(
         return
     }
     val currentUser = (sessionUiState as SessionUiState.Ready).currentUser
-    var shellAvatarUrl by remember(currentUser?.id) { mutableStateOf(currentUser?.avatarUrl) }
+    var shellAvatarUrl by remember(currentUser?.avatarUrl) { mutableStateOf(currentUser?.avatarUrl) }
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
     var songActionTarget by remember { mutableStateOf<SongItem?>(null) }
@@ -509,7 +509,20 @@ fun FuzicNavigation(
                 DownloadsScreen(
                     uiState = uiState,
                     onSortClick = { viewModel.onIntent(DownloadsIntent.SortSelected(it)) },
-                    onSongClick = { playerViewModel.onIntent(PlayerIntent.PlayById(it.id)) },
+                    onSongClick = { item ->
+                        val localPath = item.localFilePath
+                        if (localPath != null) {
+                            val song = com.androidprj.fuzic.model.ui.SongItem(
+                                id = item.id,
+                                title = item.title,
+                                artist = item.artist,
+                                artworkUrl = item.artworkUrl
+                            )
+                            playerViewModel.onIntent(PlayerIntent.PlayLocalFile(song, localPath))
+                        } else {
+                            playerViewModel.onIntent(PlayerIntent.PlayById(item.id))
+                        }
+                    },
                     onDeleteClick = { viewModel.onIntent(DownloadsIntent.Delete(it)) },
                     onUndoDeleteClick = { viewModel.onIntent(DownloadsIntent.UndoDelete) },
                     onRetryClick = { viewModel.onIntent(DownloadsIntent.Retry) },
@@ -882,6 +895,7 @@ fun FuzicNavigation(
             exit = androidx.compose.animation.fadeOut(animationSpec = tween(PlayerTransition.DurationMillis)) + androidx.compose.animation.slideOutVertically(animationSpec = tween(PlayerTransition.DurationMillis), targetOffsetY = { it }),
             modifier = Modifier.fillMaxSize()
         ) {
+            val context = androidx.compose.ui.platform.LocalContext.current
             androidx.activity.compose.BackHandler { isFullPlayerOpen = false }
             LaunchedEffect(playerViewModel) {
                 playerViewModel.uiEvents.collect { event: com.androidprj.fuzic.ui.screens.player.PlayerUiEvent ->
@@ -889,6 +903,9 @@ fun FuzicNavigation(
                         is com.androidprj.fuzic.ui.screens.player.PlayerUiEvent.NavigateToPremium -> {
                             isFullPlayerOpen = false
                             navController.navigate(PremiumDestination)
+                        }
+                        is com.androidprj.fuzic.ui.screens.player.PlayerUiEvent.ShowToast -> {
+                            android.widget.Toast.makeText(context, event.message, android.widget.Toast.LENGTH_SHORT).show()
                         }
                     }
                 }

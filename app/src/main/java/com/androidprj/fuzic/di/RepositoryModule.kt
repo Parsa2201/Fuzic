@@ -97,7 +97,7 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindDownloadRepository(
-        downloadRepositoryImpl: DownloadRepositoryImpl
+        roomDownloadRepository: RoomDownloadRepository
     ): DownloadRepository
 
     @Binds

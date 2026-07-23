@@ -63,6 +63,10 @@ class DownloadsViewModel @Inject constructor(
 
     private fun observePremiumStatus() {
         viewModelScope.launch {
+            // Actively fetch to ensure we don't just rely on the default 'false'
+            withContext(ioDispatcher) {
+                premiumRepository.fetchPremiumStatus()
+            }
             premiumRepository.observePremiumStatus().collect { isPremium ->
                 _uiState.update {
                     it.copy(isPremiumUser = isPremium, isPremiumLoading = false, isUpgrading = false)
