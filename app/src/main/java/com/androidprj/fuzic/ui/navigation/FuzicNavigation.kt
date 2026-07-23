@@ -320,10 +320,15 @@ fun FuzicNavigation(
                 },
                 snackbarHost = { SnackbarHost(snackbarHostState) },
             ) { paddingValues ->
+                val navHostModifier = if (currentDestination?.hasRoute(WelcomeDestination::class) == true) {
+                    Modifier
+                } else {
+                    Modifier.padding(paddingValues)
+                }
                 NavHost(
                     navController = navController,
                     startDestination = WelcomeDestination,
-                    modifier = Modifier.padding(paddingValues),
+                    modifier = navHostModifier,
                     enterTransition = {
                         fadeIn(animationSpec = tween(NavigationMotion.DurationMillis)) +
                             slideIntoContainer(
