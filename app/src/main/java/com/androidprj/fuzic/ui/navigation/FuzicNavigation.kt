@@ -243,14 +243,24 @@ fun FuzicNavigation(
     var songActionTarget by remember { mutableStateOf<SongItem?>(null) }
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = currentBackStackEntry?.destination
-    val selectedTab = topLevelDestinations.indexOfFirst { destination ->
+    val selectedMainTab = topLevelDestinations.indexOfFirst { destination ->
         currentDestination?.hasRoute(destination::class) == true
-    }.takeIf { it >= 0 }?.let(MainTab.entries::get) ?: MainTab.Home
-    val showShell = currentDestination?.hasRoute(HomeDestination::class) == true ||
+    }.takeIf { it >= 0 }?.let(MainTab.entries::get)
+    val isProfileSubDestination = currentDestination?.hasRoute(LikedSongsDestination::class) == true ||
+        currentDestination?.hasRoute(RecentlyPlayedDestination::class) == true ||
+        currentDestination?.hasRoute(ArtistsDestination::class) == true ||
+        currentDestination?.hasRoute(ChatListDestination::class) == true ||
+        currentDestination?.hasRoute(ChatDetailDestination::class) == true ||
+        currentDestination?.hasRoute(FollowSearchDestination::class) == true ||
+        currentDestination?.hasRoute(FollowListDestination::class) == true ||
+        currentDestination?.hasRoute(UserProfileDestination::class) == true
+    val selectedTab = selectedMainTab ?: if (isProfileSubDestination) MainTab.Profile else MainTab.Home
+    val isMainTabDestination = currentDestination?.hasRoute(HomeDestination::class) == true ||
         currentDestination?.hasRoute(SearchDestination::class) == true ||
         currentDestination?.hasRoute(DownloadsDestination::class) == true ||
         currentDestination?.hasRoute(PlaylistsDestination::class) == true ||
         currentDestination?.hasRoute(ProfileDestination::class) == true
+    val showBottomNavigation = isMainTabDestination || isProfileSubDestination
     val hideMiniPlayer = currentDestination?.hasRoute(WelcomeDestination::class) == true ||
         currentDestination?.hasRoute(AuthDestination::class) == true ||
         currentDestination?.hasRoute(PasswordRecoveryDestination::class) == true ||
@@ -260,8 +270,8 @@ fun FuzicNavigation(
         currentDestination?.hasRoute(ChatPickerDestination::class) == true
     val isFullPlayerOpen = currentDestination?.hasRoute(FullPlayerDestination::class) == true
 
-    LaunchedEffect(currentUser, showShell) {
-        if (currentUser == null && showShell) {
+    LaunchedEffect(currentUser, showBottomNavigation) {
+        if (currentUser == null && showBottomNavigation) {
             navController.navigate(WelcomeDestination) {
                 popUpTo(HomeDestination) { inclusive = true }
             }
@@ -275,13 +285,13 @@ fun FuzicNavigation(
         ) { fullPlayerVisible ->
             NavigationSuiteScaffold(
                 modifier = modifier.fillMaxSize(),
-                layoutType = if (showShell) {
+                layoutType = if (showBottomNavigation) {
                     NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
                 } else {
                     NavigationSuiteType.None
                 },
                 navigationSuiteItems = {
-                    if (showShell) {
+                    if (showBottomNavigation) {
                         MainTab.entries.forEachIndexed { index, tab ->
                             item(
                                 selected = index == selectedTab.ordinal,
@@ -305,7 +315,7 @@ fun FuzicNavigation(
             Scaffold(
                 contentWindowInsets = if (isWelcomeDestination) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
                 topBar = {
-                    if (showShell) {
+                    if (isMainTabDestination) {
                         FuzicTopAppBar(
                             onProfileClick = { navController.navigate(ProfileDestination) },
                             onNotificationsClick = { navController.navigate(NotificationsDestination) },
