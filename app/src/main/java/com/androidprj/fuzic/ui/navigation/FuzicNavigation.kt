@@ -607,6 +607,18 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onRetryClick = viewModel::retry,
                     onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
+                    onChatClick = { user ->
+                        navController.navigate(
+                            ChatDetailDestination(
+                                conversationId = user.id,
+                                participantId = user.id,
+                                participantUsername = user.username,
+                                participantDisplayName = user.displayName,
+                                participantAvatarUrl = user.avatarUrl,
+                            ),
+                        )
+                    },
+                    onFollowClick = viewModel::toggleFollow,
                 )
             }
             composable<PlaylistDestination> { entry ->
