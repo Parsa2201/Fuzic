@@ -2,6 +2,7 @@ package com.androidprj.fuzic.di
 
 import android.content.Context
 import coil.ImageLoader
+import coil.decode.SvgDecoder
 import com.androidprj.fuzic.data.repository.Media3PlayerRepository
 import com.androidprj.fuzic.player.local.NoopPlaybackDownloadLookup
 import com.androidprj.fuzic.player.local.PlaybackDownloadLookup
@@ -76,7 +77,9 @@ object ImageLoaderModule {
     @Singleton
     fun provideImageLoader(
         @ApplicationContext context: Context,
-    ): ImageLoader = ImageLoader.Builder(context).build()
+    ): ImageLoader = ImageLoader.Builder(context)
+        .components { add(SvgDecoder.Factory()) }
+        .build()
 }
 
 /**
@@ -95,4 +98,3 @@ object CrossfadeDispatcherModule {
     fun provideCrossfadeMainDispatcher(): CoroutineDispatcher =
         Dispatchers.Main.immediate
 }
-
