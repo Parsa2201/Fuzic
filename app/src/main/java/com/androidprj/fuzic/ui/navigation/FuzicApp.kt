@@ -53,6 +53,8 @@ import com.androidprj.fuzic.ui.screens.downloads.DownloadsScreen
 import com.androidprj.fuzic.ui.screens.home.HomeScreen
 import com.androidprj.fuzic.ui.screens.playlists.PlaylistsScreen
 import com.androidprj.fuzic.ui.screens.profile.ProfileScreen
+import com.androidprj.fuzic.ui.screens.chat.ChatListScreen
+import com.androidprj.fuzic.model.ui.ChatListUiState
 import com.androidprj.fuzic.ui.screens.search.SearchScreen
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.model.ui.AppLanguageOption
@@ -210,10 +212,10 @@ private fun FuzicMainTabContent(
             onRetryClick = {},
             modifier = contentModifier
         )
-        MainTab.Profile -> ProfileScreen(
-            uiState = sampleProfileUiState(),
-            onEditProfileClick = {},
-            onEntryClick = {},
+        MainTab.Chat -> ChatListScreen(
+            uiState = ChatListUiState(),
+            onBackClick = null,
+            onConversationClick = {},
             onRetryClick = {},
             modifier = contentModifier
         )
@@ -420,7 +422,7 @@ private fun FuzicAppShellSearchPreview() {
 private fun FuzicAppShellPersianPreview() {
     FuzicTheme {
         FuzicAppShell(
-            selectedTab = MainTab.Profile,
+            selectedTab = MainTab.Chat,
             onTabSelected = {},
             onProfileClick = {},
             onSettingsClick = {}

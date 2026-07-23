@@ -4,7 +4,9 @@
     <string name="nav_search">جستجو</string>
     <string name="nav_downloads">دانلودها</string>
     <string name="nav_playlists">پلی لیست ها</string>
+    <string name="nav_chat">چت</string>
     <string name="nav_profile">نمایه</string>
+    <string name="profile_title">پروفایل</string>
     <string name="shell_cd_profile">باز کردن نمایه</string>
     <string name="shell_cd_notifications">باز کردن اعلان ها</string>
     <string name="shell_cd_settings">باز کردن تنظیمات</string>

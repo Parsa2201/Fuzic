@@ -84,7 +84,7 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun ChatListRoute(
     uiState: ChatListUiState,
-    onBackClick: () -> Unit,
+    onBackClick: (() -> Unit)?,
     onConversationClick: (ChatConversation) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -95,7 +95,7 @@ fun ChatListRoute(
 @Composable
 fun ChatListScreen(
     uiState: ChatListUiState,
-    onBackClick: () -> Unit,
+    onBackClick: (() -> Unit)?,
     onConversationClick: (ChatConversation) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -103,7 +103,9 @@ fun ChatListScreen(
     Column(
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        DetailTopAppBar(stringResource(R.string.chat_title), onBackClick)
+        if (onBackClick != null) {
+            DetailTopAppBar(stringResource(R.string.chat_title), onBackClick)
+        }
         when {
             uiState.isLoading -> ChatLoading()
             uiState.errorMessage != null -> ChatStateMessage(

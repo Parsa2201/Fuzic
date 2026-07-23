@@ -4,7 +4,9 @@
     <string name="nav_search">Search</string>
     <string name="nav_downloads">Downloads</string>
     <string name="nav_playlists">Playlists</string>
+    <string name="nav_chat">Chat</string>
     <string name="nav_profile">Profile</string>
+    <string name="profile_title">Profile</string>
     <string name="shell_cd_profile">Open profile</string>
     <string name="shell_cd_notifications">Open notifications</string>
     <string name="shell_cd_settings">Open settings</string>

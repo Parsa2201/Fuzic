@@ -221,7 +221,7 @@ private val topLevelDestinations = listOf(
     SearchDestination,
     DownloadsDestination,
     PlaylistsDestination,
-    ProfileDestination,
+    ChatListDestination,
 )
 
 private const val ProfileUpdatedResultKey = "profile_updated"
@@ -276,7 +276,7 @@ fun FuzicNavigation(
         currentDestination?.hasRoute(SearchDestination::class) == true ||
         currentDestination?.hasRoute(DownloadsDestination::class) == true ||
         currentDestination?.hasRoute(PlaylistsDestination::class) == true ||
-        currentDestination?.hasRoute(ProfileDestination::class) == true
+        currentDestination?.hasRoute(ChatListDestination::class) == true
     val showBottomNavigation = isMainTabDestination || isTabSubDestination
     var isFullPlayerOpen by rememberSaveable { mutableStateOf(false) }
     val hideMiniPlayer = isFullPlayerOpen || currentDestination?.hasRoute(WelcomeDestination::class) == true ||
@@ -340,7 +340,11 @@ fun FuzicNavigation(
                     if (isMainTabDestination) {
                         FuzicTopAppBar(
                             avatarUrl = shellAvatarUrl,
-                            onProfileClick = { navController.navigate(ProfileDestination) },
+                            onProfileClick = {
+                                navController.navigate(ProfileDestination) {
+                                    launchSingleTop = true
+                                }
+                            },
                             onNotificationsClick = { navController.navigate(NotificationsDestination) },
                             onSettingsClick = { navController.navigate(SettingsDestination()) },
                         )
@@ -537,6 +541,7 @@ fun FuzicNavigation(
                 }
                 ProfileScreen(
                     uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
                     onEditProfileClick = { navController.navigate(EditProfileDestination) },
                     onEntryClick = { entry ->
                         when (entry) {
@@ -549,7 +554,6 @@ fun FuzicNavigation(
                             ProfileEntry.LikedSongs -> navController.navigate(LikedSongsDestination)
                             ProfileEntry.RecentlyPlayed -> navController.navigate(RecentlyPlayedDestination)
                             ProfileEntry.Settings -> navController.navigate(SettingsDestination())
-                            ProfileEntry.Chat -> navController.navigate(ChatListDestination)
                             ProfileEntry.Logout -> navController.navigate(SettingsDestination(showLogoutConfirmation = true))
                         }
                     },
@@ -609,6 +613,10 @@ fun FuzicNavigation(
                     onRetryClick = viewModel::retry,
                     onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
                     onChatClick = { user ->
+                        lastMainTab = MainTab.Chat
+                        navController.navigate(ChatListDestination) {
+                            launchSingleTop = true
+                        }
                         navController.navigate(
                             ChatDetailDestination(
                                 conversationId = user.id,

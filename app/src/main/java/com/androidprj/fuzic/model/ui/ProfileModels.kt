@@ -52,7 +52,6 @@ enum class ProfileEntry(@StringRes val labelRes: Int) {
     LikedSongs(R.string.profile_entry_liked_songs),
     RecentlyPlayed(R.string.profile_entry_recently_played),
     Settings(R.string.profile_entry_settings),
-    Chat(R.string.profile_entry_chat),
     Logout(R.string.profile_entry_logout);
 
     companion object {
