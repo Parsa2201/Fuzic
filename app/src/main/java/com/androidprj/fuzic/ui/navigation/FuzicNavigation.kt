@@ -151,10 +151,6 @@ data object DownloadsDestination
 @Serializable
 data object PlaylistsDestination
 
-/** Home quick action that reuses the playlist browser without selecting the Playlists tab. */
-@Serializable
-data object HomePlaylistsDestination
-
 @Serializable
 data object ProfileDestination
 
@@ -268,7 +264,6 @@ fun FuzicNavigation(
     val isProfileSubDestination = currentDestination?.hasRoute(LikedSongsDestination::class) == true ||
         currentDestination?.hasRoute(RecentlyPlayedDestination::class) == true ||
         currentDestination?.hasRoute(ArtistsDestination::class) == true ||
-        currentDestination?.hasRoute(HomePlaylistsDestination::class) == true ||
         currentDestination?.hasRoute(ChatListDestination::class) == true ||
         currentDestination?.hasRoute(ChatDetailDestination::class) == true ||
         currentDestination?.hasRoute(FollowSearchDestination::class) == true ||
@@ -318,11 +313,20 @@ fun FuzicNavigation(
                                 selected = index == selectedTab.ordinal,
                                 onClick = {
                                     lastMainTab = tab
-                                    navController.navigate(topLevelDestinations[index]) {
-                                        launchSingleTop = true
-                                        restoreState = true
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
+                                    if (tab == MainTab.Home) {
+                                        val returnedToHome = navController.popBackStack(HomeDestination, inclusive = false)
+                                        if (!returnedToHome) {
+                                            navController.navigate(HomeDestination) {
+                                                launchSingleTop = true
+                                            }
+                                        }
+                                    } else {
+                                        navController.navigate(topLevelDestinations[index]) {
+                                            launchSingleTop = true
+                                            restoreState = true
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
                                         }
                                     }
                                 },
@@ -458,7 +462,7 @@ fun FuzicNavigation(
                         when (action) {
                             HomeQuickAction.LikedSongs -> navController.navigate(LikedSongsDestination)
                             HomeQuickAction.RecentlyPlayed -> navController.navigate(RecentlyPlayedDestination)
-                            HomeQuickAction.MyPlaylists -> navController.navigate(HomePlaylistsDestination)
+                            HomeQuickAction.MyPlaylists -> navController.navigate(PlaylistsDestination)
                             HomeQuickAction.TopArtists -> navController.navigate(ArtistsDestination)
                         }
                     },
@@ -502,9 +506,6 @@ fun FuzicNavigation(
                 )
             }
             composable<PlaylistsDestination> {
-                PlaylistsDestinationContent(navController)
-            }
-            composable<HomePlaylistsDestination> {
                 PlaylistsDestinationContent(navController)
             }
             composable<ProfileDestination> { entry ->
