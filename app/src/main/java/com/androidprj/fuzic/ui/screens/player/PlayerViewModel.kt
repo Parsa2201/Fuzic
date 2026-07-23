@@ -11,6 +11,10 @@ import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.repository.PlayerRepository
 import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.util.StringProvider
+import com.androidprj.fuzic.model.ui.DownloadRequest
+import com.androidprj.fuzic.repository.DownloadRepository
+import com.androidprj.fuzic.repository.PremiumRepository
+import com.androidprj.fuzic.repository.MusicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
@@ -44,6 +48,8 @@ sealed interface PlayerIntent {
     data class RemoveFromQueue(val song: SongItem) : PlayerIntent
     data object Stop : PlayerIntent
     data object ClearError : PlayerIntent
+    data class Download(val song: SongItem) : PlayerIntent
+    data class PlayById(val songId: String) : PlayerIntent
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -51,6 +57,9 @@ sealed interface PlayerIntent {
 class PlayerViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
     private val interactionRepository: InteractionRepository,
+    private val premiumRepository: PremiumRepository,
+    private val downloadRepository: DownloadRepository,
+    private val musicRepository: MusicRepository,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val stringProvider: StringProvider,
 ) : ViewModel() {
@@ -59,7 +68,10 @@ class PlayerViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            var lastRepositoryError: String? = null
             playerRepository.playerState.collect { repositoryState ->
+                val repoErrorChanged = lastRepositoryError != repositoryState.errorMessage
+                lastRepositoryError = repositoryState.errorMessage
                 _uiState.update { current ->
                     repositoryState.copy(
                         isLiked = if (repositoryState.currentSong?.id == current.currentSong?.id) {
@@ -68,7 +80,7 @@ class PlayerViewModel @Inject constructor(
                             false
                         },
                         selectedOverlay = current.selectedOverlay,
-                        errorMessage = current.errorMessage ?: repositoryState.errorMessage,
+                        errorMessage = if (repoErrorChanged) repositoryState.errorMessage else current.errorMessage,
                         visualizerAmplitudes = if (
                             repositoryState.isPlaying &&
                             repositoryState.currentSong?.id == current.currentSong?.id
@@ -77,6 +89,8 @@ class PlayerViewModel @Inject constructor(
                         } else {
                             emptyList()
                         },
+                        isPremiumUser = current.isPremiumUser,
+                        actionErrorMessage = current.actionErrorMessage
                     )
                 }
             }
@@ -112,12 +126,18 @@ class PlayerViewModel @Inject constructor(
                 }
             }
         }
+        viewModelScope.launch {
+            premiumRepository.observePremiumStatus().collect { isPremium ->
+                _uiState.update { it.copy(isPremiumUser = isPremium) }
+            }
+        }
     }
 
     fun onIntent(intent: PlayerIntent) {
         when (intent) {
             is PlayerIntent.Play -> runPlayerCommand { playerRepository.play(intent.song) }
             is PlayerIntent.PlayQueue -> runPlayerCommand { playerRepository.playQueue(intent.songs, intent.startIndex) }
+            is PlayerIntent.PlayById -> playById(intent.songId)
             PlayerIntent.TogglePlayPause -> runPlayerCommand { playerRepository.togglePlayPause() }
             PlayerIntent.Previous -> runPlayerCommand { playerRepository.skipToPrevious() }
             PlayerIntent.Next -> runPlayerCommand { playerRepository.skipToNext() }
@@ -133,6 +153,24 @@ class PlayerViewModel @Inject constructor(
             is PlayerIntent.RemoveFromQueue -> runPlayerCommand { playerRepository.removeFromQueue(intent.song.id) }
             PlayerIntent.Stop -> runPlayerCommand { playerRepository.stop() }
             PlayerIntent.ClearError -> _uiState.update { it.copy(errorMessage = null) }
+            is PlayerIntent.Download -> download(intent.song)
+        }
+    }
+
+    private fun playById(songId: String) {
+        viewModelScope.launch {
+            val result = withContext(ioDispatcher) {
+                musicRepository.getSongById(songId)
+            }
+            result.onSuccess { song ->
+                if (song != null) {
+                    runPlayerCommand { playerRepository.play(song) }
+                } else {
+                    _uiState.update { it.copy(errorMessage = stringProvider.get(R.string.player_error_title)) }
+                }
+            }.onFailure { error ->
+                _uiState.update { it.copy(errorMessage = error.message ?: stringProvider.get(R.string.player_error_title)) }
+            }
         }
     }
 
@@ -145,6 +183,26 @@ class PlayerViewModel @Inject constructor(
                 if (wasLiked) interactionRepository.unlikeSong(song.id) else interactionRepository.likeSong(song.id)
             }
             if (result.isFailure) _uiState.update { it.copy(isLiked = wasLiked, errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title)) }
+        }
+    }
+
+    private fun download(song: SongItem) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(actionErrorMessage = null) }
+            val request = DownloadRequest(
+                song = song,
+                audioUrl = song.audioUrl ?: ""
+            )
+            val result = withContext(ioDispatcher) {
+                kotlin.runCatching { downloadRepository.enqueueDownload(request) }
+            }
+            if (result.isFailure) {
+                _uiState.update {
+                    it.copy(
+                        actionErrorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title),
+                    )
+                }
+            }
         }
     }
 

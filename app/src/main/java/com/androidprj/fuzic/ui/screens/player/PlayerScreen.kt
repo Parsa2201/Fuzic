@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Download
@@ -58,6 +59,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -79,6 +81,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -133,11 +136,10 @@ fun PlayerRoute(
     onLikeClick: () -> Unit,
     onShareClick: () -> Unit,
     onAddToPlaylistClick: () -> Unit,
-    onQueueClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     onSleepTimerClick: () -> Unit,
     onPlaybackSpeedClick: () -> Unit,
-    onQueueSongClick: (SongItem) -> Unit,
-    onSongMoreClick: (SongItem) -> Unit,
+    
     onOverlayDismiss: () -> Unit,
     onSleepTimerSelected: (Int?) -> Unit,
     onPlaybackSpeedSelected: (Float) -> Unit,
@@ -157,11 +159,10 @@ fun PlayerRoute(
         onLikeClick = onLikeClick,
         onShareClick = onShareClick,
         onAddToPlaylistClick = onAddToPlaylistClick,
-        onQueueClick = onQueueClick,
+        onDownloadClick = onDownloadClick,
         onSleepTimerClick = onSleepTimerClick,
         onPlaybackSpeedClick = onPlaybackSpeedClick,
-        onQueueSongClick = onQueueSongClick,
-        onSongMoreClick = onSongMoreClick,
+        
         onOverlayDismiss = onOverlayDismiss,
         onSleepTimerSelected = onSleepTimerSelected,
         onPlaybackSpeedSelected = onPlaybackSpeedSelected,
@@ -185,11 +186,10 @@ fun PlayerScreen(
     onLikeClick: () -> Unit,
     onShareClick: () -> Unit,
     onAddToPlaylistClick: () -> Unit,
-    onQueueClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     onSleepTimerClick: () -> Unit,
     onPlaybackSpeedClick: () -> Unit,
-    onQueueSongClick: (SongItem) -> Unit,
-    onSongMoreClick: (SongItem) -> Unit,
+    
     onOverlayDismiss: () -> Unit,
     onSleepTimerSelected: (Int?) -> Unit,
     onPlaybackSpeedSelected: (Float) -> Unit,
@@ -214,7 +214,10 @@ fun PlayerScreen(
         targetValue = artworkColor ?: defaultBackground,
         label = "playerArtworkGradient",
     )
-    Box(
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onBackground
+    ) {
+        Box(
         modifier = modifier
             .fillMaxSize()
             .graphicsLayer { translationY = minimizeOffset.value }
@@ -236,6 +239,7 @@ fun PlayerScreen(
                     }
                 },
             )
+            .background(defaultBackground)
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
@@ -268,7 +272,7 @@ fun PlayerScreen(
                 onLikeClick = onLikeClick,
                 onShareClick = onShareClick,
                 onAddToPlaylistClick = onAddToPlaylistClick,
-                onQueueClick = onQueueClick,
+                onDownloadClick = onDownloadClick,
                 onSleepTimerClick = onSleepTimerClick,
                 onPlaybackSpeedClick = onPlaybackSpeedClick,
                 artworkModifier = artworkModifier,
@@ -276,12 +280,7 @@ fun PlayerScreen(
         }
 
         when (uiState.selectedOverlay) {
-            PlayerOverlay.Queue -> QueueSheet(
-                queue = uiState.queue,
-                onDismiss = onOverlayDismiss,
-                onSongClick = onQueueSongClick,
-                onSongMoreClick = onSongMoreClick,
-            )
+            PlayerOverlay.Queue -> {} // Deleted QueueSheet
             PlayerOverlay.SleepTimer -> SleepTimerSheet(
                 selectedMinutes = uiState.sleepTimerMinutes,
                 onDismiss = onOverlayDismiss,
@@ -300,6 +299,7 @@ fun PlayerScreen(
             PlayerOverlay.None -> Unit
         }
     }
+    }
 }
 
 @Composable
@@ -315,7 +315,7 @@ private fun PlayerContent(
     onLikeClick: () -> Unit,
     onShareClick: () -> Unit,
     onAddToPlaylistClick: () -> Unit,
-    onQueueClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     onSleepTimerClick: () -> Unit,
     onPlaybackSpeedClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -370,14 +370,7 @@ private fun PlayerContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        if (uiState.isBuffering) {
-            Text(
-                text = stringResource(R.string.player_reconnecting),
-                modifier = Modifier.padding(top = MaterialTheme.spacing.small),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.tertiary,
-            )
-        }
+        // Reconnecting text removed
         Spacer(Modifier.height(MaterialTheme.spacing.medium))
         AudioVisualizer(
             isPlaying = uiState.isPlaying,
@@ -388,10 +381,31 @@ private fun PlayerContent(
         )
         Spacer(Modifier.height(MaterialTheme.spacing.small))
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
             Slider(
                 value = uiState.progress.coerceIn(0f, 1f),
                 onValueChange = onSeek,
                 modifier = Modifier.fillMaxWidth(),
+                thumb = {
+                    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "bufferingThumb")
+                    val scale by if (uiState.isBuffering) {
+                        infiniteTransition.animateFloat(
+                            initialValue = 1f,
+                            targetValue = 1.5f,
+                            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                                animation = androidx.compose.animation.core.tween(400),
+                                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                            ),
+                            label = "scale"
+                        )
+                    } else {
+                        androidx.compose.runtime.mutableStateOf(1f)
+                    }
+                    androidx.compose.material3.SliderDefaults.Thumb(
+                        interactionSource = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        modifier = Modifier.scale(scale)
+                    )
+                }
             )
         }
         Row(
@@ -416,7 +430,7 @@ private fun PlayerContent(
             onLikeClick = onLikeClick,
             onShareClick = onShareClick,
             onAddToPlaylistClick = onAddToPlaylistClick,
-            onQueueClick = onQueueClick,
+            onDownloadClick = onDownloadClick,
             onSleepTimerClick = onSleepTimerClick,
             onPlaybackSpeedClick = onPlaybackSpeedClick,
         )
@@ -489,7 +503,7 @@ private fun PlayerActionGrid(
     onLikeClick: () -> Unit,
     onShareClick: () -> Unit,
     onAddToPlaylistClick: () -> Unit,
-    onQueueClick: () -> Unit,
+    onDownloadClick: () -> Unit,
     onSleepTimerClick: () -> Unit,
     onPlaybackSpeedClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -550,9 +564,9 @@ private fun PlayerActionGrid(
             ),
         ) {
             PlayerActionButton(
-                icon = Icons.AutoMirrored.Filled.QueueMusic,
-                label = stringResource(R.string.player_queue),
-                onClick = onQueueClick,
+                icon = Icons.Default.Download,
+                label = stringResource(R.string.action_download),
+                onClick = onDownloadClick,
                 modifier = Modifier.weight(1f),
             )
 
@@ -741,51 +755,6 @@ private fun DrawScope.drawVisualizer(
             strokeWidth = barWidth,
             cap = StrokeCap.Round,
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun QueueSheet(
-    queue: List<SongItem>,
-    onDismiss: () -> Unit,
-    onSongClick: (SongItem) -> Unit,
-    onSongMoreClick: (SongItem) -> Unit,
-) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        dragHandle = { BottomSheetDefaults.DragHandle() },
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = MaterialTheme.spacing.medium),
-        ) {
-            Text(
-                text = stringResource(R.string.player_queue),
-                style = MaterialTheme.typography.headlineSmall,
-            )
-            if (queue.isEmpty()) {
-                ScreenMessage(
-                    icon = Icons.AutoMirrored.Filled.QueueMusic,
-                    title = stringResource(R.string.player_queue_empty_title),
-                    message = stringResource(R.string.player_queue_empty_message),
-                    fillMaxSize = false,
-                )
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(vertical = MaterialTheme.spacing.medium),
-                ) {
-                    items(queue, key = { it.id }) { song ->
-                        SongListItem(
-                            song = song,
-                            onClick = { onSongClick(song) },
-                            onMoreClick = { onSongMoreClick(song) },
-                        )
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -990,11 +959,11 @@ private fun PlayerPlayingPreview() {
             onLikeClick = {},
             onShareClick = {},
             onAddToPlaylistClick = {},
-            onQueueClick = {},
+            
             onSleepTimerClick = {},
             onPlaybackSpeedClick = {},
-            onQueueSongClick = {},
-            onSongMoreClick = {},
+            
+            onDownloadClick = {},
             onOverlayDismiss = {},
             onSleepTimerSelected = {},
             onPlaybackSpeedSelected = {},
@@ -1018,11 +987,11 @@ private fun PlayerPausedPersianPreview() {
             onLikeClick = {},
             onShareClick = {},
             onAddToPlaylistClick = {},
-            onQueueClick = {},
+            
             onSleepTimerClick = {},
             onPlaybackSpeedClick = {},
-            onQueueSongClick = {},
-            onSongMoreClick = {},
+            
+            onDownloadClick = {},
             onOverlayDismiss = {},
             onSleepTimerSelected = {},
             onPlaybackSpeedSelected = {},
@@ -1046,11 +1015,11 @@ private fun PlayerBufferingPreview() {
             onLikeClick = {},
             onShareClick = {},
             onAddToPlaylistClick = {},
-            onQueueClick = {},
+            
             onSleepTimerClick = {},
             onPlaybackSpeedClick = {},
-            onQueueSongClick = {},
-            onSongMoreClick = {},
+            
+            onDownloadClick = {},
             onOverlayDismiss = {},
             onSleepTimerSelected = {},
             onPlaybackSpeedSelected = {},
@@ -1074,11 +1043,11 @@ private fun PlayerEmptyPreview() {
             onLikeClick = {},
             onShareClick = {},
             onAddToPlaylistClick = {},
-            onQueueClick = {},
+            
             onSleepTimerClick = {},
             onPlaybackSpeedClick = {},
-            onQueueSongClick = {},
-            onSongMoreClick = {},
+            
+            onDownloadClick = {},
             onOverlayDismiss = {},
             onSleepTimerSelected = {},
             onPlaybackSpeedSelected = {},
@@ -1087,17 +1056,7 @@ private fun PlayerEmptyPreview() {
 }
 
 @Preview(name = "Queue sheet", showBackground = true)
-@Composable
-private fun QueueSheetPreview() {
-    FuzicTheme {
-        QueueSheet(
-            queue = samplePlayerState().queue,
-            onDismiss = {},
-            onSongClick = {},
-            onSongMoreClick = {},
-        )
-    }
-}
+
 
 @Preview(name = "Sleep timer sheet - Persian", locale = "fa", showBackground = true)
 @Composable

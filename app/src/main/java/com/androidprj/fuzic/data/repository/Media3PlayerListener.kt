@@ -26,7 +26,7 @@ internal class Media3PlayerListener(
 ) : Player.Listener {
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
-        playerState.update { it.copy(isPlaying = isPlaying) }
+        playerState.update { it.copy(isPlaying = isPlaying, errorMessage = if (isPlaying) null else it.errorMessage) }
     }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
@@ -44,7 +44,7 @@ internal class Media3PlayerListener(
         // surfaces null in that case so the mini-player doesn't go stale.
         val resolvedSong = resolveSong(mediaItem)
         currentSongMirror.value = resolvedSong
-        playerState.update { it.copy(currentSong = resolvedSong) }
+        playerState.update { it.copy(currentSong = resolvedSong, errorMessage = null) }
     }
 
     override fun onRepeatModeChanged(repeatMode: Int) {

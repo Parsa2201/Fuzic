@@ -31,6 +31,8 @@ data class PlayerUiState(
     val sleepTimerMinutes: Int? = null,
     val errorMessage: String? = null,
     val visualizerAmplitudes: List<Float> = emptyList(),
+    val isPremiumUser: Boolean = false,
+    val actionErrorMessage: String? = null,
     /**
      * Dominant color extracted from the current song's cover artwork, in
      * ARGB form. `null` while the artwork is still loading or when no

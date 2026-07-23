@@ -50,6 +50,8 @@ import com.androidprj.fuzic.model.ui.PremiumPlan
 import com.androidprj.fuzic.model.ui.PremiumUiState
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
+import com.androidprj.fuzic.ui.components.PremiumFeatureList
+import com.androidprj.fuzic.ui.components.PremiumHeroCard
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
@@ -130,10 +132,10 @@ private fun PremiumContent(
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
     ) {
         item {
-            PremiumHero()
+            PremiumHeroCard()
         }
         item {
-            PremiumFeatures()
+            PremiumFeatureList()
         }
         item {
             Text(
@@ -170,72 +172,7 @@ private fun PremiumContent(
     }
 }
 
-@Composable
-private fun PremiumHero(modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(MaterialTheme.spacing.large),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-        ) {
-            Icon(
-                Icons.Default.WorkspacePremium,
-                contentDescription = null,
-                modifier = Modifier.size(MaterialTheme.spacing.extraLarge),
-                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-            )
-            Text(
-                text = stringResource(R.string.premium_title),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = stringResource(R.string.premium_subtitle),
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
 
-@Composable
-private fun PremiumFeatures(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-    ) {
-        premiumFeatures.forEach { feature ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(feature.titleRes),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        text = stringResource(feature.descriptionRes),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun PremiumPlanCard(
@@ -363,11 +300,7 @@ fun PremiumUpgradeDialog(
     )
 }
 
-private val premiumFeatures = listOf(
-    PremiumFeature(R.string.premium_feature_downloads, R.string.premium_feature_downloads_description),
-    PremiumFeature(R.string.premium_feature_audio, R.string.premium_feature_audio_description),
-    PremiumFeature(R.string.premium_feature_badge, R.string.premium_feature_badge_description),
-)
+
 
 @Composable
 private fun samplePremiumState() = PremiumUiState(

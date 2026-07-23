@@ -21,9 +21,16 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import com.androidprj.fuzic.repository.PremiumRepository
+import com.androidprj.fuzic.repository.DownloadRepository
+import com.androidprj.fuzic.repository.MusicRepository
+import com.androidprj.fuzic.FakeStringProvider
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerViewModelTest {
+    private val fakePremiumRepository = FakePremiumRepository()
+    private val fakeDownloadRepository = FakeDownloadRepository()
+    private val fakeMusicRepository = FakeMusicRepository()
     private val dispatcher = StandardTestDispatcher()
 
     @Before

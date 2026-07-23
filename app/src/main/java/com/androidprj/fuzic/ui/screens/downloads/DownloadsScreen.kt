@@ -59,6 +59,9 @@ import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
+import androidx.compose.material.icons.filled.WorkspacePremium
+import com.androidprj.fuzic.ui.components.PremiumFeatureList
+import com.androidprj.fuzic.ui.components.PremiumHeroCard
 
 @Composable
 fun DownloadsRoute(
@@ -69,6 +72,7 @@ fun DownloadsRoute(
     onUndoDeleteClick: () -> Unit,
     onRetryClick: () -> Unit,
     onFreeUpSpaceClick: () -> Unit,
+    onUpgradeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     DownloadsScreen(
@@ -79,6 +83,7 @@ fun DownloadsRoute(
         onUndoDeleteClick = onUndoDeleteClick,
         onRetryClick = onRetryClick,
         onFreeUpSpaceClick = onFreeUpSpaceClick,
+        onUpgradeClick = onUpgradeClick,
         modifier = modifier
     )
 }
@@ -92,9 +97,17 @@ fun DownloadsScreen(
     onUndoDeleteClick: () -> Unit,
     onRetryClick: () -> Unit,
     onFreeUpSpaceClick: () -> Unit,
+    onUpgradeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     when {
+        uiState.isPremiumLoading -> DownloadsLoadingContent(modifier)
+        !uiState.isPremiumUser -> DownloadsUpgradeContent(
+            isUpgrading = uiState.isUpgrading,
+            errorMessage = uiState.errorMessage,
+            onUpgradeClick = onUpgradeClick,
+            modifier = modifier
+        )
         uiState.isLoading -> DownloadsLoadingContent(modifier)
         uiState.errorMessage != null -> DownloadsMessageContent(
             icon = Icons.Default.ErrorOutline,
@@ -352,6 +365,58 @@ private fun DownloadSongRow(
 }
 
 @Composable
+private fun DownloadsUpgradeContent(
+    isUpgrading: Boolean,
+    errorMessage: String?,
+    onUpgradeClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(MaterialTheme.spacing.medium),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
+    ) {
+        item {
+            PremiumHeroCard()
+        }
+        item {
+            PremiumFeatureList()
+        }
+        if (errorMessage != null) {
+            item {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium)
+                )
+            }
+        }
+        item {
+            Button(
+                onClick = onUpgradeClick,
+                enabled = !isUpgrading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isUpgrading) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(Icons.Default.WorkspacePremium, contentDescription = null)
+                    Spacer(Modifier.width(MaterialTheme.spacing.small))
+                    Text(stringResource(R.string.premium_upgrade))
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun DownloadsLoadingContent(modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier
@@ -427,7 +492,7 @@ private object DownloadsSizes {
 @Composable
 private fun DownloadsScreenContentPreview() {
     FuzicTheme {
-        DownloadsPreviewState(uiState = sampleDownloadsUiState())
+        DownloadsPreviewState(uiState = sampleDownloadsUiState().copy(isPremiumUser = true, isPremiumLoading = false))
     }
 }
 
@@ -435,7 +500,7 @@ private fun DownloadsScreenContentPreview() {
 @Composable
 private fun DownloadsScreenContentPersianPreview() {
     FuzicTheme {
-        DownloadsPreviewState(uiState = sampleDownloadsUiState())
+        DownloadsPreviewState(uiState = sampleDownloadsUiState().copy(isPremiumUser = true, isPremiumLoading = false))
     }
 }
 
@@ -443,7 +508,7 @@ private fun DownloadsScreenContentPersianPreview() {
 @Composable
 private fun DownloadsScreenStorageFullPreview() {
     FuzicTheme {
-        DownloadsPreviewState(uiState = sampleDownloadsUiState().copy(isStorageFull = true))
+        DownloadsPreviewState(uiState = sampleDownloadsUiState().copy(isStorageFull = true, isPremiumUser = true, isPremiumLoading = false))
     }
 }
 
@@ -451,7 +516,7 @@ private fun DownloadsScreenStorageFullPreview() {
 @Composable
 private fun DownloadsScreenLoadingPreview() {
     FuzicTheme {
-        DownloadsPreviewState(uiState = DownloadsUiState(isLoading = true))
+        DownloadsPreviewState(uiState = DownloadsUiState(isLoading = true, isPremiumUser = true, isPremiumLoading = false))
     }
 }
 
@@ -459,7 +524,7 @@ private fun DownloadsScreenLoadingPreview() {
 @Composable
 private fun DownloadsScreenEmptyPreview() {
     FuzicTheme {
-        DownloadsPreviewState(uiState = DownloadsUiState())
+        DownloadsPreviewState(uiState = DownloadsUiState(isPremiumUser = true, isPremiumLoading = false))
     }
 }
 
@@ -468,7 +533,7 @@ private fun DownloadsScreenEmptyPreview() {
 private fun DownloadsScreenErrorPreview() {
     FuzicTheme {
         DownloadsPreviewState(
-            uiState = DownloadsUiState(errorMessage = stringResource(R.string.downloads_error_message))
+            uiState = DownloadsUiState(errorMessage = stringResource(R.string.downloads_error_message), isPremiumUser = true, isPremiumLoading = false)
         )
     }
 }
@@ -538,6 +603,14 @@ private fun DeleteBackgroundPreview() {
     }
 }
 
+@Preview(name = "Downloads upgrade gate", showBackground = true)
+@Composable
+private fun DownloadsUpgradeGatePreview() {
+    FuzicTheme {
+        DownloadsPreviewState(uiState = DownloadsUiState(isPremiumUser = false, isPremiumLoading = false))
+    }
+}
+
 @Preview(name = "Downloads loading content", showBackground = true)
 @Composable
 private fun DownloadsLoadingContentPreview() {
@@ -570,7 +643,8 @@ private fun DownloadsPreviewState(uiState: DownloadsUiState) {
         onDeleteClick = { item -> state = state.copy(downloads = state.downloads - item) },
         onUndoDeleteClick = { undoRequested = true },
         onRetryClick = { state = state.copy(errorMessage = null) },
-        onFreeUpSpaceClick = { state = state.copy(isStorageFull = false) }
+        onFreeUpSpaceClick = { state = state.copy(isStorageFull = false) },
+        onUpgradeClick = { state = state.copy(isUpgrading = true) }
     )
 }
 

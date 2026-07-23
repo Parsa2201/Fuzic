@@ -8,7 +8,10 @@ data class DownloadsUiState(
     val sortOption: DownloadSortOption = DownloadSortOption.DateDownloaded,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val isStorageFull: Boolean = false
+    val isStorageFull: Boolean = false,
+    val isPremiumUser: Boolean = false,
+    val isPremiumLoading: Boolean = true,
+    val isUpgrading: Boolean = false,
 ) {
     val isEmpty: Boolean
         get() = !isLoading && errorMessage == null && downloads.isEmpty()
