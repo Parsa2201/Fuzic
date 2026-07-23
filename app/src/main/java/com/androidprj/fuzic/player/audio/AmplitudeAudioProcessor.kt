@@ -93,6 +93,10 @@ class AmplitudeAudioProcessor(
                 ringWriteIndex = 0
             }
         }
+        // Media3's BaseAudioProcessor contract: subclass must flip the output
+        // buffer so getOutput() returns the bytes just written. Without this
+        // call getOutput() reads zero bytes.
+        outputBuffer.flip()
     }
 
     override fun onFlush(streamMetadata: AudioProcessor.StreamMetadata) {
