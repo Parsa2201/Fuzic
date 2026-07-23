@@ -9,6 +9,7 @@ import com.androidprj.fuzic.model.ui.PlayerUiState
 import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.player.PlayerController
+import com.androidprj.fuzic.player.audio.AudioProcessorRegistry
 import com.androidprj.fuzic.player.queue.PlaybackQueue
 import com.androidprj.fuzic.player.timer.SleepTimer
 import com.androidprj.fuzic.repository.PlayerRepository
@@ -21,7 +22,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -30,13 +30,16 @@ import kotlinx.coroutines.withContext
  * Media3-backed [PlayerRepository] owning the single [PlayerUiState] snapshot
  * for the whole app. Every transport call hops to the injected IO dispatcher
  * for cooperative cancellation and then to [Dispatchers.Main] because Media3's
- * controller API is main-thread only. Visualizer frames (playback-06) still
- * intentionally return an empty flow; the sleep timer (playback-05) and
- * 250 ms progress polling ticker are wired here.
+ * controller API is main-thread only. Visualizer frames (playback-06) flow
+ * from the audio-thread processor installed in `FuzicPlaybackService`
+ * through the same [AudioProcessorRegistry] instance this repository reads
+ * from. The 250 ms progress polling ticker and sleep timer (playback-05)
+ * are also wired here.
  */
 @Singleton
 class Media3PlayerRepository @Inject constructor(
     private val playerController: PlayerController,
+    audioProcessorRegistry: AudioProcessorRegistry,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     initialPlaybackQueue: PlaybackQueue = PlaybackQueue(),
 ) : PlayerRepository {
@@ -45,7 +48,14 @@ class Media3PlayerRepository @Inject constructor(
     // directly; external callers see only StateFlow via the interface.
     override val playerState: MutableStateFlow<PlayerUiState> = MutableStateFlow(PlayerUiState())
 
-    override val visualizerFrames: Flow<AudioVisualizerFrame> = emptyFlow()
+    /**
+     * Visualizer frames published by the audio processor. The flow is
+     * unicast — `Media3PlayerRepository` is the sole intended subscriber and
+     * `PlayerViewModel` uses `flatMapLatest` so a stale subscription never
+     * holds a future frame slot.
+     */
+    override val visualizerFrames: Flow<AudioVisualizerFrame> =
+        audioProcessorRegistry.frameBuffer.flow()
 
     // Authoritative SongItem mirror for whatever Media3 is playing.
     private val currentSongMirror: MutableStateFlow<SongItem?> = MutableStateFlow(null)
