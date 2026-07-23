@@ -18,6 +18,9 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -269,6 +272,11 @@ fun FuzicNavigation(
         ) { fullPlayerVisible ->
             NavigationSuiteScaffold(
                 modifier = modifier.fillMaxSize(),
+                layoutType = if (showShell) {
+                    NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
+                } else {
+                    NavigationSuiteType.None
+                },
                 navigationSuiteItems = {
                     if (showShell) {
                         MainTab.entries.forEachIndexed { index, tab ->
