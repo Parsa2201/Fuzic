@@ -251,4 +251,5 @@
     <string name="share_to_chat_empty">گفتگویی برای اشتراک‌گذاری وجود ندارد.</string>
     <string name="share_to_chat_error">آهنگ اشتراک‌گذاری نشد.</string>
     <string name="share_to_chat_success">آهنگ اشتراک‌گذاری شد.</string>
+    <string name="player_notification_channel_name">پخش فوزیک</string>
 </resources>

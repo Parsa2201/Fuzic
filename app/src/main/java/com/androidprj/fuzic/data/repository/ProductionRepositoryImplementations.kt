@@ -11,9 +11,6 @@ import com.androidprj.fuzic.model.ui.*
 import com.androidprj.fuzic.repository.*
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
@@ -66,11 +63,6 @@ private val Context.settingsDataStore by preferencesDataStore(name = "app_settin
     override suspend fun deleteDownload(downloadId: String) = unavailable()
     override suspend fun restoreDownload(downloadId: String) = unavailable()
     override suspend fun removeDownloadFile(downloadId: String) = unavailable()
-}
-@Singleton class PlayerRepositoryImpl @Inject constructor() : PlayerRepository {
-    override val playerState = MutableStateFlow(PlayerUiState())
-    override val visualizerFrames: Flow<AudioVisualizerFrame> = emptyFlow()
-    override suspend fun play(song: SongItem) = unavailable(); override suspend fun playQueue(songs: List<SongItem>, startIndex: Int) = unavailable(); override suspend fun togglePlayPause() = unavailable(); override suspend fun seekTo(progress: Float) = unavailable(); override suspend fun skipToPrevious() = unavailable(); override suspend fun skipToNext() = unavailable(); override suspend fun setShuffleEnabled(enabled: Boolean) = unavailable(); override suspend fun setRepeatMode(mode: RepeatMode) = unavailable(); override suspend fun setPlaybackSpeed(speed: Float) = unavailable(); override suspend fun setSleepTimer(minutes: Int?) = unavailable(); override suspend fun addToQueue(song: SongItem) = unavailable(); override suspend fun removeFromQueue(songId: String) = unavailable(); override suspend fun clearQueue() = unavailable(); override suspend fun stop() = unavailable()
 }
 @Singleton class PlaylistDetailsRepositoryImpl @Inject constructor() : PlaylistDetailsRepository { override suspend fun getPlaylistDetails(playlistId: String) = unavailableValue<PlaylistDetails>() }
 @Singleton class ArtistRepositoryImpl @Inject constructor() : ArtistRepository { override suspend fun getArtist(artistId: String) = unavailableValue<ArtistItem>(); override suspend fun getArtistDetails(artistId: String) = unavailableValue<ArtistDetails>(); override fun observeArtists() = flowOf(PagingData.empty<ArtistCollectionItem>()) }
