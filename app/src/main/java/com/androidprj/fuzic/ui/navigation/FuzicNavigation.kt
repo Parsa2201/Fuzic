@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -51,6 +51,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.toRoute
 import com.androidprj.fuzic.ui.components.FuzicTopAppBar
+import com.androidprj.fuzic.ui.components.FuzicLogo
 import com.androidprj.fuzic.ui.components.MiniPlayer
 import com.androidprj.fuzic.ui.components.SongActionSheet
 import com.androidprj.fuzic.model.ui.MiniPlayerUiState
@@ -951,7 +952,10 @@ private fun SessionRestoreScreen(modifier: Modifier = Modifier) {
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
-        CircularProgressIndicator()
+        FuzicLogo(
+            contentDescription = stringResource(R.string.app_name),
+            modifier = Modifier.size(176.dp),
+        )
     }
 }
 
