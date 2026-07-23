@@ -357,6 +357,25 @@ internal class FakePlayerRepository(
     override suspend fun removeFromQueue(songId: String): Result<Unit> = commandResult
     override suspend fun clearQueue(): Result<Unit> = commandResult
     override suspend fun stop(): Result<Unit> = commandResult.onSuccess { _playerState.value = PlayerUiState() }
+
+    var setCrossfadeDurationMsCalls = 0
+    var lastCrossfadeDurationMs: Int? = null
+
+    override suspend fun setCrossfadeDurationMs(milliseconds: Int): Result<Unit> {
+        setCrossfadeDurationMsCalls++
+        lastCrossfadeDurationMs = milliseconds
+        if (milliseconds < 0) {
+            return commandResult.fold(
+                onSuccess = {
+                    Result.failure(
+                        IllegalArgumentException("crossfade duration must be >= 0 (was $milliseconds)"),
+                    )
+                },
+                onFailure = { Result.failure(it) },
+            )
+        }
+        return commandResult
+    }
 }
 
 internal class FakeMusicRepository(

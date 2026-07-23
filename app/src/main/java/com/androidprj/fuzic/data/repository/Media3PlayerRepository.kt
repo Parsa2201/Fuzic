@@ -12,6 +12,7 @@ import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.player.PlayerController
 import com.androidprj.fuzic.player.audio.AudioProcessorRegistry
+import com.androidprj.fuzic.player.crossfade.CrossfadeController
 import com.androidprj.fuzic.player.local.LocalPlaybackFileResolver
 import com.androidprj.fuzic.player.palette.DominantColorExtractor
 import com.androidprj.fuzic.player.queue.AutoSkipGate
@@ -50,6 +51,7 @@ class Media3PlayerRepository @Inject constructor(
     private val interactionRepository: InteractionRepository,
     private val dominantColorExtractor: DominantColorExtractor,
     private val imageLoader: ImageLoader,
+    private val crossfadeController: CrossfadeController,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     initialPlaybackQueue: PlaybackQueue = PlaybackQueue(),
 ) : PlayerRepository {
@@ -335,8 +337,19 @@ class Media3PlayerRepository @Inject constructor(
         val controller = playerController.controller()
         controller.stop()
         controller.clearMediaItems()
+        crossfadeController.cancel()
         Result.success(Unit)
     }
+
+    /**
+     * Configure the crossfade duration in milliseconds. 0 disables
+     * crossfade. Negative values are rejected with [Result.failure]. The
+     * actual dual-player wiring lands in a follow-up increment; today
+     * the duration is recorded on the controller so a future
+     * `FuzicPlaybackService` refactor can pick it up unchanged.
+     */
+    override suspend fun setCrossfadeDurationMs(milliseconds: Int): Result<Unit> =
+        crossfadeController.setCrossfadeDurationMs(milliseconds)
 
     override suspend fun setShuffleEnabled(enabled: Boolean): Result<Unit> = runOnMain {
         // Per spec: update Media3 first, then the logical queue. Media3's
