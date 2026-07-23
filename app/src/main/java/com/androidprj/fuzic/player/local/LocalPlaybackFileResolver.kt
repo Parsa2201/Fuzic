@@ -17,6 +17,17 @@ import kotlinx.coroutines.withContext
  * catalog stream instead of being handed to Media3 as a missing URI.
  *
  * All file IO is hopped to the injected [@IoDispatcher] dispatcher.
+ *
+ * ## Logout policy (spec §21 Q6)
+ *
+ * **Downloads are NOT purged on logout.** This validator is what makes
+ * the no-purge contract work for the playback path: if a downloaded
+ * file is on disk the user keeps playing it offline without re-login;
+ * if it was somehow deleted between sessions the lookup returns `null`
+ * and the playback layer falls back to the stream URL — never to a
+ * broken file:// URI that would cause Media3 to surface a PlaybackException.
+ *
+ * See [PlaybackDownloadLookup] KDoc for the full logout-policy note.
  */
 @Singleton
 class LocalPlaybackFileResolver @Inject constructor(
@@ -33,3 +44,4 @@ class LocalPlaybackFileResolver @Inject constructor(
         if (File(path).exists()) path else null
     }
 }
+
