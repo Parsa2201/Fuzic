@@ -645,6 +645,19 @@ fun FuzicNavigation(
                     onPlayAllClick = { viewModel.onIntent(PlaylistDetailsIntent.PlayAll(it)) },
                     onSongClick = { playerViewModel.onIntent(PlayerIntent.PlayById(it.id)) },
                     onSongMoreClick = { songActionTarget = it },
+                    onRemoveSongClick = { song -> viewModel.onIntent(PlaylistDetailsIntent.RemoveSong(song.id)) },
+                    onSaveEdit = { name, cover ->
+                        viewModel.onIntent(
+                            PlaylistDetailsIntent.SaveEdit(
+                                com.androidprj.fuzic.model.ui.UpdatePlaylistRequest(
+                                    title = name,
+                                    coverImageUrl = cover,
+                                    visibility = com.androidprj.fuzic.model.ui.PlaylistVisibility.Public
+                                )
+                            )
+                        )
+                    },
+                    onDeletePlaylist = { viewModel.onIntent(PlaylistDetailsIntent.DeletePlaylist) },
                     onRetryClick = { viewModel.onIntent(PlaylistDetailsIntent.Retry) },
                 )
             }

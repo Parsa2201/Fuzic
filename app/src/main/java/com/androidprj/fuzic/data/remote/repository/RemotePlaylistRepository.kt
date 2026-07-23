@@ -4,6 +4,7 @@ import com.androidprj.fuzic.model.remote.PlaylistDto
 import com.androidprj.fuzic.model.remote.PlaylistDtoSong
 import com.androidprj.fuzic.model.remote.SongDto
 import com.androidprj.fuzic.model.ui.CreatePlaylistRequest
+import com.androidprj.fuzic.model.ui.UpdatePlaylistRequest
 import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.model.ui.PlaylistVisibility
 import com.androidprj.fuzic.model.ui.SongItem
@@ -88,7 +89,7 @@ class RemotePlaylistRepository @Inject constructor(
                     ?: throw Exception("Failed to read selected cover image")
                 val path = "$userId/${UUID.randomUUID()}.jpg"
                 val bucket = supabaseClient.storage.from("covers")
-                bucket.upload(path, imageBytes) { upsert = true }
+                bucket.upload(path, imageBytes)
                 finalCoverUrl = bucket.publicUrl(path)
             }
             
@@ -101,6 +102,38 @@ class RemotePlaylistRepository @Inject constructor(
             )
             val result = supabaseClient.postgrest["playlists"]
                 .insert(newPlaylist) { select() }
+                .decodeSingle<PlaylistDto>()
+            Result.success(result.toPlaylistItem())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updatePlaylist(playlistId: String, request: UpdatePlaylistRequest): Result<PlaylistItem> {
+        return try {
+            val userId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
+            
+            var finalCoverUrl = request.coverImageUrl
+            if (finalCoverUrl != null && finalCoverUrl.startsWith("content://")) {
+                val imageBytes = appContext.contentResolver.openInputStream(Uri.parse(finalCoverUrl))
+                    ?.use { it.readBytes() }
+                    ?: throw Exception("Failed to read selected cover image")
+                val path = "$userId/${UUID.randomUUID()}.jpg"
+                val bucket = supabaseClient.storage.from("covers")
+                bucket.upload(path, imageBytes)
+                finalCoverUrl = bucket.publicUrl(path)
+            }
+            
+            val updatedPlaylist = UpdatePlaylistDto(
+                title = request.title,
+                isPublic = request.visibility == PlaylistVisibility.Public,
+                coverImageUrl = finalCoverUrl
+            )
+            val result = supabaseClient.postgrest["playlists"]
+                .update(updatedPlaylist) { 
+                    filter { eq("id", playlistId) } 
+                    select() 
+                }
                 .decodeSingle<PlaylistDto>()
             Result.success(result.toPlaylistItem())
         } catch (e: Exception) {
@@ -152,6 +185,13 @@ class RemotePlaylistRepository @Inject constructor(
         val title: String,
         @kotlinx.serialization.SerialName("owner_id") val ownerId: String,
         val type: String?,
+        @kotlinx.serialization.SerialName("is_public") val isPublic: Boolean,
+        @kotlinx.serialization.SerialName("cover_image_url") val coverImageUrl: String? = null
+    )
+
+    @kotlinx.serialization.Serializable
+    private data class UpdatePlaylistDto(
+        val title: String,
         @kotlinx.serialization.SerialName("is_public") val isPublic: Boolean,
         @kotlinx.serialization.SerialName("cover_image_url") val coverImageUrl: String? = null
     )

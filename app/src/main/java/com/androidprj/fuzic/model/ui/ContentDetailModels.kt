@@ -41,8 +41,11 @@ data class ArtistItem(
 
 data class PlaylistDetailsUiState(
     val playlist: PlaylistDetails? = null,
+    val isOwner: Boolean = false,
+    val isEditing: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val actionErrorMessage: String? = null,
 )
 
 data class PlaylistDetails(
@@ -50,6 +53,7 @@ data class PlaylistDetails(
     val title: String,
     val description: String,
     val artworkUrl: String? = null,
+    val ownerId: String,
     val ownerName: String,
     val songs: List<SongItem> = emptyList(),
 )

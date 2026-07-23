@@ -82,6 +82,7 @@ private val Context.settingsDataStore by preferencesDataStore(name = "app_settin
                 title = playlist.title,
                 description = "",
                 artworkUrl = playlist.coverImageUrl,
+                ownerId = playlist.ownerId,
                 ownerName = owner?.name ?: owner?.username ?: "Unknown",
                 songs = songs
             ))
