@@ -20,7 +20,8 @@ fun SongDto.toSongItem(): SongItem {
         artworkUrl = this.coverImageUrl,
         album = null,
         durationLabel = null, // Will require formatting if DTO had duration
-        isExplicit = false // Not provided by current DTO
+        isExplicit = false, // Not provided by current DTO
+        audioUrl = this.audioUrl,
     )
 }
 
