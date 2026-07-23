@@ -49,6 +49,7 @@ import com.androidprj.fuzic.model.ui.PremiumFeature
 import com.androidprj.fuzic.model.ui.PremiumPlan
 import com.androidprj.fuzic.model.ui.PremiumUiState
 import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 
@@ -290,13 +291,13 @@ private fun PremiumLoadingContent(modifier: Modifier = Modifier) {
             .padding(MaterialTheme.spacing.medium),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
     ) {
-        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         repeat(4) {
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .size(height = MaterialTheme.spacing.extraLarge, width = MaterialTheme.spacing.extraLarge),
-            ) {}
+                    .size(height = MaterialTheme.spacing.extraLarge, width = MaterialTheme.spacing.extraLarge)
+                    .fuzicShimmer(MaterialTheme.shapes.medium),
+            )
         }
     }
 }

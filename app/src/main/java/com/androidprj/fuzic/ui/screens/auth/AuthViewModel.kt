@@ -48,6 +48,7 @@ class AuthViewModel @Inject constructor(
             AuthIntent.ToggleMode -> _uiState.update {
                 it.copy(
                     isSignUp = !it.isSignUp,
+                    confirmationEmail = null,
                     errorMessage = null,
                     emailErrorRes = null,
                     nameErrorRes = null,
@@ -64,6 +65,8 @@ class AuthViewModel @Inject constructor(
 
     private fun submit() {
         val state = _uiState.value
+        if (state.isLoading || state.confirmationEmail != null) return
+
         val nameError = if (state.isSignUp && state.name.isBlank()) R.string.auth_name_required else null
         val emailError = when {
             state.email.isBlank() -> R.string.auth_email_required
@@ -92,8 +95,8 @@ class AuthViewModel @Inject constructor(
             return
         }
 
+        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val result = withContext(ioDispatcher) {
                 if (state.isSignUp) {
                     authRepository.signUp(state.email.trim(), state.password, state.name.trim())
@@ -103,7 +106,12 @@ class AuthViewModel @Inject constructor(
             }
             _uiState.update { current ->
                 result.fold(
-                    onSuccess = { current.copy(isLoading = false) },
+                    onSuccess = {
+                        current.copy(
+                            isLoading = false,
+                            confirmationEmail = if (state.isSignUp) state.email.trim() else null,
+                        )
+                    },
                     onFailure = {
                         current.copy(
                             isLoading = false,

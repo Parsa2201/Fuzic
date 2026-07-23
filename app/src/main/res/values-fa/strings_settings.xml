@@ -4,6 +4,10 @@
     <string name="settings_language_section">زبان</string>
     <string name="settings_account_section">حساب کاربری</string>
     <string name="settings_theme_title">پوسته</string>
+    <string name="settings_font_size_title">اندازهٔ نوشته</string>
+    <string name="settings_font_size_small">کوچک</string>
+    <string name="settings_font_size_default">پیش‌فرض</string>
+    <string name="settings_font_size_large">بزرگ</string>
     <string name="settings_theme_system">پیش‌فرض سیستم</string>
     <string name="settings_theme_light">روشن</string>
     <string name="settings_theme_dark">تیره</string>

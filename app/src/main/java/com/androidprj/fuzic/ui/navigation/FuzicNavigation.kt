@@ -1,17 +1,26 @@
 package com.androidprj.fuzic.ui.navigation
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -263,6 +272,11 @@ fun FuzicNavigation(
         ) { fullPlayerVisible ->
             NavigationSuiteScaffold(
                 modifier = modifier.fillMaxSize(),
+                layoutType = if (showShell) {
+                    NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
+                } else {
+                    NavigationSuiteType.None
+                },
                 navigationSuiteItems = {
                     if (showShell) {
                         MainTab.entries.forEachIndexed { index, tab ->
@@ -284,7 +298,9 @@ fun FuzicNavigation(
                     }
                 },
             ) {
+            val isWelcomeDestination = currentDestination?.hasRoute(WelcomeDestination::class) == true
             Scaffold(
+                contentWindowInsets = if (isWelcomeDestination) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
                 topBar = {
                     if (showShell) {
                         FuzicTopAppBar(
@@ -316,10 +332,43 @@ fun FuzicNavigation(
                 },
                 snackbarHost = { SnackbarHost(snackbarHostState) },
             ) { paddingValues ->
+                val navHostModifier = if (isWelcomeDestination) {
+                    Modifier
+                } else {
+                    Modifier.padding(paddingValues)
+                }
                 NavHost(
                     navController = navController,
                     startDestination = WelcomeDestination,
-                    modifier = Modifier.padding(paddingValues),
+                    modifier = navHostModifier,
+                    enterTransition = {
+                        fadeIn(animationSpec = tween(NavigationMotion.DurationMillis)) +
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(NavigationMotion.DurationMillis),
+                            )
+                    },
+                    exitTransition = {
+                        fadeOut(animationSpec = tween(NavigationMotion.DurationMillis)) +
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(NavigationMotion.DurationMillis),
+                            )
+                    },
+                    popEnterTransition = {
+                        fadeIn(animationSpec = tween(NavigationMotion.DurationMillis)) +
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                                animationSpec = tween(NavigationMotion.DurationMillis),
+                            )
+                    },
+                    popExitTransition = {
+                        fadeOut(animationSpec = tween(NavigationMotion.DurationMillis)) +
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.End,
+                                animationSpec = tween(NavigationMotion.DurationMillis),
+                            )
+                    },
                 ) {
             composable<WelcomeDestination> {
                 LaunchedEffect(currentUser) {
@@ -488,6 +537,7 @@ fun FuzicNavigation(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },
                     onRetryClick = viewModel::retry,
+                    onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
                 )
             }
             composable<SongDestination> { entry ->
@@ -598,11 +648,13 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onThemeClick = { viewModel.onIntent(SettingsIntent.ShowThemeOptions) },
                     onLanguageClick = { viewModel.onIntent(SettingsIntent.ShowLanguageOptions) },
+                    onFontSizeClick = { viewModel.onIntent(SettingsIntent.ShowFontSizeOptions) },
                     onLogoutClick = { viewModel.onIntent(SettingsIntent.ShowLogoutConfirmation) },
                     onLogoutConfirm = { viewModel.onIntent(SettingsIntent.ConfirmLogout) },
                     onLogoutDismiss = { viewModel.onIntent(SettingsIntent.DismissLogoutConfirmation) },
                     onThemeSelected = { viewModel.onIntent(SettingsIntent.ThemeSelected(it)) },
                     onLanguageSelected = { viewModel.onIntent(SettingsIntent.LanguageSelected(it)) },
+                    onFontScaleSelected = { viewModel.onIntent(SettingsIntent.FontScaleSelected(it)) },
                     onRetryClick = { viewModel.onIntent(SettingsIntent.Retry) },
                 )
             }
@@ -644,6 +696,9 @@ fun FuzicNavigation(
                     onSongClick = { navController.navigate(SongDestination(it.id)) },
                     onSongMoreClick = { songActionTarget = it },
                     onRetryClick = { viewModel.onIntent(SongCollectionIntent.Retry) },
+                    onPlayAllClick = { playerViewModel.onIntent(PlayerIntent.PlayQueue(uiState.songs)) },
+                    onShuffleClick = { playerViewModel.onIntent(PlayerIntent.PlayQueue(uiState.songs)); playerViewModel.onIntent(PlayerIntent.ToggleShuffle) },
+                    onRemoveClick = { viewModel.onIntent(SongCollectionIntent.Remove(it.id)) },
                 )
             }
             composable<RecentlyPlayedDestination> {
@@ -655,6 +710,9 @@ fun FuzicNavigation(
                     onSongClick = { navController.navigate(SongDestination(it.id)) },
                     onSongMoreClick = { songActionTarget = it },
                     onRetryClick = { viewModel.onIntent(SongCollectionIntent.Retry) },
+                    onPlayAllClick = { playerViewModel.onIntent(PlayerIntent.PlayQueue(uiState.songs)) },
+                    onShuffleClick = { playerViewModel.onIntent(PlayerIntent.PlayQueue(uiState.songs)); playerViewModel.onIntent(PlayerIntent.ToggleShuffle) },
+                    onRemoveClick = { viewModel.onIntent(SongCollectionIntent.Remove(it.id)) },
                 )
             }
             composable<ArtistsDestination> {
@@ -812,6 +870,10 @@ fun FuzicNavigation(
         )
     }
     }
+}
+
+private object NavigationMotion {
+    const val DurationMillis = 220
 }
 
 private fun navigateForItem(controller: NavHostController, id: String, type: MusicItemType) {

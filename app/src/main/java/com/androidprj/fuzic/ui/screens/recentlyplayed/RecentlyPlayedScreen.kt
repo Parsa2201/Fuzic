@@ -20,6 +20,7 @@ fun RecentlyPlayedRoute(
     onSongClick: (SongItem) -> Unit,
     onSongMoreClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
+    onPlayAllClick: () -> Unit = {}, onShuffleClick: () -> Unit = {}, onRemoveClick: (SongItem) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     RecentlyPlayedScreen(
@@ -28,6 +29,7 @@ fun RecentlyPlayedRoute(
         onSongClick = onSongClick,
         onSongMoreClick = onSongMoreClick,
         onRetryClick = onRetryClick,
+        onPlayAllClick = onPlayAllClick, onShuffleClick = onShuffleClick, onRemoveClick = onRemoveClick,
         modifier = modifier,
     )
 }
@@ -39,6 +41,9 @@ fun RecentlyPlayedScreen(
     onSongClick: (SongItem) -> Unit,
     onSongMoreClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
+    onPlayAllClick: () -> Unit = {},
+    onShuffleClick: () -> Unit = {},
+    onRemoveClick: (SongItem) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     SongCollectionScreen(

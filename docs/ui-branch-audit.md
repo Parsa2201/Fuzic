@@ -22,6 +22,7 @@ Before this can be treated as feature-complete, prioritize fixing the confirmed 
 |---|---|---|---|
 | Done (`847ea86`) | P0 | Chat | `ChatDetailViewModel` collects `observeMessages()` but discards each emitted list. Opening a conversation therefore never renders repository/cached/realtime messages; only a locally sent message is appended. | Now stored as `PagingData` and rendered through `LazyPagingItems`. Preserve the paging contract for realtime/cache implementations. |
 | Done (`847ea86`) | P0 | Notifications | `NotificationsViewModel` collects `observeNotifications()` but only changes loading/error state. The notifications list is never populated. | Now stored as `PagingData` and rendered through `LazyPagingItems`. |
+| Done | P0 | Paging collection | Chat, Search, and Notifications recreated a `Flow<PagingData<…>>` during each recomposition, which could repeatedly reset their `LazyPagingItems` and render an empty state. | Each screen now remembers the Paging flow for the current `PagingData` instance. |
 | Done (`893fa65`) | P0 | Welcome | In `FuzicNavigation`, `WelcomeScreen` receives empty callbacks for `onPageChanged` and `onNextClick`. The Next button does nothing, so button-only users are stuck on the first page (swiping happens to work). | Next now animates the pager forward; the route callback remains optional. |
 | Done (`ui`) | P1 | Password recovery | `PasswordRecoveryDestination` owns `email` and `isSubmitted` with `rememberSaveable` and sets success locally. It never calls `PasswordRecoveryRepository`, cannot report an error/loading state, and claims success without sending a reset request. | A Hilt `PasswordRecoveryViewModel` now calls Supabase through `PasswordRecoveryRepository` on `Dispatchers.IO` and exposes loading, error, and success state. |
 | Done (`ui`) | P1 | Logout entry | Choosing `ProfileEntry.Logout` merely opens Settings instead of requesting logout or opening the confirmation dialog. This is misleading and adds an unexpected extra step. | Profile opens Settings with a typed confirmation argument; after successful logout the root navigation graph is cleared and Welcome becomes the only destination. |
@@ -65,9 +66,11 @@ Before this can be treated as feature-complete, prioritize fixing the confirmed 
 ## Preview and visual QA findings
 
 - Coverage is generally strong: most screens include English, Persian, content, empty, loading, and error previews. The home shimmer previews are useful delayed-loading scaffolding.
-- Missing reusable-component previews: `ContentDetailComponents.kt` and `SongActionSheet.kt` have no previews. Add normal/long-text/RTL and actionable states for each public reusable composable.
-- `ProfileEditorScreen.kt` and `SongCollectionScreen.kt` lack screen-state previews. Add English and Persian content, loading, empty, and error coverage where applicable.
-- `ChatPickerScreen` has no loading/error preview; `UserProfileScreen` has no loading/empty preview. Add these states.
+- **Done:** `ContentDetailComponents.kt` and `SongActionSheet.kt` now have English/Persian previews.
+- **Done:** `ProfileEditorScreen.kt` and `SongCollectionScreen.kt` now cover content and loading/error/empty states where applicable.
+- **Done:** `ChatPickerScreen` has loading/error previews and `UserProfileScreen` has loading/empty previews; the public profile empty state is rendered explicitly.
+- **Done:** `ChatDetailScreen` includes a representative English/Persian preview with incoming/outgoing text, sending/sent/delivered/read states, and a shared-song card.
+- **Done:** Share-to-Chat and all audited static loading placeholders now use the shared animated shimmer sweep rather than static surface-color blocks.
 - Preview callbacks are still empty in several component/app-shell previews. Use `remember` state and visible feedback where interaction matters, per the project preview rules.
 - There are no screenshot tests. Add Compose Preview Screenshot Testing (or the project-approved equivalent) before visual regressions are expensive. At minimum record phone, foldable, tablet, and desktop cases for the shell, home, playlist grid, chat list/detail, player, and settings.
 - Only the app-shell preview uses `@PreviewScreenSizes`; screen previews do not systematically test larger form factors. The adaptive navigation suite is a good foundation, but content still needs width-aware verification.

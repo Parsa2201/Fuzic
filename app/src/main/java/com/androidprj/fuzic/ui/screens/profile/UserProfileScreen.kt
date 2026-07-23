@@ -1,6 +1,7 @@
 package com.androidprj.fuzic.ui.screens.profile
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -9,6 +10,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Card
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -18,6 +20,8 @@ import androidx.lifecycle.viewModelScope
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.di.IoDispatcher
 import com.androidprj.fuzic.model.ui.ProfileUser
+import com.androidprj.fuzic.model.ui.PlaylistItem
+import com.androidprj.fuzic.repository.PlaylistRepository
 import com.androidprj.fuzic.repository.UserRepository
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
@@ -35,6 +39,7 @@ import kotlinx.coroutines.withContext
 
 data class UserProfileUiState(
     val user: ProfileUser? = null,
+    val publicPlaylists: List<PlaylistItem> = emptyList(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
 )
@@ -42,6 +47,7 @@ data class UserProfileUiState(
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     private val userRepository: UserRepository,
+    private val playlistRepository: PlaylistRepository,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val stringProvider: StringProvider,
 ) : ViewModel() {
@@ -55,7 +61,10 @@ class UserProfileViewModel @Inject constructor(
             _uiState.value = UserProfileUiState()
             val result = withContext(ioDispatcher) { userRepository.getUserProfile(id) }
             _uiState.value = result.fold(
-                onSuccess = { UserProfileUiState(user = it, isLoading = false) },
+                onSuccess = { user ->
+                    val playlists = withContext(ioDispatcher) { playlistRepository.getUserPlaylists(id) }.getOrDefault(emptyList())
+                    UserProfileUiState(user = user, publicPlaylists = playlists, isLoading = false)
+                },
                 onFailure = { UserProfileUiState(isLoading = false, errorMessage = it.message ?: stringProvider.get(R.string.user_profile_error)) },
             )
         }
@@ -80,6 +89,7 @@ private fun UserProfileEnglishPreview() {
             ),
             onBackClick = {},
             onRetryClick = {},
+            onPlaylistClick = {},
         )
     }
 }
@@ -92,6 +102,28 @@ private fun UserProfileErrorPersianPreview() {
             uiState = UserProfileUiState(isLoading = false, errorMessage = "Profile could not be loaded."),
             onBackClick = {},
             onRetryClick = {},
+            onPlaylistClick = {},
+        )
+    }
+}
+
+@Preview(name = "User profile loading - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun UserProfileLoadingPreview() {
+    FuzicTheme {
+        UserProfileScreen(UserProfileUiState(), onBackClick = {}, onRetryClick = {}, onPlaylistClick = {})
+    }
+}
+
+@Preview(name = "User profile empty - Persian", locale = "fa", showBackground = true)
+@Composable
+private fun UserProfileEmptyPreview() {
+    FuzicTheme {
+        UserProfileScreen(
+            uiState = UserProfileUiState(isLoading = false),
+            onBackClick = {},
+            onRetryClick = {},
+            onPlaylistClick = {},
         )
     }
 }
@@ -101,6 +133,7 @@ fun UserProfileScreen(
     uiState: UserProfileUiState,
     onBackClick: () -> Unit,
     onRetryClick: () -> Unit,
+    onPlaylistClick: (PlaylistItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxSize()) {
@@ -113,10 +146,29 @@ fun UserProfileScreen(
                 message = uiState.errorMessage,
                 action = { Button(onClick = onRetryClick) { Text(stringResource(R.string.action_retry)) } },
             )
-            uiState.user != null -> Column(Modifier.padding(MaterialTheme.spacing.large)) {
+            uiState.user != null -> Column(
+                Modifier.padding(MaterialTheme.spacing.large),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+            ) {
                 Text(uiState.user.displayName, style = MaterialTheme.typography.headlineMedium)
                 Text(uiState.user.username, style = MaterialTheme.typography.bodyLarge)
+                if (uiState.publicPlaylists.isNotEmpty()) {
+                    Text(stringResource(R.string.user_profile_public_playlists), style = MaterialTheme.typography.titleLarge)
+                    uiState.publicPlaylists.forEach { playlist ->
+                        Card(onClick = { onPlaylistClick(playlist) }) {
+                            Column(Modifier.padding(MaterialTheme.spacing.medium)) {
+                                Text(playlist.title, style = MaterialTheme.typography.titleMedium)
+                                Text(playlist.songCountLabel, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
             }
+            else -> ScreenMessage(
+                icon = Icons.Default.ErrorOutline,
+                title = stringResource(R.string.profile_empty_title),
+                message = stringResource(R.string.profile_empty_message),
+            )
         }
     }
 }

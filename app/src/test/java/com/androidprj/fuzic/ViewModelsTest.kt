@@ -84,6 +84,25 @@ class ViewModelsTest {
 
         assertEquals(1, repository.signUpCalls)
         assertEquals("Parsa", repository.lastSignUpName)
+        assertEquals("parsa@example.com", viewModel.uiState.value.confirmationEmail)
+    }
+
+    @Test
+    fun authDoesNotResubmitAfterSuccessfulSignup() = runTest {
+        val repository = FakeAuthRepository()
+        val viewModel = AuthViewModel(repository, dispatcher, FakeStringProvider)
+
+        viewModel.onIntent(AuthIntent.ToggleMode)
+        viewModel.onIntent(AuthIntent.NameChanged("Parsa"))
+        viewModel.onIntent(AuthIntent.EmailChanged("parsa@example.com"))
+        viewModel.onIntent(AuthIntent.PasswordChanged("password123"))
+        viewModel.onIntent(AuthIntent.ConfirmPasswordChanged("password123"))
+        viewModel.onIntent(AuthIntent.Submit)
+        advanceUntilIdle()
+        viewModel.onIntent(AuthIntent.Submit)
+        viewModel.onIntent(AuthIntent.Retry)
+
+        assertEquals(1, repository.signUpCalls)
     }
 
     @Test

@@ -14,17 +14,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.FollowTheSigns
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FollowTheSigns
 import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.MarkEmailRead
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.WorkspacePremium
@@ -34,17 +32,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,6 +51,7 @@ import com.androidprj.fuzic.model.ui.NotificationType
 import com.androidprj.fuzic.model.ui.NotificationsUiState
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
@@ -115,7 +113,8 @@ private fun NotificationsContent(
     onMarkAllReadClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val pagedNotifications = flowOf(uiState.notifications).collectAsLazyPagingItems()
+    val notificationsFlow = remember(uiState.notifications) { flowOf(uiState.notifications) }
+    val pagedNotifications = notificationsFlow.collectAsLazyPagingItems()
     val snapshot = pagedNotifications.itemSnapshotList.items
     val unreadCount = snapshot.count { !it.isRead }
     LazyColumn(
@@ -257,7 +256,7 @@ private fun NotificationLeadingIcon(
 ) {
     val icon = when (notification.type) {
         NotificationType.NewRelease -> Icons.Default.LibraryMusic
-        NotificationType.Follow -> Icons.Default.FollowTheSigns
+        NotificationType.Follow -> Icons.AutoMirrored.Filled.FollowTheSigns
         NotificationType.Playlist -> Icons.Default.Favorite
         NotificationType.Premium -> Icons.Default.WorkspacePremium
         NotificationType.System -> Icons.Default.Campaign
@@ -289,20 +288,13 @@ private fun NotificationsLoadingContent(modifier: Modifier = Modifier) {
             .padding(MaterialTheme.spacing.medium),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
     ) {
-        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         repeat(5) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(MaterialTheme.spacing.extraLarge),
-                )
-            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(MaterialTheme.spacing.extraLarge)
+                    .fuzicShimmer(MaterialTheme.shapes.medium),
+            )
         }
     }
 }

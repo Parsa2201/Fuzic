@@ -20,6 +20,7 @@ import kotlinx.coroutines.withContext
 sealed interface SongCollectionIntent {
     data object Retry : SongCollectionIntent
     data object ClearError : SongCollectionIntent
+    data class Remove(val songId: String) : SongCollectionIntent
 }
 
 @HiltViewModel
@@ -40,6 +41,7 @@ class LikedSongsViewModel @Inject constructor(
         when (intent) {
             SongCollectionIntent.Retry -> load()
             SongCollectionIntent.ClearError -> _uiState.value = _uiState.value.copy(errorMessage = null)
+            is SongCollectionIntent.Remove -> viewModelScope.launch { interactionRepository.unlikeSong(intent.songId).onSuccess { _uiState.value = _uiState.value.copy(songs = _uiState.value.songs.filterNot { it.id == intent.songId }) } }
         }
     }
 
@@ -86,6 +88,7 @@ class RecentlyPlayedViewModel @Inject constructor(
         when (intent) {
             SongCollectionIntent.Retry -> load()
             SongCollectionIntent.ClearError -> _uiState.value = _uiState.value.copy(errorMessage = null)
+            is SongCollectionIntent.Remove -> viewModelScope.launch { interactionRepository.removeRecentlyPlayed(intent.songId).onSuccess { _uiState.value = _uiState.value.copy(songs = _uiState.value.songs.filterNot { it.id == intent.songId }) } }
         }
     }
 
