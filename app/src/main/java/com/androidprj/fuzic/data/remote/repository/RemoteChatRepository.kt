@@ -4,6 +4,7 @@ import androidx.paging.PagingData
 import com.androidprj.fuzic.model.remote.MessageDto
 import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.model.ui.ChatMessage
+import com.androidprj.fuzic.model.mapper.toFollowUser
 import com.androidprj.fuzic.model.mapper.toChatMessage
 import com.androidprj.fuzic.model.ui.TypingStatus
 import com.androidprj.fuzic.repository.ChatRepository
@@ -26,7 +27,9 @@ class RemoteChatRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) : ChatRepository {
 
-    override fun observeConversations(): Flow<List<ChatConversation>> = flowOf(emptyList())
+    override fun observeConversations(): Flow<List<ChatConversation>> = flow {
+        emit(loadConversations().getOrThrow())
+    }
 
     override fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>> = flow {
         emit(PagingData.from(getChatHistory(conversationId).getOrDefault(emptyList())))
@@ -94,6 +97,63 @@ class RemoteChatRepository @Inject constructor(
                 .decodeList<MessageDto>()
                 .map { it.toChatMessage(currentUserId) }
             Result.success(messages)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun loadConversations(): Result<List<ChatConversation>> {
+        return try {
+            val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
+                ?: throw Exception("Not logged in")
+            val messages = supabaseClient.postgrest["messages"]
+                .select {
+                    filter {
+                        or {
+                            eq("sender_id", currentUserId)
+                            eq("receiver_id", currentUserId)
+                        }
+                    }
+                    order("created_at", order = Order.DESCENDING)
+                }
+                .decodeList<MessageDto>()
+
+            val participants = messages
+                .asSequence()
+                .map { message ->
+                    val participantId = if (message.senderId == currentUserId) {
+                        message.receiverId
+                    } else {
+                        message.senderId
+                    }
+                    participantId to message
+                }
+                .distinctBy { it.first }
+                .toList()
+
+            val conversations = participants.mapNotNull { (participantId, latestMessage) ->
+                    val participant = supabaseClient.postgrest["users"]
+                        .select { filter { eq("id", participantId) } }
+                        .decodeList<com.androidprj.fuzic.model.remote.UserDto>()
+                        .firstOrNull()
+                        ?: return@mapNotNull null
+                    ChatConversation(
+                        id = participantId,
+                        participant = participant.toFollowUser(),
+                        lastMessagePreview = latestMessage.content.orEmpty(),
+                        lastMessageTimeLabel = latestMessage.createdAt.orEmpty(),
+                        unreadCount = if (
+                            latestMessage.receiverId == currentUserId &&
+                            latestMessage.status != "read"
+                        ) {
+                            1
+                        } else {
+                            0
+                        },
+                    )
+                }
+                .toList()
+            Result.success(conversations)
         } catch (e: Exception) {
             Result.failure(e)
         }
