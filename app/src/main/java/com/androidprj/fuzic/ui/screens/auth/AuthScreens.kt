@@ -297,6 +297,7 @@ private fun AuthForm(
             isError = uiState.nameErrorRes != null,
             supportingText = uiState.nameErrorRes?.let { errorRes -> { Text(stringResource(errorRes)) } },
             singleLine = true,
+            enabled = !uiState.isLoading,
         )
         Spacer(Modifier.height(MaterialTheme.spacing.medium))
     }
@@ -309,6 +310,7 @@ private fun AuthForm(
         isError = uiState.emailErrorRes != null,
         supportingText = uiState.emailErrorRes?.let { errorRes -> { Text(stringResource(errorRes)) } },
         singleLine = true,
+        enabled = !uiState.isLoading,
     )
     Spacer(Modifier.height(MaterialTheme.spacing.medium))
     PasswordField(
@@ -318,6 +320,7 @@ private fun AuthForm(
         isVisible = uiState.isPasswordVisible,
         errorMessage = uiState.passwordErrorRes?.let { stringResource(it) },
         onVisibilityClick = onPasswordVisibilityClick,
+        enabled = !uiState.isLoading,
     )
     if (uiState.isSignUp) {
         Spacer(Modifier.height(MaterialTheme.spacing.medium))
@@ -328,20 +331,22 @@ private fun AuthForm(
             isVisible = uiState.isConfirmPasswordVisible,
             errorMessage = uiState.confirmPasswordErrorRes?.let { stringResource(it) },
             onVisibilityClick = onConfirmPasswordVisibilityClick,
+            enabled = !uiState.isLoading,
         )
     } else {
         TextButton(
             onClick = onForgotPasswordClick,
+            enabled = !uiState.isLoading,
         ) {
             Text(stringResource(R.string.auth_forgot_password))
         }
     }
     Spacer(Modifier.height(MaterialTheme.spacing.medium))
-    Button(onClick = onSubmitClick, modifier = Modifier.fillMaxWidth()) {
+    Button(onClick = onSubmitClick, modifier = Modifier.fillMaxWidth(), enabled = !uiState.isLoading) {
         Text(stringResource(if (uiState.isSignUp) R.string.auth_sign_up else R.string.auth_sign_in))
     }
     Spacer(Modifier.height(MaterialTheme.spacing.small))
-    TextButton(onClick = onSwitchModeClick) {
+    TextButton(onClick = onSwitchModeClick, enabled = !uiState.isLoading) {
         Text(stringResource(if (uiState.isSignUp) R.string.auth_switch_to_sign_in else R.string.auth_switch_to_sign_up))
     }
 }
@@ -354,6 +359,7 @@ private fun PasswordField(
     isVisible: Boolean,
     errorMessage: String?,
     onVisibilityClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
     OutlinedTextField(
         value = value,
@@ -375,6 +381,7 @@ private fun PasswordField(
         isError = errorMessage != null,
         supportingText = errorMessage?.let { { Text(it) } },
         singleLine = true,
+        enabled = enabled,
     )
 }
 
