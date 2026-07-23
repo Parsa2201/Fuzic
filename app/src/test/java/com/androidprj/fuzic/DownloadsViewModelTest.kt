@@ -19,6 +19,7 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DownloadsViewModelTest {
+    private val fakePremiumRepository = FakePremiumRepository()
     private val dispatcher = StandardTestDispatcher()
 
     @Before
@@ -33,7 +34,7 @@ class DownloadsViewModelTest {
 
     @Test
     fun observesDownloadsOnStart() = runTest {
-        val viewModel = DownloadsViewModel(FakeDownloadRepository(), dispatcher, FakeStringProvider)
+        val viewModel = DownloadsViewModel(FakeDownloadRepository(), fakePremiumRepository, dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         assertFalse(viewModel.uiState.value.isLoading)
@@ -43,7 +44,7 @@ class DownloadsViewModelTest {
     @Test
     fun changingSortOptionRestartsObservation() = runTest {
         val repository = FakeDownloadRepository()
-        val viewModel = DownloadsViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = DownloadsViewModel(repository, fakePremiumRepository, dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         viewModel.onIntent(DownloadsIntent.SortSelected(DownloadSortOption.Artist))
@@ -56,7 +57,7 @@ class DownloadsViewModelTest {
     @Test
     fun deleteRemovesItemAndAllowsUndo() = runTest {
         val repository = FakeDownloadRepository()
-        val viewModel = DownloadsViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = DownloadsViewModel(repository, fakePremiumRepository, dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         viewModel.onIntent(DownloadsIntent.Delete(testDownload))
@@ -73,7 +74,7 @@ class DownloadsViewModelTest {
         val repository = FakeDownloadRepository().apply {
             deleteResult = Result.failure(IllegalStateException("delete failed"))
         }
-        val viewModel = DownloadsViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = DownloadsViewModel(repository, fakePremiumRepository, dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         viewModel.onIntent(DownloadsIntent.Delete(testDownload))
@@ -87,7 +88,7 @@ class DownloadsViewModelTest {
         val repository = FakeDownloadRepository().apply {
             removeFileResult = Result.failure(IllegalStateException("storage full"))
         }
-        val viewModel = DownloadsViewModel(repository, dispatcher, FakeStringProvider)
+        val viewModel = DownloadsViewModel(repository, fakePremiumRepository, dispatcher, FakeStringProvider)
         advanceUntilIdle()
 
         viewModel.onIntent(DownloadsIntent.RemoveFile(testDownload))
@@ -95,5 +96,25 @@ class DownloadsViewModelTest {
 
         assertTrue(viewModel.uiState.value.isStorageFull)
         assertEquals("storage full", viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun nonPremiumUserShowsUpgradeGate() = runTest {
+        val viewModel = DownloadsViewModel(FakeDownloadRepository(), fakePremiumRepository, dispatcher, FakeStringProvider)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isPremiumUser)
+        assertFalse(viewModel.uiState.value.isPremiumLoading)
+    }
+
+    @Test
+    fun upgradeToPremiumFlipsStatus() = runTest {
+        val viewModel = DownloadsViewModel(FakeDownloadRepository(), fakePremiumRepository, dispatcher, FakeStringProvider)
+        advanceUntilIdle()
+
+        viewModel.onIntent(DownloadsIntent.UpgradeToPremium)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isPremiumUser)
     }
 }

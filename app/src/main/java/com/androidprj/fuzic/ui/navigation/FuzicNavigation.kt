@@ -514,6 +514,7 @@ fun FuzicNavigation(
                     onUndoDeleteClick = { viewModel.onIntent(DownloadsIntent.UndoDelete) },
                     onRetryClick = { viewModel.onIntent(DownloadsIntent.Retry) },
                     onFreeUpSpaceClick = { viewModel.onIntent(DownloadsIntent.FreeUpSpace) },
+                    onUpgradeClick = { viewModel.onIntent(DownloadsIntent.UpgradeToPremium) },
                 )
             }
             composable<PlaylistsDestination> {
@@ -901,7 +902,12 @@ fun FuzicNavigation(
                     playerUiState.currentSong?.let { navController.navigate(AddToPlaylistDestination(it.id)) } ?: unavailableAction(unavailableMessage)
                 },
                 onDownloadClick = {
-                    playerUiState.currentSong?.let { playerViewModel.onIntent(PlayerIntent.Download(it)) }
+                    if (playerUiState.isPremiumUser) {
+                        playerUiState.currentSong?.let { playerViewModel.onIntent(PlayerIntent.Download(it)) }
+                    } else {
+                        isFullPlayerOpen = false
+                        navController.navigate(PremiumDestination)
+                    }
                 },
                 onSleepTimerClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.SleepTimer)) },
                 onPlaybackSpeedClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.PlaybackSpeed)) },

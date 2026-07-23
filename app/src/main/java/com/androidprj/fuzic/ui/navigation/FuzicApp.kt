@@ -195,6 +195,7 @@ private fun FuzicMainTabContent(
             onUndoDeleteClick = {},
             onRetryClick = {},
             onFreeUpSpaceClick = {},
+            onUpgradeClick = {},
             modifier = contentModifier
         )
         MainTab.Playlists -> PlaylistsScreen(
@@ -313,11 +314,10 @@ private fun sampleSearchUiState(): SearchUiState = SearchUiState(
 )
 
 @Composable
-private fun sampleDownloadsUiState(): DownloadsUiState = DownloadsUiState(
-    sortOption = DownloadSortOption.DateDownloaded,
+private fun sampleDownloadsUiState() = DownloadsUiState(
     downloads = listOf(
         DownloadedSongItem(
-            id = "download-midnight-drive",
+            id = "download-1",
             title = stringResource(R.string.preview_song_midnight_drive),
             artist = stringResource(R.string.preview_artist_luna_ray),
             fileSizeLabel = stringResource(R.string.preview_download_size_large),
@@ -332,7 +332,9 @@ private fun sampleDownloadsUiState(): DownloadsUiState = DownloadsUiState(
             downloadedAtLabel = stringResource(R.string.preview_download_date_yesterday),
             artworkUrl = previewArtworkUri(R.drawable.preview_artwork_tehran)
         )
-    )
+    ),
+    isPremiumUser = true,
+    isPremiumLoading = false
 )
 
 @Composable

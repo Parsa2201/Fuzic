@@ -13,7 +13,7 @@ import com.androidprj.fuzic.ui.screens.playlists.PlaylistsViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileEditorIntent
 import com.androidprj.fuzic.ui.screens.profile.ProfileEditorViewModel
-import com.androidprj.fuzic.ui.screens.song.SongDetailsViewModel
+// import com.androidprj.fuzic.ui.screens.song.SongDetailsViewModel
 import com.androidprj.fuzic.ui.navigation.SessionUiState
 import com.androidprj.fuzic.ui.navigation.SessionViewModel
 import kotlinx.coroutines.async

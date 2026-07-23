@@ -29,7 +29,8 @@ class RemoteInteractionRepository @Inject constructor(
                 }
                 .decodeList<SongWrapper>()
                 .map { it.song.toSongItem() }
-            Result.success(songs)
+            val distinctSongs = songs.distinctBy { it.id }
+            Result.success(distinctSongs)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -48,7 +49,8 @@ class RemoteInteractionRepository @Inject constructor(
                 }
                 .decodeList<SongWrapper>()
                 .map { it.song.toSongItem() }
-            Result.success(songs)
+            val distinctSongs = songs.distinctBy { it.id }
+            Result.success(distinctSongs)
         } catch (e: Exception) {
             Result.failure(e)
         }

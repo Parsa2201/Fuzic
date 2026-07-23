@@ -8,6 +8,7 @@ import com.androidprj.fuzic.model.ui.DownloadSortOption
 import com.androidprj.fuzic.model.ui.DownloadedSongItem
 import com.androidprj.fuzic.model.ui.DownloadsUiState
 import com.androidprj.fuzic.repository.DownloadRepository
+import com.androidprj.fuzic.repository.PremiumRepository
 import com.androidprj.fuzic.util.StringProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -28,11 +29,13 @@ sealed interface DownloadsIntent {
     data object UndoDelete : DownloadsIntent
     data class RemoveFile(val item: DownloadedSongItem) : DownloadsIntent
     data object FreeUpSpace : DownloadsIntent
+    data object UpgradeToPremium : DownloadsIntent
 }
 
 @HiltViewModel
 class DownloadsViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository,
+    private val premiumRepository: PremiumRepository,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val stringProvider: StringProvider,
 ) : ViewModel() {
@@ -43,6 +46,7 @@ class DownloadsViewModel @Inject constructor(
 
     init {
         observeDownloads(DownloadSortOption.DateDownloaded)
+        observePremiumStatus()
     }
 
     fun onIntent(intent: DownloadsIntent) {
@@ -53,6 +57,36 @@ class DownloadsViewModel @Inject constructor(
             DownloadsIntent.UndoDelete -> undoDelete()
             is DownloadsIntent.RemoveFile -> removeFile(intent.item)
             DownloadsIntent.FreeUpSpace -> _uiState.update { it.copy(isStorageFull = false, errorMessage = null) }
+            DownloadsIntent.UpgradeToPremium -> upgradeToPremium()
+        }
+    }
+
+    private fun observePremiumStatus() {
+        viewModelScope.launch {
+            premiumRepository.observePremiumStatus().collect { isPremium ->
+                _uiState.update {
+                    it.copy(isPremiumUser = isPremium, isPremiumLoading = false, isUpgrading = false)
+                }
+            }
+        }
+    }
+
+    private fun upgradeToPremium() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isUpgrading = true, errorMessage = null) }
+            val result = withContext(ioDispatcher) {
+                premiumRepository.purchasePlan(DEMO_PURCHASE_PLAN_ID)
+            }
+            if (result.isFailure) {
+                _uiState.update {
+                    it.copy(
+                        isUpgrading = false,
+                        errorMessage = result.exceptionOrNull()?.message
+                            ?: stringProvider.get(R.string.premium_error_title),
+                    )
+                }
+            }
+            // On success the premium status flow flips isPremiumUser to true automatically.
         }
     }
 
@@ -117,5 +151,10 @@ class DownloadsViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private companion object {
+        // Demo entitlement only: no real purchase flow. Matches RemotePremiumRepository's plan ids.
+        const val DEMO_PURCHASE_PLAN_ID = "yearly"
     }
 }
