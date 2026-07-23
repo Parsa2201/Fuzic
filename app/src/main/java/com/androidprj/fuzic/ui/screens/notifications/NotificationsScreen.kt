@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import androidx.paging.cachedIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FollowTheSigns
@@ -39,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -120,7 +122,10 @@ private fun NotificationsContent(
     onMarkAllReadClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val notificationsFlow = remember(uiState.notifications) { flowOf(uiState.notifications) }
+    val pagingScope = rememberCoroutineScope()
+    val notificationsFlow = remember(uiState.notifications, pagingScope) {
+        flowOf(uiState.notifications).cachedIn(pagingScope)
+    }
     val pagedNotifications = notificationsFlow.collectAsLazyPagingItems()
     val snapshot = pagedNotifications.itemSnapshotList.items
     val unreadCount = snapshot.count { !it.isRead }

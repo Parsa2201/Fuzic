@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import androidx.paging.cachedIn
 import kotlinx.coroutines.flow.flowOf
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -50,6 +51,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -109,7 +111,10 @@ fun SearchScreen(
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val resultsFlow = remember(uiState.results) { flowOf(uiState.results) }
+    val pagingScope = rememberCoroutineScope()
+    val resultsFlow = remember(uiState.results, pagingScope) {
+        flowOf(uiState.results).cachedIn(pagingScope)
+    }
     val pagedResults = resultsFlow.collectAsLazyPagingItems()
     LazyColumn(
         modifier = modifier

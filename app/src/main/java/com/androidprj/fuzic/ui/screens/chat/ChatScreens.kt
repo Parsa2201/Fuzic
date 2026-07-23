@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import androidx.paging.cachedIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -188,7 +190,10 @@ fun ChatDetailScreen(
             )
             else -> {
                 val listState = rememberLazyListState()
-                val messagesFlow = remember(uiState.messages) { flowOf(uiState.messages) }
+                val pagingScope = rememberCoroutineScope()
+                val messagesFlow = remember(uiState.messages, pagingScope) {
+                    flowOf(uiState.messages).cachedIn(pagingScope)
+                }
                 val pagedMessages = messagesFlow.collectAsLazyPagingItems()
                 val visibleUnreadMessages = pagedMessages.itemSnapshotList.items.filter {
                     !it.isMine && it.status != ChatMessageStatus.Read
