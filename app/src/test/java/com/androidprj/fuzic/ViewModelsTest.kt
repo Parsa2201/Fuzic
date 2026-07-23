@@ -9,6 +9,8 @@ import com.androidprj.fuzic.ui.screens.home.HomeViewModel
 import com.androidprj.fuzic.ui.screens.playlists.PlaylistsIntent
 import com.androidprj.fuzic.ui.screens.playlists.PlaylistsViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileViewModel
+import com.androidprj.fuzic.ui.screens.profile.ProfileEditorIntent
+import com.androidprj.fuzic.ui.screens.profile.ProfileEditorViewModel
 import com.androidprj.fuzic.ui.screens.song.SongDetailsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -182,6 +184,26 @@ class ViewModelsTest {
         assertEquals(testProfile, viewModel.uiState.value.profile)
         assertEquals("12", viewModel.uiState.value.stats.followersLabel)
         assertEquals("5", viewModel.uiState.value.stats.followingLabel)
+    }
+
+    @Test
+    fun profileEditorMarksSaveCompleteWithUpdatedProfile() = runTest {
+        val viewModel = ProfileEditorViewModel(
+            FakeAuthRepository(),
+            FakeUserRepository(),
+            dispatcher,
+            FakeStringProvider,
+        )
+        advanceUntilIdle()
+
+        viewModel.onIntent(ProfileEditorIntent.DisplayNameChanged("Parsa Updated"))
+        viewModel.onIntent(ProfileEditorIntent.UsernameChanged("parsa_updated"))
+        viewModel.onIntent(ProfileEditorIntent.Save)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isSaved)
+        assertEquals("Parsa Updated", viewModel.uiState.value.profile?.displayName)
+        assertEquals("parsa_updated", viewModel.uiState.value.profile?.username)
     }
 
     @Test

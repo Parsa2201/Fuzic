@@ -233,6 +233,7 @@
     <string name="edit_profile_username">نام کاربری</string>
     <string name="edit_profile_avatar_url">نشانی تصویر پروفایل</string>
     <string name="edit_profile_save">ذخیره تغییرات</string>
+    <string name="edit_profile_saved">پروفایل به‌روزرسانی شد.</string>
     <string name="edit_profile_error">پروفایل به‌روزرسانی نشد.</string>
     <string name="password_recovery_title">بازیابی گذرواژه</string>
     <string name="password_recovery_message">ایمیل خود را وارد کنید تا دستورالعمل بازیابی ارسال شود.</string>

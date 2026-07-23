@@ -220,6 +220,8 @@ private val topLevelDestinations = listOf(
     ProfileDestination,
 )
 
+private const val ProfileUpdatedResultKey = "profile_updated"
+
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun FuzicNavigation(
@@ -230,6 +232,7 @@ fun FuzicNavigation(
     val scope = rememberCoroutineScope()
     val unavailableMessage = stringResource(R.string.ui_action_unavailable)
     val notificationTargetUnavailableMessage = stringResource(R.string.notification_target_unavailable)
+    val profileSavedMessage = stringResource(R.string.edit_profile_saved)
     val unavailableAction: (String) -> Unit = { message ->
         scope.launch { snackbarHostState.showSnackbar(message) }
     }
@@ -478,9 +481,19 @@ fun FuzicNavigation(
                     onRetryClick = { viewModel.onIntent(PlaylistsIntent.Retry) },
                 )
             }
-            composable<ProfileDestination> {
+            composable<ProfileDestination> { entry ->
                 val viewModel: ProfileViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val profileUpdated by entry.savedStateHandle
+                    .getStateFlow(ProfileUpdatedResultKey, false)
+                    .collectAsStateWithLifecycle()
+                LaunchedEffect(profileUpdated) {
+                    if (profileUpdated) {
+                        entry.savedStateHandle[ProfileUpdatedResultKey] = false
+                        viewModel.retry()
+                        snackbarHostState.showSnackbar(profileSavedMessage)
+                    }
+                }
                 ProfileScreen(
                     uiState = uiState,
                     onEditProfileClick = { navController.navigate(EditProfileDestination) },
@@ -518,6 +531,12 @@ fun FuzicNavigation(
             composable<EditProfileDestination> {
                 val viewModel: ProfileEditorViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(uiState.isSaved) {
+                    if (uiState.isSaved) {
+                        navController.previousBackStackEntry?.savedStateHandle?.set(ProfileUpdatedResultKey, true)
+                        navController.popBackStack()
+                    }
+                }
                 ProfileEditorScreen(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },

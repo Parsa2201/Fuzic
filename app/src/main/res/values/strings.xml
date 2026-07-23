@@ -233,6 +233,7 @@
     <string name="edit_profile_username">Username</string>
     <string name="edit_profile_avatar_url">Avatar URL</string>
     <string name="edit_profile_save">Save changes</string>
+    <string name="edit_profile_saved">Profile updated.</string>
     <string name="edit_profile_error">Profile could not be updated.</string>
     <string name="password_recovery_title">Reset password</string>
     <string name="password_recovery_message">Enter your email and we will send reset instructions.</string>
