@@ -39,7 +39,7 @@ class RemotePlaylistRepository @Inject constructor(
 
     override fun observeLocalPlaylists(): Flow<PagingData<PlaylistItem>> {
         return Pager(PagingConfig(pageSize = 20)) {
-            com.androidprj.fuzic.data.remote.paging.GenericSupabasePagingSource { _, _ -> emptyList() }
+            com.androidprj.fuzic.data.remote.paging.GenericSupabasePagingSource { _, _ -> emptyList<PlaylistItem>() }
         }.flow
     }
 

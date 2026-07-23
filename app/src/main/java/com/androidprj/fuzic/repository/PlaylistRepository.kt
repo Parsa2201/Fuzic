@@ -20,4 +20,5 @@ interface PlaylistRepository {
     suspend fun deletePlaylist(playlistId: String): Result<Unit>
     
     suspend fun addSongToPlaylist(playlistId: String, songId: String): Result<Unit>
+    suspend fun removeSongFromPlaylist(playlistId: String, songId: String): Result<Unit>
 }
