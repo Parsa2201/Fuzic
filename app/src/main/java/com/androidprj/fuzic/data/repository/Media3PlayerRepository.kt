@@ -10,6 +10,7 @@ import com.androidprj.fuzic.model.ui.RepeatMode
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.player.PlayerController
 import com.androidprj.fuzic.player.audio.AudioProcessorRegistry
+import com.androidprj.fuzic.player.local.LocalPlaybackFileResolver
 import com.androidprj.fuzic.player.queue.PlaybackQueue
 import com.androidprj.fuzic.player.timer.SleepTimer
 import com.androidprj.fuzic.repository.PlayerRepository
@@ -40,6 +41,7 @@ import kotlinx.coroutines.withContext
 class Media3PlayerRepository @Inject constructor(
     private val playerController: PlayerController,
     audioProcessorRegistry: AudioProcessorRegistry,
+    private val localFileResolver: LocalPlaybackFileResolver,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     initialPlaybackQueue: PlaybackQueue = PlaybackQueue(),
 ) : PlayerRepository {
@@ -117,16 +119,21 @@ class Media3PlayerRepository @Inject constructor(
     }
 
     override suspend fun play(song: SongItem): Result<Unit> = runOnMain {
-        val url = song.audioUrl
-        if (url.isNullOrEmpty()) {
-            return@runOnMain Result.failure(IllegalArgumentException("song has no audioUrl"))
+        // Prefer a local download before the catalog stream URL so offline
+        // playback works without consuming network. Both null is a real
+        // failure (caller cannot play a song with no source at all).
+        val source = resolveSource(song)
+        if (source.isNullOrEmpty()) {
+            return@runOnMain Result.failure(
+                IllegalArgumentException("song has no audioUrl or downloaded file"),
+            )
         }
         val controller = playerController.controller()
         // Stash the SongItem before issuing transport commands so the
         // subsequent onMediaItemTransition callback can recover it.
         songByMediaId[song.id] = song
         currentSongMirror.value = song
-        controller.setMediaItem(buildMediaItem(song), 0L)
+        controller.setMediaItem(buildMediaItem(song, source), 0L)
         controller.prepare()
         controller.play()
         playbackQueue = playbackQueue.withSongs(listOf(song), 0)
@@ -146,14 +153,21 @@ class Media3PlayerRepository @Inject constructor(
                 IllegalArgumentException("playQueue called with empty list"),
             )
         }
-        val playable = songs.filter { !it.audioUrl.isNullOrEmpty() }
-        if (playable.isEmpty()) {
+        // Resolve each song's source (local download preferred, else catalog
+        // audioUrl) before building MediaItems so we can drop songs that
+        // have no playable source at all and surface a single error.
+        val resolved = songs.mapNotNull { song ->
+            val source = resolveSource(song)
+            if (source.isNullOrEmpty()) null else song to source
+        }
+        if (resolved.isEmpty()) {
             return@runOnMain Result.failure(
-                IllegalArgumentException("playQueue has no songs with audioUrl"),
+                IllegalArgumentException("no playable songs in queue"),
             )
         }
+        val playable = resolved.map { it.first }
         val safeIndex = startIndex.coerceIn(0, playable.lastIndex)
-        val mediaItems = playable.map(::buildMediaItem)
+        val mediaItems = resolved.map { (song, source) -> buildMediaItem(song, source) }
         val controller = playerController.controller()
         controller.setMediaItems(mediaItems, safeIndex, 0L)
         controller.prepare()
@@ -260,14 +274,14 @@ class Media3PlayerRepository @Inject constructor(
     }
 
     override suspend fun addToQueue(song: SongItem): Result<Unit> = runOnMain {
-        val url = song.audioUrl
-        if (url.isNullOrEmpty()) {
+        val source = resolveSource(song)
+        if (source.isNullOrEmpty()) {
             return@runOnMain Result.failure(
-                IllegalArgumentException("song has no audioUrl"),
+                IllegalArgumentException("song has no audioUrl or downloaded file"),
             )
         }
         val controller = playerController.controller()
-        controller.addMediaItem(buildMediaItem(song))
+        controller.addMediaItem(buildMediaItem(song, source))
         songByMediaId[song.id] = song
         playbackQueue = playbackQueue.withAddedSong(song)
         queueMirror.value = playbackQueue.songs
@@ -332,11 +346,30 @@ class Media3PlayerRepository @Inject constructor(
 
     // Centralises MediaItem construction so every entry point populates the
     // songByMediaId map with the same mediaId convention (== SongItem.id).
-    private fun buildMediaItem(song: SongItem): MediaItem =
+    // Callers resolve [source] first via [resolveSource] so this stays a
+    // pure URI → MediaItem mapping.
+    private fun buildMediaItem(song: SongItem, source: String): MediaItem =
         MediaItem.Builder()
             .setMediaId(song.id)
-            .setUri(song.audioUrl)
+            .setUri(source)
             .build()
+
+    /**
+     * Returns the URI Media3 should play for [song]: the absolute path of
+     * the downloaded file when one exists, otherwise [SongItem.audioUrl].
+     * `null` (or empty) means neither source is usable — callers must
+     * surface a controlled failure in that case.
+     *
+     * Local lookup hops to IO via [LocalPlaybackFileResolver]; a deleted
+     * download is treated as "not downloaded" so we fall back to the
+     * stream URL rather than handing Media3 a missing file.
+     */
+    private suspend fun resolveSource(song: SongItem): String? {
+        val local = localFileResolver.resolve(song.id)
+        if (!local.isNullOrEmpty()) return local
+        val stream = song.audioUrl
+        return stream?.takeIf { it.isNotEmpty() }
+    }
 
     // Linear scan over Media3's media item list — queues are small enough
     // (hundreds at most) that this is cheaper than maintaining a parallel

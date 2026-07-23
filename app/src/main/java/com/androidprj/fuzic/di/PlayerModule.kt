@@ -1,6 +1,8 @@
 package com.androidprj.fuzic.di
 
 import com.androidprj.fuzic.data.repository.Media3PlayerRepository
+import com.androidprj.fuzic.player.local.NoopPlaybackDownloadLookup
+import com.androidprj.fuzic.player.local.PlaybackDownloadLookup
 import com.androidprj.fuzic.player.queue.PlaybackQueue
 import com.androidprj.fuzic.repository.PlayerRepository
 import dagger.Binds
@@ -23,6 +25,17 @@ abstract class PlayerModule {
     abstract fun bindPlayerRepository(
         impl: Media3PlayerRepository,
     ): PlayerRepository
+
+    /**
+     * Default playback-local lookup until Bagher's `backend-integration`
+     * branch lands a `RoomPlaybackDownloadLookup` on master. Swap this
+     * binding for the Room-backed impl without touching playback code.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindPlaybackDownloadLookup(
+        impl: NoopPlaybackDownloadLookup,
+    ): PlaybackDownloadLookup
 }
 
 /**
