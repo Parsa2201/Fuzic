@@ -124,6 +124,7 @@ fun FuzicAppShell(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 FuzicTopAppBar(
+                    avatarUrl = null,
                     onProfileClick = onProfileClick,
                     onNotificationsClick = {},
                     onSettingsClick = onSettingsClick

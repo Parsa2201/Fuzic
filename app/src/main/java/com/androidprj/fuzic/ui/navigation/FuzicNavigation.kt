@@ -248,6 +248,7 @@ fun FuzicNavigation(
         return
     }
     val currentUser = (sessionUiState as SessionUiState.Ready).currentUser
+    var shellAvatarUrl by remember(currentUser?.id) { mutableStateOf(currentUser?.avatarUrl) }
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
     var songActionTarget by remember { mutableStateOf<SongItem?>(null) }
@@ -327,6 +328,7 @@ fun FuzicNavigation(
                 topBar = {
                     if (isMainTabDestination) {
                         FuzicTopAppBar(
+                            avatarUrl = shellAvatarUrl,
                             onProfileClick = { navController.navigate(ProfileDestination) },
                             onNotificationsClick = { navController.navigate(NotificationsDestination) },
                             onSettingsClick = { navController.navigate(SettingsDestination()) },
@@ -554,18 +556,28 @@ fun FuzicNavigation(
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 LaunchedEffect(uiState.isSaved) {
                     if (uiState.isSaved) {
+                        shellAvatarUrl = uiState.profile?.avatarUrl
                         navController.previousBackStackEntry?.savedStateHandle?.set(ProfileUpdatedResultKey, true)
+                        navController.popBackStack()
+                    }
+                }
+                LaunchedEffect(uiState.shouldNavigateBack) {
+                    if (uiState.shouldNavigateBack) {
+                        viewModel.onIntent(ProfileEditorIntent.BackNavigationConsumed)
                         navController.popBackStack()
                     }
                 }
                 ProfileEditorScreen(
                     uiState = uiState,
-                    onBackClick = { navController.popBackStack() },
+                    onBackClick = { viewModel.onIntent(ProfileEditorIntent.BackRequested) },
                     onDisplayNameChange = { viewModel.onIntent(ProfileEditorIntent.DisplayNameChanged(it)) },
                     onUsernameChange = { viewModel.onIntent(ProfileEditorIntent.UsernameChanged(it)) },
-                    onAvatarUrlChange = { viewModel.onIntent(ProfileEditorIntent.AvatarUrlChanged(it)) },
+                    onAvatarSelected = { viewModel.onIntent(ProfileEditorIntent.AvatarSelected(it)) },
+                    onDeleteAvatarClick = { viewModel.onIntent(ProfileEditorIntent.DeleteAvatar) },
                     onSaveClick = { viewModel.onIntent(ProfileEditorIntent.Save) },
                     onRetryClick = { viewModel.onIntent(ProfileEditorIntent.Retry) },
+                    onDiscardChangesClick = { viewModel.onIntent(ProfileEditorIntent.DiscardChanges) },
+                    onDismissDiscardClick = { viewModel.onIntent(ProfileEditorIntent.DismissDiscardConfirmation) },
                 )
             }
             composable<UserProfileDestination> { entry ->
