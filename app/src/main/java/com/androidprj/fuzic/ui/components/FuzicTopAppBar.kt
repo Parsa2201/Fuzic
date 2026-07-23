@@ -89,7 +89,7 @@ fun FuzicTopAppBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 FuzicLogo(
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(40.dp),
                 )
                 Text(
                     text = stringResource(R.string.app_name),
