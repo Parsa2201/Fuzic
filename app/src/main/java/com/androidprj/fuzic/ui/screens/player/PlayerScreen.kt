@@ -81,6 +81,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -369,14 +370,7 @@ private fun PlayerContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        if (uiState.isBuffering) {
-            Text(
-                text = stringResource(R.string.player_reconnecting),
-                modifier = Modifier.padding(top = MaterialTheme.spacing.small),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.tertiary,
-            )
-        }
+        // Reconnecting text removed
         Spacer(Modifier.height(MaterialTheme.spacing.medium))
         AudioVisualizer(
             isPlaying = uiState.isPlaying,
@@ -387,10 +381,31 @@ private fun PlayerContent(
         )
         Spacer(Modifier.height(MaterialTheme.spacing.small))
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
             Slider(
                 value = uiState.progress.coerceIn(0f, 1f),
                 onValueChange = onSeek,
                 modifier = Modifier.fillMaxWidth(),
+                thumb = {
+                    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "bufferingThumb")
+                    val scale by if (uiState.isBuffering) {
+                        infiniteTransition.animateFloat(
+                            initialValue = 1f,
+                            targetValue = 1.5f,
+                            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                                animation = androidx.compose.animation.core.tween(400),
+                                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                            ),
+                            label = "scale"
+                        )
+                    } else {
+                        androidx.compose.runtime.mutableStateOf(1f)
+                    }
+                    androidx.compose.material3.SliderDefaults.Thumb(
+                        interactionSource = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        modifier = Modifier.scale(scale)
+                    )
+                }
             )
         }
         Row(

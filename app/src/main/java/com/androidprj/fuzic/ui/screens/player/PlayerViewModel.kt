@@ -68,7 +68,10 @@ class PlayerViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            var lastRepositoryError: String? = null
             playerRepository.playerState.collect { repositoryState ->
+                val repoErrorChanged = lastRepositoryError != repositoryState.errorMessage
+                lastRepositoryError = repositoryState.errorMessage
                 _uiState.update { current ->
                     repositoryState.copy(
                         isLiked = if (repositoryState.currentSong?.id == current.currentSong?.id) {
@@ -77,7 +80,7 @@ class PlayerViewModel @Inject constructor(
                             false
                         },
                         selectedOverlay = current.selectedOverlay,
-                        errorMessage = current.errorMessage ?: repositoryState.errorMessage,
+                        errorMessage = if (repoErrorChanged) repositoryState.errorMessage else current.errorMessage,
                         visualizerAmplitudes = if (
                             repositoryState.isPlaying &&
                             repositoryState.currentSong?.id == current.currentSong?.id
@@ -87,6 +90,7 @@ class PlayerViewModel @Inject constructor(
                             emptyList()
                         },
                         isPremiumUser = current.isPremiumUser,
+                        actionErrorMessage = current.actionErrorMessage
                     )
                 }
             }

@@ -141,7 +141,7 @@ fun MiniPlayer(
                 
                 IconButton(onClick = onCloseClick) {
                     Icon(
-                        imageVector = Icons.Default.SkipNext,
+                        imageVector = Icons.Default.Close,
                         contentDescription = stringResource(R.string.action_cancel)
                     )
                 }
