@@ -21,14 +21,14 @@ fun FuzicLogo(
     contentDescription: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    val logoRes = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
-        R.raw.fuzic_logo_dark
+    val logoAsset = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) {
+        DarkLogoAsset
     } else {
-        R.raw.fuzic_logo_light
+        LightLogoAsset
     }
     AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
-            .data(logoRes)
+            .data("file:///android_asset/$logoAsset")
             .crossfade(false)
             .build(),
         contentDescription = contentDescription,
@@ -36,6 +36,9 @@ fun FuzicLogo(
         contentScale = ContentScale.Fit,
     )
 }
+
+private const val DarkLogoAsset = "fuzic_logo_dark.svg"
+private const val LightLogoAsset = "fuzic_logo_light.svg"
 
 @Preview(name = "Fuzic logo - light theme", showBackground = true)
 @Composable
