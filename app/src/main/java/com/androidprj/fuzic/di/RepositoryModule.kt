@@ -7,6 +7,7 @@ import com.androidprj.fuzic.data.remote.repository.RemoteFollowRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteInteractionRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteMusicRepository
 import com.androidprj.fuzic.data.remote.repository.RemotePlaylistRepository
+import com.androidprj.fuzic.data.remote.repository.RemotePremiumRepository
 import com.androidprj.fuzic.data.remote.repository.RemoteUserRepository
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.PasswordRecoveryRepository
@@ -90,7 +91,7 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindPremiumRepository(
-        premiumRepositoryImpl: PremiumRepositoryImpl
+        remotePremiumRepository: RemotePremiumRepository,
     ): PremiumRepository
 
     @Binds

@@ -51,12 +51,6 @@ private val Context.settingsDataStore by preferencesDataStore(name = "app_settin
         val FontScale = stringPreferencesKey("font_scale")
     }
 }
-@Singleton class PremiumRepositoryImpl @Inject constructor() : PremiumRepository {
-    override fun observePremiumStatus() = flowOf(false)
-    override suspend fun getPlans() = unavailableValue<List<PremiumPlan>>()
-    override suspend fun purchasePlan(planId: String) = unavailable()
-    override suspend fun restorePurchase() = unavailable()
-}
 @Singleton class DownloadRepositoryImpl @Inject constructor() : DownloadRepository {
     override fun observeDownloads(sortOption: DownloadSortOption) = flowOf(emptyList<DownloadedSongItem>())
     override suspend fun enqueueDownload(request: DownloadRequest) = unavailable()
