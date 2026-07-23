@@ -229,6 +229,7 @@ fun AuthScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(MaterialTheme.spacing.large),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = Icons.Default.MusicNote,
@@ -412,6 +413,19 @@ private fun SignInPreview() {
             onForgotPasswordClick = {},
             onSwitchModeClick = {},
             onRetryClick = {},
+        )
+    }
+}
+
+@Preview(name = "Sign in dark", showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun SignInDarkPreview() {
+    FuzicTheme(darkTheme = true) {
+        AuthScreen(
+            uiState = AuthUiState(email = "parsa@example.com"),
+            onNameChange = {}, onEmailChange = {}, onPasswordChange = {}, onConfirmPasswordChange = {},
+            onPasswordVisibilityClick = {}, onConfirmPasswordVisibilityClick = {}, onSubmitClick = {},
+            onForgotPasswordClick = {}, onSwitchModeClick = {}, onRetryClick = {},
         )
     }
 }

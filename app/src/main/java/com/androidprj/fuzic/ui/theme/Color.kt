@@ -6,6 +6,8 @@ val MidnightViolet = Color(0xFF7C4DFF)
 val ElectricTeal = Color(0xFF00C2A8)
 val PremiumGold = Color(0xFFF5B84B)
 val OnDarkAccent = Color(0xFFFFFFFF)
+val OnDarkPrimary = Color(0xFF381E72)
+val OnDarkSecondary = Color(0xFF003731)
 val OnGold = Color(0xFF271900)
 
 val MidnightVioletLight = Color(0xFF5E35D8)
