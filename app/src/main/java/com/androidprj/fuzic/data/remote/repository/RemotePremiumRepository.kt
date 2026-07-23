@@ -29,6 +29,11 @@ class RemotePremiumRepository @Inject constructor(
 
     override fun observePremiumStatus(): StateFlow<Boolean> = premiumStatus
 
+    override suspend fun fetchPremiumStatus(): Result<Boolean> = runCatching {
+        refreshPremiumStatus()
+        premiumStatus.value
+    }
+
     override suspend fun getPlans(): Result<List<PremiumPlan>> = runCatching {
         refreshPremiumStatus()
         listOf(

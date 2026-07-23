@@ -22,6 +22,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -52,6 +53,10 @@ sealed interface PlayerIntent {
     data class PlayById(val songId: String) : PlayerIntent
 }
 
+sealed interface PlayerUiEvent {
+    data object NavigateToPremium : PlayerUiEvent
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
@@ -65,6 +70,9 @@ class PlayerViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
+
+    private val _uiEvents = kotlinx.coroutines.channels.Channel<PlayerUiEvent>(kotlinx.coroutines.channels.Channel.BUFFERED)
+    val uiEvents = _uiEvents.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -189,6 +197,11 @@ class PlayerViewModel @Inject constructor(
     private fun download(song: SongItem) {
         viewModelScope.launch {
             _uiState.update { it.copy(actionErrorMessage = null) }
+            val isPremium = premiumRepository.fetchPremiumStatus().getOrDefault(false)
+            if (!isPremium) {
+                _uiEvents.send(PlayerUiEvent.NavigateToPremium)
+                return@launch
+            }
             val request = DownloadRequest(
                 song = song,
                 audioUrl = song.audioUrl ?: ""

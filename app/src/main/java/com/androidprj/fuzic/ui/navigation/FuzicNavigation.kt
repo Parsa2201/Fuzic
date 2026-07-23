@@ -883,6 +883,16 @@ fun FuzicNavigation(
             modifier = Modifier.fillMaxSize()
         ) {
             androidx.activity.compose.BackHandler { isFullPlayerOpen = false }
+            LaunchedEffect(playerViewModel) {
+                playerViewModel.uiEvents.collect { event: com.androidprj.fuzic.ui.screens.player.PlayerUiEvent ->
+                    when (event) {
+                        is com.androidprj.fuzic.ui.screens.player.PlayerUiEvent.NavigateToPremium -> {
+                            isFullPlayerOpen = false
+                            navController.navigate(PremiumDestination)
+                        }
+                    }
+                }
+            }
             PlayerScreen(
                 uiState = playerUiState,
                 onCloseClick = { isFullPlayerOpen = false },
@@ -902,12 +912,7 @@ fun FuzicNavigation(
                     playerUiState.currentSong?.let { navController.navigate(AddToPlaylistDestination(it.id)) } ?: unavailableAction(unavailableMessage)
                 },
                 onDownloadClick = {
-                    if (playerUiState.isPremiumUser) {
-                        playerUiState.currentSong?.let { playerViewModel.onIntent(PlayerIntent.Download(it)) }
-                    } else {
-                        isFullPlayerOpen = false
-                        navController.navigate(PremiumDestination)
-                    }
+                    playerUiState.currentSong?.let { playerViewModel.onIntent(PlayerIntent.Download(it)) }
                 },
                 onSleepTimerClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.SleepTimer)) },
                 onPlaybackSpeedClick = { playerViewModel.onIntent(PlayerIntent.ShowOverlay(com.androidprj.fuzic.model.ui.PlayerOverlay.PlaybackSpeed)) },
