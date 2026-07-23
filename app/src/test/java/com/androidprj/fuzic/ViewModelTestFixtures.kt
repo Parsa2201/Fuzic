@@ -524,6 +524,8 @@ internal class FakeInteractionRepository(
     var recentlyPlayedResult: Result<List<SongItem>> = Result.success(listOf(testSong))
     var likedCalls = 0
     var recentlyCalls = 0
+    var songLikedStateResult: Result<Boolean> = Result.success(false)
+    var songLikedStateCalls = 0
 
     override suspend fun getRecentlyPlayed(userId: String, offset: Long, limit: Long): Result<List<SongItem>> {
         recentlyCalls++
@@ -534,6 +536,10 @@ internal class FakeInteractionRepository(
         return likedResult
     }
     override suspend fun recordPlay(songId: String) = Result.success(Unit)
+    override suspend fun isSongLiked(songId: String): Result<Boolean> {
+        songLikedStateCalls++
+        return songLikedStateResult
+    }
     override suspend fun likeSong(songId: String): Result<Unit> {
         likeCalls++
         return likeResult

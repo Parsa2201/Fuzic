@@ -62,6 +62,11 @@ class PlayerViewModel @Inject constructor(
             playerRepository.playerState.collect { repositoryState ->
                 _uiState.update { current ->
                     repositoryState.copy(
+                        isLiked = if (repositoryState.currentSong?.id == current.currentSong?.id) {
+                            current.isLiked
+                        } else {
+                            false
+                        },
                         selectedOverlay = current.selectedOverlay,
                         errorMessage = current.errorMessage ?: repositoryState.errorMessage,
                         visualizerAmplitudes = if (
@@ -75,6 +80,19 @@ class PlayerViewModel @Inject constructor(
                     )
                 }
             }
+        }
+        viewModelScope.launch {
+            playerRepository.playerState
+                .map { it.currentSong?.id }
+                .distinctUntilChanged()
+                .collect { songId ->
+                    val isLiked = songId?.let { id ->
+                        withContext(ioDispatcher) { interactionRepository.isSongLiked(id).getOrDefault(false) }
+                    } ?: false
+                    _uiState.update { state ->
+                        if (state.currentSong?.id == songId) state.copy(isLiked = isLiked) else state
+                    }
+                }
         }
         viewModelScope.launch {
             playerRepository.playerState

@@ -113,6 +113,7 @@ fun SongDetailsScreen(
                 song = uiState.song,
                 isLiked = uiState.isLiked,
                 isPremiumUser = uiState.isPremiumUser,
+                actionErrorMessage = uiState.actionErrorMessage,
                 onPlayClick = onPlayClick,
                 onLikeClick = onLikeClick,
                 onDownloadClick = onDownloadClick,
@@ -128,6 +129,7 @@ private fun SongDetailsContent(
     song: SongItem,
     isLiked: Boolean,
     isPremiumUser: Boolean,
+    actionErrorMessage: String?,
     onPlayClick: (SongItem) -> Unit,
     onLikeClick: (SongItem) -> Unit,
     onDownloadClick: (SongItem) -> Unit,
@@ -170,6 +172,15 @@ private fun SongDetailsContent(
                     text = album,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+        actionErrorMessage?.let { message ->
+            item {
+                Text(
+                    text = message,
+                    color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center,
                 )
             }
