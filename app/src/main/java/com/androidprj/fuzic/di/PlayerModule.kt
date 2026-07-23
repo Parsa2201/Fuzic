@@ -3,8 +3,8 @@ package com.androidprj.fuzic.di
 import android.content.Context
 import coil.ImageLoader
 import com.androidprj.fuzic.data.repository.Media3PlayerRepository
-import com.androidprj.fuzic.player.local.NoopPlaybackDownloadLookup
 import com.androidprj.fuzic.player.local.PlaybackDownloadLookup
+import com.androidprj.fuzic.player.local.RoomPlaybackDownloadLookup
 import com.androidprj.fuzic.player.queue.PlaybackQueue
 import com.androidprj.fuzic.repository.PlayerRepository
 import dagger.Binds
@@ -33,14 +33,15 @@ abstract class PlayerModule {
     ): PlayerRepository
 
     /**
-     * Default playback-local lookup until Bagher's `backend-integration`
-     * branch lands a `RoomPlaybackDownloadLookup` on master. Swap this
-     * binding for the Room-backed impl without touching playback code.
+     * Resolves a downloaded song id to its absolute local file path via
+     * the downloads DAO. Wires the playback track to Room on
+     * `backend-integration`; see [RoomPlaybackDownloadLookup] KDoc for
+     * the contract (no filesystem checks, returns null on missing rows).
      */
     @Binds
     @Singleton
     abstract fun bindPlaybackDownloadLookup(
-        impl: NoopPlaybackDownloadLookup,
+        impl: RoomPlaybackDownloadLookup,
     ): PlaybackDownloadLookup
 }
 
