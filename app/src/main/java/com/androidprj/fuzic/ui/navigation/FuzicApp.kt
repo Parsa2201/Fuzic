@@ -196,6 +196,7 @@ private fun FuzicMainTabContent(
             onRetryClick = {},
             onFreeUpSpaceClick = {},
             onUpgradeClick = {},
+            onShowSnackbar = { _, _ -> false },
             modifier = contentModifier
         )
         MainTab.Playlists -> PlaylistsScreen(

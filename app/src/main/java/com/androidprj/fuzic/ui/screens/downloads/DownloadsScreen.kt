@@ -86,6 +86,7 @@ fun DownloadsRoute(
         onRetryClick = onRetryClick,
         onFreeUpSpaceClick = onFreeUpSpaceClick,
         onUpgradeClick = onUpgradeClick,
+        onShowSnackbar = { _, _ -> false },
         modifier = modifier
     )
 }
@@ -100,9 +101,9 @@ fun DownloadsScreen(
     onRetryClick: () -> Unit,
     onFreeUpSpaceClick: () -> Unit,
     onUpgradeClick: () -> Unit,
+    onShowSnackbar: suspend (String, String?) -> Boolean,
     modifier: Modifier = Modifier
 ) {
-    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
     val undoLabel = stringResource(R.string.action_undo)
     val deletedLabel = stringResource(R.string.downloads_deleted_message)
     val coroutineScope = rememberCoroutineScope()
@@ -110,19 +111,14 @@ fun DownloadsScreen(
     val onDeleteWithSnackbar: (DownloadedSongItem) -> Unit = { item ->
         onDeleteClick(item)
         coroutineScope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message = deletedLabel,
-                actionLabel = undoLabel,
-                duration = androidx.compose.material3.SnackbarDuration.Short
-            )
-            if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+            val actionPerfomed = onShowSnackbar(deletedLabel, undoLabel)
+            if (actionPerfomed) {
                 onUndoDeleteClick()
             }
         }
     }
 
     androidx.compose.material3.Scaffold(
-        snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier
     ) { innerPadding ->
@@ -666,7 +662,8 @@ private fun DownloadsPreviewState(uiState: DownloadsUiState) {
         onUndoDeleteClick = { undoRequested = true },
         onRetryClick = { state = state.copy(errorMessage = null) },
         onFreeUpSpaceClick = { state = state.copy(isStorageFull = false) },
-        onUpgradeClick = { state = state.copy(isUpgrading = true) }
+        onUpgradeClick = { state = state.copy(isUpgrading = true) },
+        onShowSnackbar = { _, _ -> false }
     )
 }
 
