@@ -23,6 +23,9 @@
     <string name="auth_confirm_password_error">Passwords do not match.</string>
     <string name="auth_error_title">Sign in unavailable</string>
     <string name="auth_error_message">Check your connection and try again.</string>
+    <string name="auth_confirmation_title">Check your email</string>
+    <string name="auth_confirmation_message">We sent a confirmation link to %1$s. Confirm your account, then sign in.</string>
+    <string name="auth_confirmation_sign_in">Back to sign in</string>
     <string name="auth_password_show">Show password</string>
     <string name="auth_password_hide">Hide password</string>
     <string name="auth_welcome_page_one_title">Find your sound</string>

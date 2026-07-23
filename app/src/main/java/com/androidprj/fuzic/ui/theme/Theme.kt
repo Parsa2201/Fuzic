@@ -15,11 +15,11 @@ import androidx.compose.ui.unit.LayoutDirection
 
 private val DarkColorScheme = darkColorScheme(
     primary = MidnightVioletDark,
-    onPrimary = OnDarkAccent,
+    onPrimary = OnDarkPrimary,
     primaryContainer = MidnightViolet,
     onPrimaryContainer = OnDarkAccent,
     secondary = ElectricTealDark,
-    onSecondary = OnDarkAccent,
+    onSecondary = OnDarkSecondary,
     secondaryContainer = ElectricTeal,
     onSecondaryContainer = OnDarkAccent,
     tertiary = PremiumGoldDark,

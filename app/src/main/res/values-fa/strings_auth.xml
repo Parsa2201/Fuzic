@@ -23,6 +23,9 @@
     <string name="auth_confirm_password_error">رمزهای عبور یکسان نیستند.</string>
     <string name="auth_error_title">ورود در دسترس نیست</string>
     <string name="auth_error_message">اتصال را بررسی و دوباره تلاش کن.</string>
+    <string name="auth_confirmation_title">ایمیلت را بررسی کن</string>
+    <string name="auth_confirmation_message">لینک تأیید به %1$s فرستاده شد. حسابت را تأیید کن و سپس وارد شو.</string>
+    <string name="auth_confirmation_sign_in">بازگشت به ورود</string>
     <string name="auth_password_show">نمایش رمز عبور</string>
     <string name="auth_password_hide">پنهان کردن رمز عبور</string>
     <string name="auth_welcome_page_one_title">صدای خودت را پیدا کن</string>

@@ -12,6 +12,7 @@ data class AuthUiState(
     val isConfirmPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val confirmationEmail: String? = null,
     @StringRes val nameErrorRes: Int? = null,
     @StringRes val emailErrorRes: Int? = null,
     @StringRes val passwordErrorRes: Int? = null,

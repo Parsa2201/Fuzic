@@ -15,7 +15,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Density
@@ -67,7 +66,6 @@ fun FuzicApp(modifier: Modifier = Modifier) {
         AppThemeOption.Light -> false
         AppThemeOption.Dark -> true
     }
-    val baseContext = LocalContext.current
     val baseConfiguration = LocalConfiguration.current
     val baseDensity = androidx.compose.ui.platform.LocalDensity.current
     val locale = when (settings.language) {
@@ -79,10 +77,7 @@ fun FuzicApp(modifier: Modifier = Modifier) {
         locale?.let(::setLocale)
         setLayoutDirection(locale ?: Locale.getDefault())
     }
-    val localizedContext = baseContext.createConfigurationContext(localizedConfiguration)
-
     CompositionLocalProvider(
-        LocalContext provides localizedContext,
         LocalConfiguration provides localizedConfiguration,
         androidx.compose.ui.platform.LocalLayoutDirection provides if (locale?.language == "fa") LayoutDirection.Rtl else LayoutDirection.Ltr,
         androidx.compose.ui.platform.LocalDensity provides Density(baseDensity.density, settings.fontScale.multiplier),

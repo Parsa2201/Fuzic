@@ -8,14 +8,19 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -267,6 +272,11 @@ fun FuzicNavigation(
         ) { fullPlayerVisible ->
             NavigationSuiteScaffold(
                 modifier = modifier.fillMaxSize(),
+                layoutType = if (showShell) {
+                    NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
+                } else {
+                    NavigationSuiteType.None
+                },
                 navigationSuiteItems = {
                     if (showShell) {
                         MainTab.entries.forEachIndexed { index, tab ->
@@ -288,7 +298,9 @@ fun FuzicNavigation(
                     }
                 },
             ) {
+            val isWelcomeDestination = currentDestination?.hasRoute(WelcomeDestination::class) == true
             Scaffold(
+                contentWindowInsets = if (isWelcomeDestination) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
                 topBar = {
                     if (showShell) {
                         FuzicTopAppBar(
@@ -320,10 +332,15 @@ fun FuzicNavigation(
                 },
                 snackbarHost = { SnackbarHost(snackbarHostState) },
             ) { paddingValues ->
+                val navHostModifier = if (isWelcomeDestination) {
+                    Modifier
+                } else {
+                    Modifier.padding(paddingValues)
+                }
                 NavHost(
                     navController = navController,
                     startDestination = WelcomeDestination,
-                    modifier = Modifier.padding(paddingValues),
+                    modifier = navHostModifier,
                     enterTransition = {
                         fadeIn(animationSpec = tween(NavigationMotion.DurationMillis)) +
                             slideIntoContainer(
