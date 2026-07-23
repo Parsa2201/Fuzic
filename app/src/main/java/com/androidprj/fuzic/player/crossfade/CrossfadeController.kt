@@ -47,6 +47,17 @@ class CrossfadeController @Inject constructor() {
     private var activeRamp: Job? = null
 
     /**
+     * Set to `true` immediately before the controller calls
+     * [CrossfadingPlayer.swapTo] and reset to `false` immediately after.
+     * The service's listener checks this flag to suppress the synthetic
+     * `onMediaItemTransition` that [ForwardingSimpleBasePlayer.setPlayer]
+     * fires, which would otherwise recurse into another crossfade.
+     */
+    @Volatile
+    var isSwapping: Boolean = false
+        private set
+
+    /**
      * Install the wrapper and the two ExoPlayers. Call this from
      * `FuzicPlaybackService.onCreate` once ExoPlayer construction lands
      * two players. Idempotent: re-installing replaces the previous
@@ -115,7 +126,15 @@ class CrossfadeController @Inject constructor() {
             }
             inactive.play()
             ramp(active, inactive, durationMs.toLong())
-            wrap.swapTo(inactive)
+            // Suppress the synthetic onMediaItemTransition that
+            // ForwardingSimpleBasePlayer.setPlayer emits so the service's
+            // listener doesn't recurse into another crossfade attempt.
+            isSwapping = true
+            try {
+                wrap.swapTo(inactive)
+            } finally {
+                isSwapping = false
+            }
             // Swap references so the next call uses the new "primary"
             val oldActive = primary
             primary = secondary
