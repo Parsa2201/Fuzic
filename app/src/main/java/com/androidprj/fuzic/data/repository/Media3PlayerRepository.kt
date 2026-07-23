@@ -1,5 +1,6 @@
 package com.androidprj.fuzic.data.repository
 
+import android.util.Log
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -13,6 +14,7 @@ import com.androidprj.fuzic.player.audio.AudioProcessorRegistry
 import com.androidprj.fuzic.player.local.LocalPlaybackFileResolver
 import com.androidprj.fuzic.player.queue.PlaybackQueue
 import com.androidprj.fuzic.player.timer.SleepTimer
+import com.androidprj.fuzic.repository.InteractionRepository
 import com.androidprj.fuzic.repository.PlayerRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -42,6 +44,7 @@ class Media3PlayerRepository @Inject constructor(
     private val playerController: PlayerController,
     audioProcessorRegistry: AudioProcessorRegistry,
     private val localFileResolver: LocalPlaybackFileResolver,
+    private val interactionRepository: InteractionRepository,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     initialPlaybackQueue: PlaybackQueue = PlaybackQueue(),
 ) : PlayerRepository {
@@ -83,11 +86,45 @@ class Media3PlayerRepository @Inject constructor(
     private val scope: CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    private val recordPlayScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @Volatile
+    private var recordedSongId: String? = null
+
     private val listener: Media3PlayerListener = Media3PlayerListener(
         playerState = playerState,
         currentSongMirror = currentSongMirror,
         resolveSong = ::toSongItemOrNull,
     )
+
+    private val recordPlayListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            if (!isPlaying) return
+
+            val songId = currentSongMirror.value?.id ?: return
+            if (recordedSongId == songId) return
+
+            // This callback is the single source of truth for recording plays;
+            // transitions only reset per-song duplicate suppression.
+            recordedSongId = songId
+            recordPlayScope.launch {
+                interactionRepository.recordPlay(songId).onFailure {
+                    Log.w("Media3PlayerRepo", "recordPlay failed for $songId", it)
+                }
+            }
+        }
+
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            if (
+                mediaItem == null ||
+                reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED ||
+                reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO
+            ) {
+                recordedSongId = null
+            }
+        }
+    }
 
     // Sleep-timer mirror. Held as a flow so future analytics/state-sync
     // observers don't need to scrape PlayerUiState. Updated on every
@@ -130,7 +167,10 @@ class Media3PlayerRepository @Inject constructor(
     )
 
     init {
-        scope.launch { playerController.addListener(listener) }
+        scope.launch {
+            playerController.addListener(listener)
+            playerController.addListener(recordPlayListener)
+        }
         progressPoller.start(scope)
     }
 
