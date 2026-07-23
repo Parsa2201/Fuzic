@@ -15,13 +15,19 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.broadcast
+import io.github.jan.supabase.realtime.broadcastFlow
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.decodeRecord
+import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class RemoteChatRepository @Inject constructor(
@@ -32,11 +38,50 @@ class RemoteChatRepository @Inject constructor(
         emit(loadConversations().getOrThrow())
     }
 
-    override fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>> = flow {
-        emit(PagingData.from(getChatHistory(conversationId).getOrDefault(emptyList())))
+    override fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>> {
+        val channel = supabaseClient.channel(messageChannel(conversationId))
+        return flow<PagingData<ChatMessage>> {
+            val messageChanges = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+                table = "messages"
+            }
+            channel.subscribe(blockUntilSubscribed = true)
+            emit(PagingData.from(getChatHistory(conversationId).getOrDefault(emptyList())))
+            messageChanges.collect { change ->
+                val message = change.decodeRecord<MessageDto>()
+                if (message.belongsToConversation(conversationId)) {
+                    emit(PagingData.from(getChatHistory(conversationId).getOrDefault(emptyList())))
+                }
+            }
+        }.onStart {
+            supabaseClient.realtime.connect()
+        }.onCompletion {
+            supabaseClient.realtime.removeChannel(channel)
+        }
     }
 
-    override fun observeTypingStatus(conversationId: String): Flow<TypingStatus?> = flowOf(null)
+    override fun observeTypingStatus(conversationId: String): Flow<TypingStatus?> {
+        val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
+        if (currentUserId == null) return flowOf(null)
+        val channel = supabaseClient.channel(typingChannel(conversationId))
+        return flow {
+            channel.subscribe(blockUntilSubscribed = true)
+            emitAll(channel.broadcastFlow<TypingEvent>(TYPING_EVENT).map { event ->
+                if (event.userId != currentUserId && event.isTyping) {
+                    TypingStatus(
+                        conversationId = conversationId,
+                        userId = event.userId,
+                        updatedAtEpochMillis = System.currentTimeMillis(),
+                    )
+                } else {
+                    null
+                }
+            })
+        }.onStart {
+            supabaseClient.realtime.connect()
+        }.onCompletion {
+            supabaseClient.realtime.removeChannel(channel)
+        }
+    }
 
     override suspend fun sendTextMessage(
         conversationId: String,
@@ -68,7 +113,20 @@ class RemoteChatRepository @Inject constructor(
     }
 
     override suspend fun setTyping(conversationId: String, isTyping: Boolean): Result<Unit> {
-        return Result.success(Unit)
+        return try {
+            val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
+                ?: throw Exception("Not logged in")
+            val channel = supabaseClient.channel(typingChannel(conversationId))
+            channel.subscribe(blockUntilSubscribed = true)
+            channel.broadcast(
+                event = TYPING_EVENT,
+                message = TypingEvent(userId = currentUserId, isTyping = isTyping),
+            )
+            supabaseClient.realtime.removeChannel(channel)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun refreshConversation(conversationId: String): Result<Unit> {
@@ -204,6 +262,26 @@ class RemoteChatRepository @Inject constructor(
              (message.senderId == userId && message.receiverId == currentUserId)
          }
          .map { it.toChatMessage(currentUserId) }
+    }
+
+    private fun MessageDto.belongsToConversation(participantId: String): Boolean {
+        val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: return false
+        return (senderId == currentUserId && receiverId == participantId) ||
+            (senderId == participantId && receiverId == currentUserId)
+    }
+
+    private fun messageChannel(conversationId: String) = "chat:$conversationId:messages"
+
+    private fun typingChannel(conversationId: String) = "chat:$conversationId:typing"
+
+    @kotlinx.serialization.Serializable
+    private data class TypingEvent(
+        val userId: String,
+        val isTyping: Boolean,
+    )
+
+    private companion object {
+        const val TYPING_EVENT = "typing"
     }
 
     @kotlinx.serialization.Serializable
