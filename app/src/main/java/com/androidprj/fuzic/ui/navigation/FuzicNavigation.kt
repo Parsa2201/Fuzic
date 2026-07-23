@@ -847,11 +847,6 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onDraftChange = { viewModel.onIntent(ChatDetailIntent.DraftChanged(it)) },
                     onSendClick = { viewModel.onIntent(ChatDetailIntent.SendDraft) },
-                    onShareSongClick = {
-                        playerUiState.currentSong?.let { song ->
-                            navController.navigate(ChatPickerDestination(song.id))
-                        } ?: unavailableAction(unavailableMessage)
-                    },
                     onSongClick = { playerViewModel.onIntent(PlayerIntent.PlayById(it.id)) },
                     onRetryClick = { viewModel.onIntent(ChatDetailIntent.Retry) },
                     onVisibleUnreadMessages = { messages ->
