@@ -129,9 +129,9 @@ class FuzicPlaybackService : MediaSessionService() {
         playerB = b
         crossfadingPlayer = wrapper
 
+        crossfadeController.setSecondary(b)
         crossfadeController.attach(
             primary = a,
-            secondary = b,
             wrapper = wrapper,
         )
 

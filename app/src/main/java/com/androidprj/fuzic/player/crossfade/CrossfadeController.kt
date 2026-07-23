@@ -4,7 +4,9 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -38,12 +40,14 @@ import kotlinx.coroutines.launch
  */
 @Singleton
 @UnstableApi
-class CrossfadeController @Inject constructor() {
+class CrossfadeController @Inject constructor(
+    @Named("crossfadeMainDispatcher") mainDispatcher: CoroutineDispatcher,
+) {
     private var durationMs: Int = 0
     private var primary: Player? = null
     private var secondary: Player? = null
     private var wrapper: CrossfadingPlayer? = null
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + mainDispatcher)
     private var activeRamp: Job? = null
 
     /**
@@ -58,14 +62,23 @@ class CrossfadeController @Inject constructor() {
         private set
 
     /**
-     * Install the wrapper and the two ExoPlayers. Call this from
-     * `FuzicPlaybackService.onCreate` once ExoPlayer construction lands
-     * two players. Idempotent: re-installing replaces the previous
+     * Set the secondary (inactive) player used as the mirror target.
+     * Called from `FuzicPlaybackService.onCreate` after both ExoPlayers
+     * are built. Exposed so JVM unit tests can inject a fake without
+     * the `CrossfadingPlayer` Android-Looper requirement of [attach].
+     */
+    fun setSecondary(secondary: Player) {
+        this.secondary = secondary
+    }
+
+    /**
+     * Install the wrapper and the primary (active) ExoPlayer. Call this
+     * from `FuzicPlaybackService.onCreate` once ExoPlayer construction
+     * lands two players. Idempotent: re-installing replaces the previous
      * wrapper and cancels any in-flight crossfade.
      */
-    fun attach(primary: Player, secondary: Player, wrapper: CrossfadingPlayer) {
+    fun attach(primary: Player, wrapper: CrossfadingPlayer) {
         this.primary = primary
-        this.secondary = secondary
         this.wrapper = wrapper
         activeRamp?.cancel()
     }
@@ -95,6 +108,62 @@ class CrossfadeController @Inject constructor() {
     fun cancel() {
         activeRamp?.cancel()
         activeRamp = null
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // Mirror methods: when crossfade is ENABLED, every transport mutation
+    // from [com.androidprj.fuzic.data.repository.Media3PlayerRepository]
+    // is forwarded to BOTH players via the wrapper's active player AND
+    // these mirror methods on the inactive one. When crossfade is OFF
+    // (durationMs == 0), each mirror method is a no-op so the existing
+    // single-player behaviour is preserved without any per-call cost.
+    // ────────────────────────────────────────────────────────────────────────
+
+    /** Mirror of `Player.setMediaItems`. No-op when crossfade is disabled. */
+    fun mirrorSetMediaItems(items: List<MediaItem>, startIndex: Int, startPositionMs: Long) {
+        if (durationMs <= 0) return
+        val inactive = secondary ?: return
+        val safeIndex = startIndex.coerceIn(0, (items.lastIndex).coerceAtLeast(0))
+        inactive.setMediaItems(items, safeIndex, startPositionMs)
+    }
+
+    /** Mirror of `Player.addMediaItem`. No-op when crossfade is disabled. */
+    fun mirrorAddMediaItem(item: MediaItem) {
+        if (durationMs <= 0) return
+        secondary?.addMediaItem(item)
+    }
+
+    /** Mirror of `Player.removeMediaItem`. No-op when crossfade is disabled. */
+    fun mirrorRemoveMediaItem(index: Int) {
+        if (durationMs <= 0) return
+        secondary?.removeMediaItem(index)
+    }
+
+    /** Mirror of `Player.clearMediaItems`. No-op when crossfade is disabled. */
+    fun mirrorClearMediaItems() {
+        if (durationMs <= 0) return
+        secondary?.clearMediaItems()
+    }
+
+    /** Mirror of `Player.setShuffleModeEnabled`. No-op when crossfade is disabled. */
+    fun mirrorSetShuffleModeEnabled(enabled: Boolean) {
+        if (durationMs <= 0) return
+        secondary?.setShuffleModeEnabled(enabled)
+    }
+
+    /**
+     * Mirror of `Player.setRepeatMode`. No-op when crossfade is disabled.
+     * [repeatMode] is the Media3 [Player.REPEAT_MODE_OFF/_ALL/_ONE] int.
+     */
+    fun mirrorSetRepeatMode(repeatMode: Int) {
+        if (durationMs <= 0) return
+        secondary?.setRepeatMode(repeatMode)
+    }
+
+    /** Mirror of `Player.setPlaybackSpeed`. No-op when crossfade is disabled. */
+    fun mirrorSetPlaybackSpeed(speed: Float) {
+        if (durationMs <= 0) return
+        secondary?.setPlaybackSpeed(speed)
     }
 
     /**
