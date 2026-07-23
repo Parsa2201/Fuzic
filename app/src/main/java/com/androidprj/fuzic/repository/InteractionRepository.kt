@@ -7,6 +7,7 @@ interface InteractionRepository {
     suspend fun getLikedSongs(userId: String, offset: Long = 0, limit: Long = 20): Result<List<SongItem>>
     
     suspend fun recordPlay(songId: String): Result<Unit>
+    suspend fun isSongLiked(songId: String): Result<Boolean>
     suspend fun likeSong(songId: String): Result<Unit>
     suspend fun unlikeSong(songId: String): Result<Unit>
     suspend fun removeRecentlyPlayed(songId: String): Result<Unit>

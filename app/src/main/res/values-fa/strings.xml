@@ -138,6 +138,7 @@
     <string name="song_details_empty_title">آهنگ در دسترس نیست</string>
     <string name="song_details_empty_message">این آهنگ دیگر در دسترس نیست.</string>
     <string name="song_details_error_title">آهنگ بارگذاری نشد</string>
+    <string name="song_details_like_error">به‌روزرسانی آهنگ‌های پسندیده‌شده ممکن نیست. دوباره تلاش کنید.</string>
     <string name="song_details_download_premium">دانلود با پریمیوم در دسترس است.</string>
     <string name="artist_details_title">هنرمند</string>
     <string name="artist_popular_songs">آهنگ‌های محبوب</string>

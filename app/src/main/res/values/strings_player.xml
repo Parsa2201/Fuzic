@@ -20,6 +20,7 @@
     <string name="player_share">Share to chat</string>
     <string name="player_add_to_playlist">Add to playlist</string>
     <string name="player_close">Close player</string>
+    <string name="player_minimize">Minimize player</string>
     <string name="player_empty_title">Nothing is playing</string>
     <string name="player_empty_message">Choose a song to start listening.</string>
     <string name="player_error_title">Player unavailable</string>

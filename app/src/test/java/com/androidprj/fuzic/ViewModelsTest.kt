@@ -311,7 +311,9 @@ class ViewModelsTest {
 
     @Test
     fun songDetailsLoadsSongAndTogglesLikeAfterSuccess() = runTest {
-        val interactionRepository = FakeInteractionRepository()
+        val interactionRepository = FakeInteractionRepository().apply {
+            songLikedStateResult = Result.success(true)
+        }
         val viewModel = SongDetailsViewModel(
             FakeMusicRepository(),
             interactionRepository,
@@ -323,12 +325,13 @@ class ViewModelsTest {
 
         viewModel.load("song-1")
         advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.isLiked)
         viewModel.toggleLike()
         advanceUntilIdle()
 
         assertEquals(testSong, viewModel.uiState.value.song)
-        assertTrue(viewModel.uiState.value.isLiked)
-        assertEquals(1, interactionRepository.likeCalls)
+        assertFalse(viewModel.uiState.value.isLiked)
+        assertEquals(1, interactionRepository.unlikeCalls)
     }
 
     @Test

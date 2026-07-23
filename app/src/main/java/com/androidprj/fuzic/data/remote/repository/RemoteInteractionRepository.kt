@@ -59,7 +59,25 @@ class RemoteInteractionRepository @Inject constructor(
     }
 
     override suspend fun likeSong(songId: String): Result<Unit> {
-        return insertInteraction(songId, "like")
+        val alreadyLiked = isSongLiked(songId)
+        if (alreadyLiked.getOrNull() == true) return Result.success(Unit)
+        return insertInteraction(songId, "like").recoverCatching { error ->
+            if (error.message.orEmpty().contains("unique_active_like")) Unit else throw error
+        }
+    }
+
+    override suspend fun isSongLiked(songId: String): Result<Boolean> = runCatching {
+        val userId = supabaseClient.auth.currentUserOrNull()?.id ?: error("Not logged in")
+        supabaseClient.postgrest["interactions"]
+            .select {
+                filter {
+                    eq("user_id", userId)
+                    eq("song_id", songId)
+                    eq("interaction_type", "like")
+                }
+            }
+            .decodeList<InteractionDto>()
+            .isNotEmpty()
     }
 
     override suspend fun unlikeSong(songId: String): Result<Unit> {

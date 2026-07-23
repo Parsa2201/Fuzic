@@ -18,6 +18,7 @@ data class SongDetailsUiState(
     val isPremiumUser: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val actionErrorMessage: String? = null,
 )
 
 data class ArtistDetailsUiState(

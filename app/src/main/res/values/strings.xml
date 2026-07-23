@@ -137,6 +137,7 @@
     <string name="song_details_empty_title">Song unavailable</string>
     <string name="song_details_empty_message">This song is no longer available.</string>
     <string name="song_details_error_title">Song could not load</string>
+    <string name="song_details_like_error">Could not update liked songs. Try again.</string>
     <string name="song_details_download_premium">Downloads are available with Premium.</string>
     <string name="artist_details_title">Artist</string>
     <string name="artist_popular_songs">Popular songs</string>

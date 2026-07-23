@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -261,22 +262,25 @@ fun FuzicNavigation(
     LaunchedEffect(selectedMainTab) {
         selectedMainTab?.let { lastMainTab = it }
     }
-    val isProfileSubDestination = currentDestination?.hasRoute(LikedSongsDestination::class) == true ||
+    val isTabSubDestination = currentDestination?.hasRoute(LikedSongsDestination::class) == true ||
         currentDestination?.hasRoute(RecentlyPlayedDestination::class) == true ||
         currentDestination?.hasRoute(ArtistsDestination::class) == true ||
+        currentDestination?.hasRoute(SongDestination::class) == true ||
+        currentDestination?.hasRoute(PlaylistDestination::class) == true ||
+        currentDestination?.hasRoute(ArtistDestination::class) == true ||
         currentDestination?.hasRoute(ChatListDestination::class) == true ||
         currentDestination?.hasRoute(ChatDetailDestination::class) == true ||
         currentDestination?.hasRoute(FollowSearchDestination::class) == true ||
         currentDestination?.hasRoute(FollowListDestination::class) == true ||
         currentDestination?.hasRoute(UserProfileDestination::class) == true
     // Detail/subpages stay visually attached to the tab from which they were opened.
-    val selectedTab = selectedMainTab ?: if (isProfileSubDestination) lastMainTab else MainTab.Home
+    val selectedTab = selectedMainTab ?: if (isTabSubDestination) lastMainTab else MainTab.Home
     val isMainTabDestination = currentDestination?.hasRoute(HomeDestination::class) == true ||
         currentDestination?.hasRoute(SearchDestination::class) == true ||
         currentDestination?.hasRoute(DownloadsDestination::class) == true ||
         currentDestination?.hasRoute(PlaylistsDestination::class) == true ||
         currentDestination?.hasRoute(ProfileDestination::class) == true
-    val showBottomNavigation = isMainTabDestination || isProfileSubDestination
+    val showBottomNavigation = isMainTabDestination || isTabSubDestination
     val hideMiniPlayer = currentDestination?.hasRoute(WelcomeDestination::class) == true ||
         currentDestination?.hasRoute(AuthDestination::class) == true ||
         currentDestination?.hasRoute(PasswordRecoveryDestination::class) == true ||
@@ -361,7 +365,16 @@ fun FuzicNavigation(
                                     isPlaying = playerUiState.isPlaying,
                                 ),
                                 onClick = { navController.navigate(FullPlayerDestination) },
+                                onExpandDrag = { navController.navigate(FullPlayerDestination) },
                                 onPlayPauseClick = { playerViewModel.onIntent(PlayerIntent.TogglePlayPause) },
+                                // NavigationSuiteScaffold reserves the system navigation area when the
+                                // tab bar is visible. Screens outside that shell still need this inset
+                                // so playback controls never render behind Android's navigation buttons.
+                                modifier = if (showBottomNavigation) {
+                                    Modifier
+                                } else {
+                                    Modifier.navigationBarsPadding()
+                                },
                                 artworkModifier = Modifier.sharedElement(
                                     sharedContentState = rememberSharedContentState("player-artwork-${song.id}"),
                                     animatedVisibilityScope = this@AnimatedContent,
@@ -714,7 +727,22 @@ fun FuzicNavigation(
                     onRetryClick = { viewModel.onIntent(SettingsIntent.Retry) },
                 )
             }
-            composable<FullPlayerDestination> {
+            composable<FullPlayerDestination>(
+                enterTransition = {
+                    fadeIn(animationSpec = tween(PlayerTransition.DurationMillis)) +
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Up,
+                            animationSpec = tween(PlayerTransition.DurationMillis),
+                        )
+                },
+                popExitTransition = {
+                    fadeOut(animationSpec = tween(PlayerTransition.DurationMillis)) +
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Down,
+                            animationSpec = tween(PlayerTransition.DurationMillis),
+                        )
+                },
+            ) {
                 PlayerScreen(
                     uiState = playerUiState,
                     onCloseClick = { navController.popBackStack() },
@@ -961,6 +989,10 @@ private fun PlaylistsDestinationContent(navController: NavHostController) {
 
 private object NavigationMotion {
     const val DurationMillis = 220
+}
+
+private object PlayerTransition {
+    const val DurationMillis = 500
 }
 
 private fun navigateForItem(controller: NavHostController, id: String, type: MusicItemType) {

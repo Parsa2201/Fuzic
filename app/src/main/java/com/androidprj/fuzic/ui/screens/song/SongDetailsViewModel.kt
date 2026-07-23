@@ -45,7 +45,16 @@ class SongDetailsViewModel @Inject constructor(
             _uiState.value = SongDetailsUiState(isLoading = true)
             val result = withContext(ioDispatcher) { musicRepository.getSongById(songId) }
             _uiState.value = result.fold(
-                onSuccess = { SongDetailsUiState(song = it) },
+                onSuccess = { song ->
+                    val liked = withContext(ioDispatcher) { interactionRepository.isSongLiked(song.id) }
+                    SongDetailsUiState(
+                        song = song,
+                        isLiked = liked.getOrDefault(false),
+                        actionErrorMessage = liked.exceptionOrNull()?.let {
+                            stringProvider.get(R.string.song_details_like_error)
+                        },
+                    )
+                },
                 onFailure = {
                     SongDetailsUiState(
                         errorMessage = it.message ?: stringProvider.get(R.string.song_details_error_title),
@@ -59,16 +68,15 @@ class SongDetailsViewModel @Inject constructor(
         val song = _uiState.value.song ?: return
         val wasLiked = _uiState.value.isLiked
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(errorMessage = null)
+            _uiState.value = _uiState.value.copy(actionErrorMessage = null)
             val result = withContext(ioDispatcher) {
                 if (wasLiked) interactionRepository.unlikeSong(song.id) else interactionRepository.likeSong(song.id)
             }
             if (result.isSuccess) {
-                _uiState.value = _uiState.value.copy(isLiked = !wasLiked)
+                _uiState.value = _uiState.value.copy(isLiked = !wasLiked, actionErrorMessage = null)
             } else {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = result.exceptionOrNull()?.message
-                        ?: stringProvider.get(R.string.song_details_error_title),
+                    actionErrorMessage = stringProvider.get(R.string.song_details_like_error),
                 )
             }
         }
