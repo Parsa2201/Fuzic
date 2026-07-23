@@ -11,6 +11,8 @@ import com.androidprj.fuzic.model.ui.FollowUser
 import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.model.ui.SongItem
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 fun SongDto.toSongItem(): SongItem {
     return SongItem(
@@ -72,7 +74,17 @@ fun MessageDto.toChatMessage(currentUserId: String): ChatMessage {
             "read" -> ChatMessageStatus.Read
             else -> ChatMessageStatus.Sent
         },
-        timeLabel = this.createdAt ?: "", // Will require formatting if DTO had date
+        timeLabel = this.createdAt.toChatTimeLabel(),
         isMine = this.senderId == currentUserId
     )
+}
+
+private fun String?.toChatTimeLabel(): String {
+    if (isNullOrBlank()) return ""
+    return runCatching {
+        OffsetDateTime.parse(this)
+            .format(DateTimeFormatter.ofPattern("HH:mm"))
+    }.getOrElse {
+        this
+    }
 }
