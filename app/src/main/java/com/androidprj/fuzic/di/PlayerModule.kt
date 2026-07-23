@@ -13,7 +13,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
 /**
  * Owns Media3-specific bindings for the Playback Track.
@@ -74,5 +77,22 @@ object ImageLoaderModule {
     fun provideImageLoader(
         @ApplicationContext context: Context,
     ): ImageLoader = ImageLoader.Builder(context).build()
+}
+
+/**
+ * Provides the dispatcher used by the crossfade controller's coroutine
+ * scope. Injecting via a `@Named` qualifier keeps the production wiring
+ * `Dispatchers.Main.immediate` while letting JVM unit tests inject
+ * `Dispatchers.Unconfined` (or any other test dispatcher) via the same
+ * constructor parameter.
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+object CrossfadeDispatcherModule {
+
+    @Provides
+    @Named("crossfadeMainDispatcher")
+    fun provideCrossfadeMainDispatcher(): CoroutineDispatcher =
+        Dispatchers.Main.immediate
 }
 

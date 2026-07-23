@@ -280,6 +280,10 @@ class Media3PlayerRepository @Inject constructor(
         controller.setMediaItems(mediaItems, safeIndex, 0L)
         controller.prepare()
         controller.play()
+        // Mirror the new queue onto the inactive player so the next
+        // crossfade (when the active track approaches its end and the
+        // crossfade duration is > 0) finds a synced inactive timeline.
+        crossfadeController.mirrorSetMediaItems(mediaItems, safeIndex, 0L)
         playable.forEach { song -> songByMediaId[song.id] = song }
         val anchorSong = playable[safeIndex]
         playbackQueue = playbackQueue.withSongs(playable, safeIndex)
@@ -355,7 +359,9 @@ class Media3PlayerRepository @Inject constructor(
         // Per spec: update Media3 first, then the logical queue. Media3's
         // shuffle mode affects what its listener / lock screen surfaces;
         // our PlaybackQueue tracks the same toggle for UI display.
-        playerController.controller().setShuffleModeEnabled(enabled)
+        val controller = playerController.controller()
+        controller.setShuffleModeEnabled(enabled)
+        crossfadeController.mirrorSetShuffleModeEnabled(enabled)
         playbackQueue = playbackQueue.withShuffleEnabled(enabled)
         queueMirror.value = playbackQueue.songs
         playerState.update {
@@ -365,7 +371,9 @@ class Media3PlayerRepository @Inject constructor(
     }
 
     override suspend fun setRepeatMode(mode: RepeatMode): Result<Unit> = runOnMain {
-        playerController.controller().setRepeatMode(toMedia3RepeatMode(mode))
+        val media3Mode = toMedia3RepeatMode(mode)
+        playerController.controller().setRepeatMode(media3Mode)
+        crossfadeController.mirrorSetRepeatMode(media3Mode)
         playbackQueue = playbackQueue.withRepeatMode(mode)
         playerState.update { it.copy(repeatMode = mode) }
         Result.success(Unit)
@@ -373,6 +381,7 @@ class Media3PlayerRepository @Inject constructor(
 
     override suspend fun setPlaybackSpeed(speed: Float): Result<Unit> = runOnMain {
         playerController.controller().setPlaybackSpeed(speed)
+        crossfadeController.mirrorSetPlaybackSpeed(speed)
         Result.success(Unit)
     }
 
@@ -413,8 +422,10 @@ class Media3PlayerRepository @Inject constructor(
         // Re-arm the auto-skip gate on every successful queue mutation so
         // a future broken play() can still attempt a single skip.
         autoSkipGate.reset()
+        val item = buildMediaItem(song, source)
         val controller = playerController.controller()
-        controller.addMediaItem(buildMediaItem(song, source))
+        controller.addMediaItem(item)
+        crossfadeController.mirrorAddMediaItem(item)
         songByMediaId[song.id] = song
         playbackQueue = playbackQueue.withAddedSong(song)
         queueMirror.value = playbackQueue.songs
@@ -431,6 +442,7 @@ class Media3PlayerRepository @Inject constructor(
             )
         }
         controller.removeMediaItem(mediaIndex)
+        crossfadeController.mirrorRemoveMediaItem(mediaIndex)
         songByMediaId.remove(songId)
         playbackQueue = playbackQueue.withRemovedSong(songId)
         queueMirror.value = playbackQueue.songs
@@ -443,6 +455,7 @@ class Media3PlayerRepository @Inject constructor(
         autoSkipGate.reset()
         val controller = playerController.controller()
         controller.clearMediaItems()
+        crossfadeController.mirrorClearMediaItems()
         songByMediaId.clear()
         playbackQueue = playbackQueue.withCleared()
         queueMirror.value = emptyList()
