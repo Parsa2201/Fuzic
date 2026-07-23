@@ -4,7 +4,7 @@ import android.content.Context
 import coil.ImageLoader
 import coil.decode.SvgDecoder
 import com.androidprj.fuzic.data.repository.Media3PlayerRepository
-import com.androidprj.fuzic.player.local.NoopPlaybackDownloadLookup
+import com.androidprj.fuzic.player.local.RoomPlaybackDownloadLookup
 import com.androidprj.fuzic.player.local.PlaybackDownloadLookup
 import com.androidprj.fuzic.player.queue.PlaybackQueue
 import com.androidprj.fuzic.repository.PlayerRepository
@@ -34,14 +34,13 @@ abstract class PlayerModule {
     ): PlayerRepository
 
     /**
-     * Default playback-local lookup until Bagher's `backend-integration`
-     * branch lands a `RoomPlaybackDownloadLookup` on master. Swap this
-     * binding for the Room-backed impl without touching playback code.
+     * Room-backed download lookup so ExoPlayer prefers local files over the
+     * catalog stream URL, and falls back gracefully when the file is deleted.
      */
     @Binds
     @Singleton
     abstract fun bindPlaybackDownloadLookup(
-        impl: NoopPlaybackDownloadLookup,
+        impl: RoomPlaybackDownloadLookup,
     ): PlaybackDownloadLookup
 }
 

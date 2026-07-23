@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface DownloadsIntent {
     data object Retry : DownloadsIntent
@@ -63,6 +64,10 @@ class DownloadsViewModel @Inject constructor(
 
     private fun observePremiumStatus() {
         viewModelScope.launch {
+            // Actively fetch to ensure we don't just rely on the default 'false'
+            withContext(ioDispatcher) {
+                premiumRepository.fetchPremiumStatus()
+            }
             premiumRepository.observePremiumStatus().collect { isPremium ->
                 _uiState.update {
                     it.copy(isPremiumUser = isPremium, isPremiumLoading = false, isUpgrading = false)
@@ -99,7 +104,7 @@ class DownloadsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = throwable.message ?: stringProvider.get(R.string.downloads_error_message),
+                            errorMessage = throwable.toUserFriendlyMessage(stringProvider, R.string.downloads_error_message),
                         )
                     }
                 }
@@ -118,7 +123,7 @@ class DownloadsViewModel @Inject constructor(
                 lastDeletedId = item.id
             } else {
                 _uiState.update {
-                    it.copy(errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.downloads_error_message))
+                    it.copy(errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.downloads_error_message))
                 }
             }
         }
@@ -133,7 +138,7 @@ class DownloadsViewModel @Inject constructor(
                     lastDeletedId = null
                     it.copy(errorMessage = null)
                 } else {
-                    it.copy(errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.downloads_error_message))
+                    it.copy(errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.downloads_error_message))
                 }
             }
         }
@@ -146,7 +151,7 @@ class DownloadsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isStorageFull = true,
-                        errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.downloads_storage_full_message),
+                        errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.downloads_storage_full_message),
                     )
                 }
             }

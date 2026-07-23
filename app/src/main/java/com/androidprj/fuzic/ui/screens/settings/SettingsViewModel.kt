@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface SettingsIntent {
     data object Retry : SettingsIntent
@@ -75,7 +76,7 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = throwable.message ?: stringProvider.get(R.string.settings_error_title),
+                            errorMessage = throwable.toUserFriendlyMessage(stringProvider, R.string.settings_error_title),
                         )
                     }
                 }
@@ -108,7 +109,7 @@ class SettingsViewModel @Inject constructor(
                     onFailure = {
                         current.copy(
                             selectedOverlay = SettingsOverlay.None,
-                            errorMessage = it.message ?: stringProvider.get(R.string.settings_error_title),
+                            errorMessage = it.toUserFriendlyMessage(stringProvider, R.string.settings_error_title),
                         )
                     },
                 )
@@ -131,7 +132,7 @@ class SettingsViewModel @Inject constructor(
                     onFailure = {
                         current.copy(
                             selectedOverlay = SettingsOverlay.None,
-                            errorMessage = it.message ?: stringProvider.get(R.string.settings_error_title),
+                            errorMessage = it.toUserFriendlyMessage(stringProvider, R.string.settings_error_title),
                         )
                     },
                 )
@@ -145,7 +146,7 @@ class SettingsViewModel @Inject constructor(
             _uiState.update { current ->
                 result.fold(
                     onSuccess = { current.copy(fontScale = option, selectedOverlay = SettingsOverlay.None, errorMessage = null) },
-                    onFailure = { current.copy(selectedOverlay = SettingsOverlay.None, errorMessage = it.message ?: stringProvider.get(R.string.settings_error_title)) },
+                    onFailure = { current.copy(selectedOverlay = SettingsOverlay.None, errorMessage = it.toUserFriendlyMessage(stringProvider, R.string.settings_error_title)) },
                 )
             }
         }
@@ -169,7 +170,7 @@ class SettingsViewModel @Inject constructor(
                         current.copy(
                             isLoading = false,
                             isLogoutConfirmationVisible = false,
-                            errorMessage = it.message ?: stringProvider.get(R.string.settings_error_title),
+                            errorMessage = it.toUserFriendlyMessage(stringProvider, R.string.settings_error_title),
                         )
                     },
                 )

@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
+import kotlinx.coroutines.flow.update
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
@@ -41,33 +43,49 @@ class ProfileViewModel @Inject constructor(
 
     private fun load() {
         viewModelScope.launch {
-            _uiState.value = ProfileUiState(isLoading = true)
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val userId = withContext(ioDispatcher) { authRepository.getCurrentUserId() }
             if (userId == null) {
-                _uiState.value = ProfileUiState()
+                _uiState.update { ProfileUiState() }
                 return@launch
             }
-            val result = withContext(ioDispatcher) {
-                runCatching {
-                    val profile = userRepository.getUserProfile(userId).getOrThrow()
-                    val followers = followRepository.observeFollowersCount(userId).first()
-                    val following = followRepository.observeFollowingCount(userId).first()
-                    val playlists = playlistRepository.getUserPlaylists(userId).getOrThrow().size
-                    profile to ProfileStats(
-                        followersLabel = followers.toString(),
-                        followingLabel = following.toString(),
-                        playlistsLabel = playlists.toString(),
+            
+            // 1. Fetch and show profile immediately (works offline if cached)
+            val profileResult = withContext(ioDispatcher) { userRepository.getUserProfile(userId) }
+            val profile = profileResult.getOrNull()
+            
+            if (profile != null) {
+                _uiState.update { it.copy(profile = profile, isLoading = false, errorMessage = null) }
+                
+                // 2. Fetch stats (might fail offline)
+                withContext(ioDispatcher) {
+                    runCatching {
+                        val followers = followRepository.observeFollowersCount(userId).first()
+                        val following = followRepository.observeFollowingCount(userId).first()
+                        val playlists = playlistRepository.getUserPlaylists(userId).getOrThrow().size
+                        ProfileStats(
+                            followersLabel = followers.toString(),
+                            followingLabel = following.toString(),
+                            playlistsLabel = playlists.toString(),
+                        )
+                    }.onSuccess { stats ->
+                        _uiState.update { it.copy(stats = stats) }
+                    }.onFailure { e ->
+                        _uiState.update { 
+                            it.copy(errorMessage = e.toUserFriendlyMessage(stringProvider, R.string.profile_error_message)) 
+                        }
+                    }
+                }
+            } else {
+                // Profile fetch failed (not cached and offline)
+                _uiState.update { 
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = profileResult.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.profile_error_message) 
+                            ?: stringProvider.get(R.string.profile_error_message)
                     )
                 }
             }
-            _uiState.value = result.fold(
-                onSuccess = { (profile, stats) -> ProfileUiState(profile = profile, stats = stats) },
-                onFailure = {
-                    ProfileUiState(
-                        errorMessage = it.message ?: stringProvider.get(R.string.profile_error_message),
-                    )
-                },
-            )
         }
     }
 }

@@ -41,7 +41,7 @@ class LocalPlaybackFileResolver @Inject constructor(
      */
     suspend fun resolve(songId: String): String? = withContext(ioDispatcher) {
         val path = lookup.localUriFor(songId) ?: return@withContext null
-        if (File(path).exists()) path else null
+        if (File(path).exists()) "file://$path" else null
     }
 }
 

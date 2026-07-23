@@ -10,6 +10,16 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.SerialName
@@ -23,11 +33,19 @@ import kotlinx.serialization.Serializable
 class RemotePremiumRepository @Inject constructor(
     private val supabaseClient: SupabaseClient,
     private val stringProvider: StringProvider,
+    @ApplicationContext private val context: Context,
 ) : PremiumRepository {
 
-    private val premiumStatus = MutableStateFlow(false)
+    private val premiumStatus = context.premiumDataStore.data
+        .map { it[IS_PREMIUM_KEY] ?: false }
+        .stateIn(CoroutineScope(Dispatchers.IO), SharingStarted.Eagerly, false)
 
     override fun observePremiumStatus(): StateFlow<Boolean> = premiumStatus
+
+    override suspend fun fetchPremiumStatus(): Result<Boolean> = runCatching {
+        refreshPremiumStatus()
+        premiumStatus.value
+    }
 
     override suspend fun getPlans(): Result<List<PremiumPlan>> = runCatching {
         refreshPremiumStatus()
@@ -57,7 +75,7 @@ class RemotePremiumRepository @Inject constructor(
                 select()
             }
             .decodeSingle<UserDto>()
-        premiumStatus.value = updatedUser.isPremium
+        setLocalPremiumStatus(updatedUser.isPremium)
         check(updatedUser.isPremium)
     }
 
@@ -69,7 +87,11 @@ class RemotePremiumRepository @Inject constructor(
         val user = supabaseClient.postgrest[USERS_TABLE]
             .select { filter { eq("id", requireCurrentUserId()) } }
             .decodeSingle<UserDto>()
-        premiumStatus.value = user.isPremium
+        setLocalPremiumStatus(user.isPremium)
+    }
+
+    private suspend fun setLocalPremiumStatus(isPremium: Boolean) {
+        context.premiumDataStore.edit { it[IS_PREMIUM_KEY] = isPremium }
     }
 
     private fun requireCurrentUserId(): String =
@@ -84,5 +106,7 @@ class RemotePremiumRepository @Inject constructor(
         const val USERS_TABLE = "users"
         const val MONTHLY_PLAN_ID = "monthly"
         const val YEARLY_PLAN_ID = "yearly"
+        private val Context.premiumDataStore by preferencesDataStore(name = "premium_cache")
+        private val IS_PREMIUM_KEY = booleanPreferencesKey("is_premium")
     }
 }

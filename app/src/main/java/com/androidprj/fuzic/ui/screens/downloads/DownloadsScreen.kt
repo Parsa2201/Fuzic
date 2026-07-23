@@ -40,7 +40,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -84,6 +86,7 @@ fun DownloadsRoute(
         onRetryClick = onRetryClick,
         onFreeUpSpaceClick = onFreeUpSpaceClick,
         onUpgradeClick = onUpgradeClick,
+        onShowSnackbar = { _, _ -> false },
         modifier = modifier
     )
 }
@@ -98,45 +101,64 @@ fun DownloadsScreen(
     onRetryClick: () -> Unit,
     onFreeUpSpaceClick: () -> Unit,
     onUpgradeClick: () -> Unit,
+    onShowSnackbar: suspend (String, String?) -> Boolean,
     modifier: Modifier = Modifier
 ) {
-    when {
-        uiState.isPremiumLoading -> DownloadsLoadingContent(modifier)
-        !uiState.isPremiumUser -> DownloadsUpgradeContent(
-            isUpgrading = uiState.isUpgrading,
-            errorMessage = uiState.errorMessage,
-            onUpgradeClick = onUpgradeClick,
-            modifier = modifier
-        )
-        uiState.isLoading -> DownloadsLoadingContent(modifier)
-        uiState.errorMessage != null -> DownloadsMessageContent(
-            icon = Icons.Default.ErrorOutline,
-            title = stringResource(R.string.downloads_error_title),
-            message = uiState.errorMessage,
-            action = {
-                Button(onClick = onRetryClick) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                    Spacer(Modifier.width(MaterialTheme.spacing.small))
-                    Text(stringResource(R.string.action_retry))
-                }
-            },
-            modifier = modifier
-        )
-        uiState.isEmpty -> DownloadsMessageContent(
-            icon = Icons.Default.Download,
-            title = stringResource(R.string.downloads_empty_title),
-            message = stringResource(R.string.downloads_empty_message),
-            modifier = modifier
-        )
-        else -> DownloadsContent(
-            uiState = uiState,
-            onSortClick = onSortClick,
-            onSongClick = onSongClick,
-            onDeleteClick = onDeleteClick,
-            onUndoDeleteClick = onUndoDeleteClick,
-            onFreeUpSpaceClick = onFreeUpSpaceClick,
-            modifier = modifier
-        )
+    val undoLabel = stringResource(R.string.action_undo)
+    val deletedLabel = stringResource(R.string.downloads_deleted_message)
+    val coroutineScope = rememberCoroutineScope()
+
+    val onDeleteWithSnackbar: (DownloadedSongItem) -> Unit = { item ->
+        onDeleteClick(item)
+        coroutineScope.launch {
+            val actionPerfomed = onShowSnackbar(deletedLabel, undoLabel)
+            if (actionPerfomed) {
+                onUndoDeleteClick()
+            }
+        }
+    }
+
+    androidx.compose.material3.Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = modifier
+    ) { innerPadding ->
+        when {
+            uiState.isPremiumLoading -> DownloadsLoadingContent(Modifier.padding(innerPadding))
+            !uiState.isPremiumUser -> DownloadsUpgradeContent(
+                isUpgrading = uiState.isUpgrading,
+                errorMessage = uiState.errorMessage,
+                onUpgradeClick = onUpgradeClick,
+                modifier = Modifier.padding(innerPadding)
+            )
+            uiState.isLoading -> DownloadsLoadingContent(Modifier.padding(innerPadding))
+            uiState.errorMessage != null -> DownloadsMessageContent(
+                icon = Icons.Default.ErrorOutline,
+                title = stringResource(R.string.downloads_error_title),
+                message = uiState.errorMessage,
+                action = {
+                    Button(onClick = onRetryClick) {
+                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Spacer(Modifier.width(MaterialTheme.spacing.small))
+                        Text(stringResource(R.string.action_retry))
+                    }
+                },
+                modifier = Modifier.padding(innerPadding)
+            )
+            uiState.isEmpty -> DownloadsMessageContent(
+                icon = Icons.Default.Download,
+                title = stringResource(R.string.downloads_empty_title),
+                message = stringResource(R.string.downloads_empty_message),
+                modifier = Modifier.padding(innerPadding)
+            )
+            else -> DownloadsContent(
+                uiState = uiState,
+                onSortClick = onSortClick,
+                onSongClick = onSongClick,
+                onDeleteClick = onDeleteWithSnackbar,
+                onFreeUpSpaceClick = onFreeUpSpaceClick,
+                modifier = Modifier.padding(innerPadding)
+            )
+        }
     }
 }
 
@@ -146,7 +168,6 @@ private fun DownloadsContent(
     onSortClick: (DownloadSortOption) -> Unit,
     onSongClick: (DownloadedSongItem) -> Unit,
     onDeleteClick: (DownloadedSongItem) -> Unit,
-    onUndoDeleteClick: () -> Unit,
     onFreeUpSpaceClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -172,8 +193,7 @@ private fun DownloadsContent(
             DownloadSwipeRow(
                 item = item,
                 onSongClick = { onSongClick(item) },
-                onDeleteClick = { onDeleteClick(item) },
-                onUndoDeleteClick = onUndoDeleteClick
+                onDeleteClick = { onDeleteClick(item) }
             )
         }
     }
@@ -241,17 +261,15 @@ private fun DownloadSwipeRow(
     item: DownloadedSongItem,
     onSongClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onUndoDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value != SwipeToDismissBoxValue.Settled) {
                 onDeleteClick()
-                onUndoDeleteClick()
-                false
-            } else {
                 true
+            } else {
+                false
             }
         }
     )
@@ -644,7 +662,8 @@ private fun DownloadsPreviewState(uiState: DownloadsUiState) {
         onUndoDeleteClick = { undoRequested = true },
         onRetryClick = { state = state.copy(errorMessage = null) },
         onFreeUpSpaceClick = { state = state.copy(isStorageFull = false) },
-        onUpgradeClick = { state = state.copy(isUpgrading = true) }
+        onUpgradeClick = { state = state.copy(isUpgrading = true) },
+        onShowSnackbar = { _, _ -> false }
     )
 }
 

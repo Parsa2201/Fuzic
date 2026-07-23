@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.di.IoDispatcher
 import com.androidprj.fuzic.util.StringProvider
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 import com.androidprj.fuzic.model.ui.FeaturedMusicItem
 import com.androidprj.fuzic.model.ui.HomeMusicSection
 import com.androidprj.fuzic.model.ui.HomeUiState
@@ -57,28 +58,31 @@ class HomeViewModel @Inject constructor(
                     )
                 }
             }
-            val failure = listOf(result.daily, result.popular, result.releases, result.global, result.local)
-                .firstOrNull { it.isFailure }
-            if (failure != null) {
+            val daily = result.daily.getOrNull()?.map { it.toFeaturedMusicItem() } ?: emptyList()
+            val popular = result.popular.getOrNull()?.map { it.toFeaturedMusicItem() } ?: emptyList()
+            val releases = result.releases.getOrNull()?.map { it.toFeaturedMusicItem() } ?: emptyList()
+            val global = result.global.getOrNull()?.map { it.toFeaturedPlaylistItem() } ?: emptyList()
+            val local = result.local.getOrNull()?.map { it.toFeaturedPlaylistItem() } ?: emptyList()
+
+            if (daily.isEmpty() && popular.isEmpty() && releases.isEmpty() && global.isEmpty() && local.isEmpty()) {
+                val failure = listOf(result.daily, result.popular, result.releases, result.global, result.local)
+                    .firstOrNull { it.isFailure }
                 _uiState.value = HomeUiState(
-                    errorMessage = failure.exceptionOrNull()?.message
-                        ?: stringProvider.get(R.string.home_error_message),
+                    errorMessage = failure?.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.home_error_message) 
+                        ?: stringProvider.get(R.string.home_error_message)
                 )
                 return@launch
             }
-            val daily = result.daily.getOrThrow().map { it.toFeaturedMusicItem() }
-            val popular = result.popular.getOrThrow().map { it.toFeaturedMusicItem() }
-            val releases = result.releases.getOrThrow().map { it.toFeaturedMusicItem() }
-            val global = result.global.getOrThrow().map { it.toFeaturedPlaylistItem() }
-            val local = result.local.getOrThrow().map { it.toFeaturedPlaylistItem() }
+
+            val sections = mutableListOf<HomeMusicSection>()
+            if (popular.isNotEmpty()) sections.add(HomeMusicSection(R.string.home_section_most_popular, popular))
+            if (releases.isNotEmpty()) sections.add(HomeMusicSection(R.string.home_section_new_releases, releases))
+            if (global.isNotEmpty()) sections.add(HomeMusicSection(R.string.home_section_global_playlists, global))
+            if (local.isNotEmpty()) sections.add(HomeMusicSection(R.string.home_section_local_playlists, local))
+
             _uiState.value = HomeUiState(
                 dailyPicks = daily,
-                sections = listOf(
-                    HomeMusicSection(R.string.home_section_most_popular, popular),
-                    HomeMusicSection(R.string.home_section_new_releases, releases),
-                    HomeMusicSection(R.string.home_section_global_playlists, global),
-                    HomeMusicSection(R.string.home_section_local_playlists, local),
-                ),
+                sections = sections,
             )
         }
     }

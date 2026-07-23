@@ -25,7 +25,9 @@ data class DownloadedSongItem(
     val downloadedAtLabel: String,
     val artworkUrl: String? = null,
     val isDownloadInProgress: Boolean = false,
-    val progress: Float = 1f
+    val progress: Float = 0f,
+    /** Non-null when the file has been fully downloaded to device storage. */
+    val localFilePath: String? = null,
 )
 
 enum class DownloadSortOption(@StringRes val labelRes: Int) {

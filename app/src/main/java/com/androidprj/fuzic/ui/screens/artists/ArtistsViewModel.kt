@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface ArtistsIntent {
     data object Retry : ArtistsIntent
@@ -60,7 +61,7 @@ class ArtistsViewModel @Inject constructor(
             }.onFailure { throwable ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = throwable.message ?: stringProvider.get(R.string.artists_error_title),
+                    errorMessage = throwable.toUserFriendlyMessage(stringProvider, R.string.artists_error_title),
                 )
             }
         }
@@ -80,7 +81,7 @@ class ArtistsViewModel @Inject constructor(
             result.onFailure { throwable ->
                 updateArtistFollowState(item.artist.id, item.isFollowing)
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = throwable.message ?: stringProvider.get(R.string.artists_error_title),
+                    errorMessage = throwable.toUserFriendlyMessage(stringProvider, R.string.artists_error_title),
                 )
             }
         }

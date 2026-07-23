@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.paging.PagingData
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface NotificationsIntent {
     data object Retry : NotificationsIntent
@@ -60,7 +61,7 @@ class NotificationsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = throwable.message ?: stringProvider.get(R.string.notifications_error_title),
+                            errorMessage = throwable.toUserFriendlyMessage(stringProvider, R.string.notifications_error_title),
                         )
                     }
                 }
@@ -83,7 +84,7 @@ class NotificationsViewModel @Inject constructor(
             if (result.isFailure) {
                 _uiState.update { state ->
                     state.copy(
-                        errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.notifications_error_title),
+                        errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.notifications_error_title),
                     )
                 }
             }
@@ -96,7 +97,7 @@ class NotificationsViewModel @Inject constructor(
             if (result.isFailure) {
                 _uiState.update {
                     it.copy(
-                        errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.notifications_error_title),
+                        errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.notifications_error_title),
                     )
                 }
             }

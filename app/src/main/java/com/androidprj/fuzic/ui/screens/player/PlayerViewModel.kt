@@ -22,6 +22,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface PlayerIntent {
     data class Play(val song: SongItem) : PlayerIntent
@@ -50,6 +52,13 @@ sealed interface PlayerIntent {
     data object ClearError : PlayerIntent
     data class Download(val song: SongItem) : PlayerIntent
     data class PlayById(val songId: String) : PlayerIntent
+    /** Play a song from a local file, bypassing the network entirely. */
+    data class PlayLocalFile(val song: SongItem, val localFilePath: String) : PlayerIntent
+}
+
+sealed interface PlayerUiEvent {
+    data object NavigateToPremium : PlayerUiEvent
+    data class ShowToast(val message: String) : PlayerUiEvent
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -65,6 +74,9 @@ class PlayerViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PlayerUiState())
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
+
+    private val _uiEvents = kotlinx.coroutines.channels.Channel<PlayerUiEvent>(kotlinx.coroutines.channels.Channel.BUFFERED)
+    val uiEvents = _uiEvents.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -138,6 +150,11 @@ class PlayerViewModel @Inject constructor(
             is PlayerIntent.Play -> runPlayerCommand { playerRepository.play(intent.song) }
             is PlayerIntent.PlayQueue -> runPlayerCommand { playerRepository.playQueue(intent.songs, intent.startIndex) }
             is PlayerIntent.PlayById -> playById(intent.songId)
+            is PlayerIntent.PlayLocalFile -> runPlayerCommand {
+                // Player service resolves local file automatically via LocalPlaybackFileResolver;
+                // we just need to pass the song with its ID so it can be looked up.
+                playerRepository.play(intent.song)
+            }
             PlayerIntent.TogglePlayPause -> runPlayerCommand { playerRepository.togglePlayPause() }
             PlayerIntent.Previous -> runPlayerCommand { playerRepository.skipToPrevious() }
             PlayerIntent.Next -> runPlayerCommand { playerRepository.skipToNext() }
@@ -159,17 +176,32 @@ class PlayerViewModel @Inject constructor(
 
     private fun playById(songId: String) {
         viewModelScope.launch {
+            // First check if the song is downloaded. This bypasses the network completely for offline play.
+            val localResult = withContext(ioDispatcher) {
+                downloadRepository.getDownloadedSong(songId)
+            }
+            if (localResult.isSuccess) {
+                val song = localResult.getOrNull()
+                if (song != null) {
+                    runPlayerCommand { playerRepository.play(song) }
+                    return@launch
+                }
+            }
+
+            // Fallback to network if not downloaded
             val result = withContext(ioDispatcher) {
                 musicRepository.getSongById(songId)
             }
             result.onSuccess { song ->
                 if (song != null) {
+                    // LocalPlaybackFileResolver in Media3PlayerRepository automatically
+                    // prefers a local download over the remote stream URL.
                     runPlayerCommand { playerRepository.play(song) }
                 } else {
                     _uiState.update { it.copy(errorMessage = stringProvider.get(R.string.player_error_title)) }
                 }
             }.onFailure { error ->
-                _uiState.update { it.copy(errorMessage = error.message ?: stringProvider.get(R.string.player_error_title)) }
+                _uiState.update { it.copy(errorMessage = error.toUserFriendlyMessage(stringProvider, R.string.player_error_title)) }
             }
         }
     }
@@ -182,26 +214,31 @@ class PlayerViewModel @Inject constructor(
             val result = withContext(ioDispatcher) {
                 if (wasLiked) interactionRepository.unlikeSong(song.id) else interactionRepository.likeSong(song.id)
             }
-            if (result.isFailure) _uiState.update { it.copy(isLiked = wasLiked, errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title)) }
+            if (result.isFailure) _uiState.update { it.copy(isLiked = wasLiked, errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.player_error_title)) }
         }
     }
 
     private fun download(song: SongItem) {
         viewModelScope.launch {
             _uiState.update { it.copy(actionErrorMessage = null) }
+            val isPremium = premiumRepository.fetchPremiumStatus().getOrDefault(false)
+            if (!isPremium) {
+                _uiEvents.send(PlayerUiEvent.NavigateToPremium)
+                return@launch
+            }
             val request = DownloadRequest(
                 song = song,
                 audioUrl = song.audioUrl ?: ""
             )
             val result = withContext(ioDispatcher) {
-                kotlin.runCatching { downloadRepository.enqueueDownload(request) }
+                kotlin.runCatching { downloadRepository.enqueueDownload(request).getOrThrow() }
             }
-            if (result.isFailure) {
-                _uiState.update {
-                    it.copy(
-                        actionErrorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title),
-                    )
-                }
+            if (result.isSuccess) {
+                _uiEvents.send(PlayerUiEvent.ShowToast(stringProvider.get(R.string.download_started) ?: "Download started"))
+            } else {
+                val errorMsg = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.player_error_title) ?: stringProvider.get(R.string.player_error_title)
+                _uiEvents.send(PlayerUiEvent.ShowToast(errorMsg))
+                _uiState.update { it.copy(actionErrorMessage = errorMsg) }
             }
         }
     }
@@ -214,7 +251,7 @@ class PlayerViewModel @Inject constructor(
             val result = withContext(ioDispatcher) { block() }
             if (result.isFailure) {
                 _uiState.update {
-                    it.copy(errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title))
+                    it.copy(errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.player_error_title))
                 }
             } else if (overlayAfterSuccess != null) {
                 _uiState.update { it.copy(selectedOverlay = overlayAfterSuccess, errorMessage = null) }

@@ -78,8 +78,7 @@ private fun ArtworkFallbackIcon(fallbackIcon: ImageVector) {
         contentDescription = null,
         tint = MaterialTheme.colorScheme.primary,
         modifier = Modifier
-            .fillMaxSize()
-            .padding(MaterialTheme.spacing.large)
+            .fillMaxSize(0.5f)
     )
 }
 

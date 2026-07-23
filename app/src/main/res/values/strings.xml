@@ -11,6 +11,7 @@
     <string name="shell_cd_play_pause">Play or pause current song</string>
     <string name="shell_cd_open_player">Open player</string>
     <string name="shell_now_playing">Now playing</string>
+    <string name="error_no_internet">No internet connection. Please check your network and try again.</string>
     <string name="action_retry">Retry</string>
     <string name="action_view_all">View all</string>
     <string name="action_remove">Remove</string>
@@ -71,7 +72,9 @@
     <string name="downloads_error_message">Your offline library could not be loaded.</string>
     <string name="downloads_storage_full_message">Storage is full. Remove files or free up space before downloading more songs.</string>
     <string name="downloads_free_up_space">Free up space</string>
-    <string name="downloads_song_metadata">%1$s • %2$s</string>
+    <string name="downloads_song_metadata">%1$s · %2$s</string>
+    <string name="downloads_deleted_message">Song removed from downloads</string>
+    <string name="action_undo">Undo</string>
     <string name="preview_download_size_large">8.2 MB</string>
     <string name="preview_download_size_medium">6.4 MB</string>
     <string name="preview_download_size_small">4.9 MB</string>
@@ -129,6 +132,7 @@
     <string name="action_follow">Follow</string>
     <string name="action_unfollow">Following</string>
     <string name="action_download">Download</string>
+    <string name="download_started">Download started</string>
     <string name="action_share">Share</string>
     <string name="action_add_to_playlist">Add to playlist</string>
     <string name="content_description_explicit">Explicit content</string>

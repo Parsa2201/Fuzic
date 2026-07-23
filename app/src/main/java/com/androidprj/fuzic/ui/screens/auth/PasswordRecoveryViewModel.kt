@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 data class PasswordRecoveryUiState(
     val email: String = "",
@@ -41,7 +42,7 @@ class PasswordRecoveryViewModel @Inject constructor(
         val result = withContext(ioDispatcher) { repository.requestPasswordReset(email) }
         _uiState.update { state -> result.fold(
             onSuccess = { state.copy(isLoading = false, isSubmitted = true) },
-            onFailure = { state.copy(isLoading = false, errorMessage = it.message ?: stringProvider.get(R.string.password_recovery_error)) },
+            onFailure = { state.copy(isLoading = false, errorMessage = it.toUserFriendlyMessage(stringProvider, R.string.password_recovery_error)) },
         ) }
     }
 }
