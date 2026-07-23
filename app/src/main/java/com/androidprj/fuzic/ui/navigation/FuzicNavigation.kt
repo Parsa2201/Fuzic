@@ -502,6 +502,7 @@ fun FuzicNavigation(
                         }
                     },
                     onRetryClick = { viewModel.onIntent(SearchIntent.Retry) },
+                    resultsFlow = viewModel.results,
                 )
             }
             composable<DownloadsDestination> {

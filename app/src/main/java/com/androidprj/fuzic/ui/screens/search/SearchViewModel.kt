@@ -18,10 +18,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 
 sealed interface SearchIntent {
     data class QueryChanged(val value: String) : SearchIntent
@@ -35,6 +40,7 @@ sealed interface SearchIntent {
     data object SubmitSearch : SearchIntent
 }
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
@@ -43,6 +49,12 @@ class SearchViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
+    private val pagingSource = MutableStateFlow<Flow<PagingData<SearchResultItem>>>(
+        flowOf(PagingData.empty()),
+    )
+    val results: Flow<PagingData<SearchResultItem>> = pagingSource
+        .flatMapLatest { it }
+        .cachedIn(viewModelScope)
     private var searchJob: Job? = null
     private var lastSubmittedQuery: String = ""
 
@@ -94,6 +106,7 @@ class SearchViewModel @Inject constructor(
             val query = _uiState.value.query.trim()
             if (query.isBlank()) {
                 lastSubmittedQuery = ""
+                pagingSource.value = flowOf(PagingData.empty())
                 _uiState.update { it.copy(isLoading = false, results = PagingData.empty(), errorMessage = null) }
                 return@launch
             }
@@ -103,15 +116,29 @@ class SearchViewModel @Inject constructor(
             }
             lastSubmittedQuery = query
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            runCatching { searchRepository.search(query, _uiState.value.selectedFilter) }
-                .onSuccess { results ->
-                    results.collect { pagingData ->
-                        _uiState.update { state -> state.copy(results = pagingData, isLoading = false, errorMessage = null) }
+            pagingSource.value = runCatching {
+                searchRepository.search(query, _uiState.value.selectedFilter)
+                    .onStart { _uiState.update { it.copy(isLoading = false, errorMessage = null) } }
+                    .catch { throwable ->
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = throwable.message
+                                    ?: stringProvider.get(R.string.search_error_message),
+                            )
+                        }
+                        emit(PagingData.empty())
                     }
+            }.getOrElse { throwable ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = throwable.message
+                            ?: stringProvider.get(R.string.search_error_message),
+                    )
                 }
-                .onFailure { throwable -> _uiState.update {
-                    it.copy(isLoading = false, errorMessage = throwable.message ?: stringProvider.get(R.string.search_error_message))
-                } }
+                flowOf(PagingData.empty())
+            }
         }
     }
 

@@ -185,6 +185,7 @@ private fun FuzicMainTabContent(
             onClearHistoryClick = {},
             onResultClick = {},
             onRetryClick = {},
+            resultsFlow = kotlinx.coroutines.flow.flowOf(sampleSearchUiState().results),
             modifier = contentModifier
         )
         MainTab.Downloads -> DownloadsScreen(
