@@ -11,6 +11,7 @@
     <string name="shell_cd_play_pause">Play or pause current song</string>
     <string name="shell_cd_open_player">Open player</string>
     <string name="shell_now_playing">Now playing</string>
+    <string name="error_no_internet">No internet connection. Please check your network and try again.</string>
     <string name="action_retry">Retry</string>
     <string name="action_view_all">View all</string>
     <string name="action_remove">Remove</string>

@@ -3,6 +3,8 @@ package com.androidprj.fuzic.data.remote.repository
 import android.content.Context
 import android.net.Uri
 import com.androidprj.fuzic.R
+import com.androidprj.fuzic.data.local.dao.UserProfileDao
+import com.androidprj.fuzic.data.local.entity.UserProfileEntity
 import com.androidprj.fuzic.model.ui.AvatarUploadRequest
 import com.androidprj.fuzic.model.remote.UserDto
 import com.androidprj.fuzic.model.ui.ProfileUser
@@ -17,6 +19,7 @@ import javax.inject.Inject
 class RemoteUserRepository @Inject constructor(
     private val supabaseClient: SupabaseClient,
     @ApplicationContext private val appContext: Context,
+    private val userProfileDao: UserProfileDao
 ) : UserRepository {
 
     override suspend fun getUserProfile(userId: String): Result<ProfileUser> {
@@ -24,11 +27,34 @@ class RemoteUserRepository @Inject constructor(
             val user = supabaseClient.postgrest["users"]
                 .select { filter { eq("id", userId) } }
                 .decodeSingle<UserDto>()
-            Result.success(user.toProfileUser())
+            val profileUser = user.toProfileUser()
+            userProfileDao.insertProfile(profileUser.toEntity())
+            Result.success(profileUser)
         } catch (e: Exception) {
-            Result.failure(e)
+            val cachedProfile = userProfileDao.getProfile(userId)
+            if (cachedProfile != null) {
+                Result.success(cachedProfile.toDomain())
+            } else {
+                Result.failure(e)
+            }
         }
     }
+
+    private fun ProfileUser.toEntity() = UserProfileEntity(
+        id = id,
+        displayName = displayName,
+        username = username,
+        avatarUrl = avatarUrl,
+        isPremium = isPremium
+    )
+
+    private fun UserProfileEntity.toDomain() = ProfileUser(
+        id = id,
+        displayName = displayName,
+        username = username,
+        avatarUrl = avatarUrl,
+        isPremium = isPremium
+    )
 
     override suspend fun updateProfile(user: ProfileUser): Result<ProfileUser> {
         return try {

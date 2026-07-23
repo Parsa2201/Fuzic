@@ -3,6 +3,7 @@ package com.androidprj.fuzic.repository
 import com.androidprj.fuzic.model.ui.DownloadRequest
 import com.androidprj.fuzic.model.ui.DownloadSortOption
 import com.androidprj.fuzic.model.ui.DownloadedSongItem
+import com.androidprj.fuzic.model.ui.SongItem
 import kotlinx.coroutines.flow.Flow
 
 /** Download mutations and summaries; long list UI must use [PagedDownloadRepository]. */
@@ -14,4 +15,5 @@ interface DownloadRepository {
     suspend fun removeDownloadFile(downloadId: String): Result<Unit>
     /** Returns the local file path if [songId] is fully downloaded, null otherwise. */
     suspend fun getLocalFilePath(songId: String): String?
+    suspend fun getDownloadedSong(songId: String): Result<SongItem>
 }

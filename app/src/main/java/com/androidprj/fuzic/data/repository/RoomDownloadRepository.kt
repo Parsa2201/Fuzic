@@ -106,6 +106,26 @@ class RoomDownloadRepository @Inject constructor(
         return if (File(path).exists()) path else null
     }
 
+    override suspend fun getDownloadedSong(songId: String): Result<com.androidprj.fuzic.model.ui.SongItem> {
+        val entity = downloadDao.getDownloadById(songId)
+            ?: return Result.failure(NoSuchElementException("No download found for $songId"))
+        if (entity.status != DownloadStatus.COMPLETED) {
+            return Result.failure(IllegalStateException("Song is not fully downloaded"))
+        }
+        val path = entity.filePath ?: return Result.failure(IllegalStateException("No file path"))
+        if (!File(path).exists()) {
+            return Result.failure(IllegalStateException("File does not exist"))
+        }
+        val songItem = com.androidprj.fuzic.model.ui.SongItem(
+            id = entity.id,
+            title = entity.title,
+            artist = entity.artist,
+            artworkUrl = entity.artworkUrl,
+            audioUrl = entity.audioUrl
+        )
+        return Result.success(songItem)
+    }
+
     override suspend fun removeDownloadFile(downloadId: String): Result<Unit> = runCatching {
         workManager.cancelUniqueWork("download_$downloadId")
         val entity = downloadDao.getDownloadById(downloadId)

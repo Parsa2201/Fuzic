@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface PlaylistDetailsIntent {
     data class Load(val playlistId: String) : PlaylistDetailsIntent
@@ -54,7 +55,7 @@ class PlaylistDetailsViewModel @Inject constructor(
                 onSuccess = { PlaylistDetailsUiState(playlist = it) },
                 onFailure = {
                     PlaylistDetailsUiState(
-                        errorMessage = it.message ?: stringProvider.get(R.string.playlist_details_error_title),
+                        errorMessage = it.toUserFriendlyMessage(stringProvider, R.string.playlist_details_error_title),
                     )
                 },
             )

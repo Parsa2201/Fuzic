@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface PlayerIntent {
     data class Play(val song: SongItem) : PlayerIntent
@@ -175,6 +176,19 @@ class PlayerViewModel @Inject constructor(
 
     private fun playById(songId: String) {
         viewModelScope.launch {
+            // First check if the song is downloaded. This bypasses the network completely for offline play.
+            val localResult = withContext(ioDispatcher) {
+                downloadRepository.getDownloadedSong(songId)
+            }
+            if (localResult.isSuccess) {
+                val song = localResult.getOrNull()
+                if (song != null) {
+                    runPlayerCommand { playerRepository.play(song) }
+                    return@launch
+                }
+            }
+
+            // Fallback to network if not downloaded
             val result = withContext(ioDispatcher) {
                 musicRepository.getSongById(songId)
             }
@@ -187,7 +201,7 @@ class PlayerViewModel @Inject constructor(
                     _uiState.update { it.copy(errorMessage = stringProvider.get(R.string.player_error_title)) }
                 }
             }.onFailure { error ->
-                _uiState.update { it.copy(errorMessage = error.message ?: stringProvider.get(R.string.player_error_title)) }
+                _uiState.update { it.copy(errorMessage = error.toUserFriendlyMessage(stringProvider, R.string.player_error_title)) }
             }
         }
     }
@@ -200,7 +214,7 @@ class PlayerViewModel @Inject constructor(
             val result = withContext(ioDispatcher) {
                 if (wasLiked) interactionRepository.unlikeSong(song.id) else interactionRepository.likeSong(song.id)
             }
-            if (result.isFailure) _uiState.update { it.copy(isLiked = wasLiked, errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title)) }
+            if (result.isFailure) _uiState.update { it.copy(isLiked = wasLiked, errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.player_error_title)) }
         }
     }
 
@@ -222,7 +236,7 @@ class PlayerViewModel @Inject constructor(
             if (result.isSuccess) {
                 _uiEvents.send(PlayerUiEvent.ShowToast(stringProvider.get(R.string.download_started) ?: "Download started"))
             } else {
-                val errorMsg = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title)
+                val errorMsg = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.player_error_title) ?: stringProvider.get(R.string.player_error_title)
                 _uiEvents.send(PlayerUiEvent.ShowToast(errorMsg))
                 _uiState.update { it.copy(actionErrorMessage = errorMsg) }
             }
@@ -237,7 +251,7 @@ class PlayerViewModel @Inject constructor(
             val result = withContext(ioDispatcher) { block() }
             if (result.isFailure) {
                 _uiState.update {
-                    it.copy(errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title))
+                    it.copy(errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.player_error_title))
                 }
             } else if (overlayAfterSuccess != null) {
                 _uiState.update { it.copy(selectedOverlay = overlayAfterSuccess, errorMessage = null) }

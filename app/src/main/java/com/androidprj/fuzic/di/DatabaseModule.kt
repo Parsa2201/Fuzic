@@ -42,4 +42,20 @@ object DatabaseModule {
     ): com.androidprj.fuzic.data.local.dao.DownloadDao {
         return database.downloadDao
     }
+
+    @Provides
+    @Singleton
+    fun provideHomeSongDao(
+        database: FuzicDatabase
+    ): com.androidprj.fuzic.data.local.dao.HomeSongDao {
+        return database.homeSongDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserProfileDao(
+        database: FuzicDatabase
+    ): com.androidprj.fuzic.data.local.dao.UserProfileDao {
+        return database.userProfileDao
+    }
 }

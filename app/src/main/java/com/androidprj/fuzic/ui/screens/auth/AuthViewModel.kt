@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface AuthIntent {
     data class NameChanged(val value: String) : AuthIntent
@@ -115,7 +116,7 @@ class AuthViewModel @Inject constructor(
                     onFailure = {
                         current.copy(
                             isLoading = false,
-                            errorMessage = it.message ?: stringProvider.get(R.string.auth_error_message),
+                            errorMessage = it.toUserFriendlyMessage(stringProvider, R.string.auth_error_message),
                         )
                     },
                 )

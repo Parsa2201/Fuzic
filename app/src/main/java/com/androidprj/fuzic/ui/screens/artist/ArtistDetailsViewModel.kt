@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface ArtistDetailsIntent {
     data class Load(val artistId: String) : ArtistDetailsIntent
@@ -64,7 +65,7 @@ class ArtistDetailsViewModel @Inject constructor(
                 },
                 onFailure = {
                     ArtistDetailsUiState(
-                        errorMessage = it.message ?: stringProvider.get(R.string.artist_error_title),
+                        errorMessage = it.toUserFriendlyMessage(stringProvider, R.string.artist_error_title),
                     )
                 },
             )
@@ -82,7 +83,7 @@ class ArtistDetailsViewModel @Inject constructor(
             if (result.isFailure) {
                 _uiState.value = _uiState.value.copy(
                     isFollowing = wasFollowing,
-                    errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.artist_error_title),
+                    errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.artist_error_title),
                 )
             }
         }
@@ -93,7 +94,7 @@ class ArtistDetailsViewModel @Inject constructor(
             val result = withContext(ioDispatcher) { playerRepository.play(song) }
             if (result.isFailure) {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.player_error_title),
+                    errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.player_error_title),
                 )
             }
         }

@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.update
 import androidx.paging.PagingData
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface SearchIntent {
     data class QueryChanged(val value: String) : SearchIntent
@@ -78,7 +79,7 @@ class SearchViewModel @Inject constructor(
             searchRepository.observeSearchHistory()
                 .catch { throwable ->
                     _uiState.update {
-                        it.copy(errorMessage = throwable.message ?: stringProvider.get(R.string.search_error_message))
+                        it.copy(errorMessage = throwable.toUserFriendlyMessage(stringProvider, R.string.search_error_message))
                     }
                 }
                 .collect { history ->
@@ -110,7 +111,7 @@ class SearchViewModel @Inject constructor(
                     }
                 }
                 .onFailure { throwable -> _uiState.update {
-                    it.copy(isLoading = false, errorMessage = throwable.message ?: stringProvider.get(R.string.search_error_message))
+                    it.copy(isLoading = false, errorMessage = throwable.toUserFriendlyMessage(stringProvider, R.string.search_error_message))
                 } }
         }
     }
@@ -120,7 +121,7 @@ class SearchViewModel @Inject constructor(
             val result = withContext(ioDispatcher) { block() }
             if (result.isFailure) {
                 _uiState.update {
-                    it.copy(errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.search_error_message))
+                    it.copy(errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.search_error_message))
                 }
             }
         }

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.androidprj.fuzic.util.toUserFriendlyMessage
 
 sealed interface PremiumIntent {
     data object Retry : PremiumIntent
@@ -95,7 +96,7 @@ class PremiumViewModel @Inject constructor(
             if (result.isFailure) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = result.exceptionOrNull()?.message ?: stringProvider.get(R.string.premium_error_title),
+                    errorMessage = result.exceptionOrNull()?.toUserFriendlyMessage(stringProvider, R.string.premium_error_title),
                 )
             }
         }
