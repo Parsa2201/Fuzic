@@ -79,7 +79,7 @@ fun MessageDto.toChatMessage(currentUserId: String): ChatMessage {
     )
 }
 
-private fun String?.toChatTimeLabel(): String {
+fun String?.toChatTimeLabel(): String {
     if (isNullOrBlank()) return ""
     return runCatching {
         OffsetDateTime.parse(this)

@@ -6,6 +6,7 @@ import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.model.ui.ChatMessage
 import com.androidprj.fuzic.model.mapper.toFollowUser
 import com.androidprj.fuzic.model.mapper.toChatMessage
+import com.androidprj.fuzic.model.mapper.toChatTimeLabel
 import com.androidprj.fuzic.model.ui.TypingStatus
 import com.androidprj.fuzic.repository.ChatRepository
 import io.github.jan.supabase.SupabaseClient
@@ -141,7 +142,7 @@ class RemoteChatRepository @Inject constructor(
                         id = participantId,
                         participant = participant.toFollowUser(),
                         lastMessagePreview = latestMessage.content.orEmpty(),
-                        lastMessageTimeLabel = latestMessage.createdAt.orEmpty(),
+                        lastMessageTimeLabel = latestMessage.createdAt.toChatTimeLabel(),
                         unreadCount = if (
                             latestMessage.receiverId == currentUserId &&
                             latestMessage.status != "read"
