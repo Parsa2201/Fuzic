@@ -287,6 +287,8 @@ internal class FakePlayerRepository(
     var toggleCalls = 0
     var nextCalls = 0
     var previousCalls = 0
+    var skipToIndexCalls = 0
+    var lastSkipToIndex: Int? = null
     var seekCalls = 0
     var lastSeekProgress: Float? = null
     var lastRepeatMode: RepeatMode? = null
@@ -321,6 +323,14 @@ internal class FakePlayerRepository(
     override suspend fun skipToNext(): Result<Unit> {
         nextCalls++
         return commandResult
+    }
+
+    override suspend fun skipToIndex(index: Int): Result<Unit> {
+        skipToIndexCalls++
+        lastSkipToIndex = index
+        return commandResult.onSuccess {
+            _playerState.value = _playerState.value.copy(currentSong = _playerState.value.currentSong)
+        }
     }
 
     override suspend fun setShuffleEnabled(enabled: Boolean): Result<Unit> {

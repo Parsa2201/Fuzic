@@ -16,6 +16,7 @@ interface PlayerRepository {
     suspend fun seekTo(progress: Float): Result<Unit>
     suspend fun skipToPrevious(): Result<Unit>
     suspend fun skipToNext(): Result<Unit>
+    suspend fun skipToIndex(index: Int): Result<Unit>
     suspend fun setShuffleEnabled(enabled: Boolean): Result<Unit>
     suspend fun setRepeatMode(mode: RepeatMode): Result<Unit>
     suspend fun setPlaybackSpeed(speed: Float): Result<Unit>

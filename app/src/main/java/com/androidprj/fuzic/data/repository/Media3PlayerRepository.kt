@@ -250,6 +250,17 @@ class Media3PlayerRepository @Inject constructor(
         Result.success(Unit)
     }
 
+    override suspend fun skipToIndex(index: Int): Result<Unit> = runOnMain {
+        val controller = playerController.controller()
+        if (index < 0 || index >= controller.mediaItemCount) {
+            return@runOnMain Result.failure(
+                IllegalArgumentException("skipToIndex out of bounds: $index"),
+            )
+        }
+        controller.seekTo(index, C.TIME_UNSET)
+        Result.success(Unit)
+    }
+
     override suspend fun skipToPrevious(): Result<Unit> = runOnMain {
         playerController.controller().seekToPreviousMediaItem()
         Result.success(Unit)
