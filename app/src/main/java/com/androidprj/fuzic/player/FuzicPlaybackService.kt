@@ -12,6 +12,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -19,6 +20,7 @@ import androidx.media3.session.SessionToken
 import com.androidprj.fuzic.MainActivity
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.player.audio.AudioProcessorRegistry
+import com.androidprj.fuzic.player.cache.MediaCache
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -57,24 +59,35 @@ class FuzicPlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
 
     /**
-     * Hilt entry point that surfaces [AudioProcessorRegistry] to this
-     * service. Keep the interface narrow — only what the service actually
-     * pulls.
+     * Hilt entry point that surfaces [AudioProcessorRegistry] and
+     * [MediaCache] to this service. Keep the interface narrow — only
+     * what the service actually pulls.
      */
     @EntryPoint
     @InstallIn(SingletonComponent::class)
     interface PlayerEntryPoint {
         fun audioProcessorRegistry(): AudioProcessorRegistry
+        fun mediaCache(): MediaCache
     }
+
+    // Cached so onDestroy can release the SimpleCache exactly once even
+    // if Media3 calls onCreate → onDestroy multiple times (e.g. during
+    // task removal).
+    private var mediaCacheRef: MediaCache? = null
 
     @OptIn(UnstableApi::class)
     override fun onCreate() {
         super.onCreate()
 
-        // Same instance Media3PlayerRepository reads visualizer frames from.
-        val registry: AudioProcessorRegistry = EntryPointAccessors
+        val entryPoint: PlayerEntryPoint = EntryPointAccessors
             .fromApplication(applicationContext, PlayerEntryPoint::class.java)
-            .audioProcessorRegistry()
+        // Same instance Media3PlayerRepository reads visualizer frames from.
+        val registry: AudioProcessorRegistry = entryPoint.audioProcessorRegistry()
+        // On-disk cache for streamed playback — wired into the ExoPlayer
+        // MediaSourceFactory below so seeking / replaying tracks within
+        // the cache window does not hit the network.
+        val mediaCache: MediaCache = entryPoint.mediaCache()
+        mediaCacheRef = mediaCache
 
         // Build the audio sink with the visualizer processor in its chain.
         // Media3's DefaultAudioSink installs silence-skipping and Sonic
@@ -99,6 +112,12 @@ class FuzicPlaybackService : MediaSessionService() {
         val player = ExoPlayer.Builder(this)
             .setAudioAttributes(AudioAttributes.DEFAULT, /* handleAudioFocus = */ true)
             .setRenderersFactory(renderersFactory)
+            // Pipe the cache through Media3's default media source factory
+            // so every streamed MediaItem is read-through cached. Local
+            // file:// URIs (resolved by LocalPlaybackFileResolver) bypass
+            // the cache because MediaSourceFactory only intercepts http(s)
+            // and content:// sources upstream of CacheDataSource.
+            .setMediaSourceFactory(DefaultMediaSourceFactory(mediaCache.cacheDataSourceFactory))
             .build()
         exoPlayer = player
 
@@ -185,6 +204,17 @@ class FuzicPlaybackService : MediaSessionService() {
         mediaSession = null
         exoPlayer?.release()
         exoPlayer = null
+        // Release the SQLite-backed cache after Media3 has stopped reading
+        // from it. runBlocking is acceptable here — MediaSessionService
+        // teardown is short-lived and the cache close is a single SQLite
+        // close() call.
+        mediaCacheRef?.let { cache ->
+            try {
+                kotlinx.coroutines.runBlocking { cache.release() }
+            } finally {
+                mediaCacheRef = null
+            }
+        }
         super.onDestroy()
     }
 
