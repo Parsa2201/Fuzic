@@ -257,6 +257,10 @@ fun FuzicNavigation(
     val selectedMainTab = topLevelDestinations.indexOfFirst { destination ->
         currentDestination?.hasRoute(destination::class) == true
     }.takeIf { it >= 0 }?.let(MainTab.entries::get)
+    var lastMainTab by rememberSaveable { mutableStateOf(MainTab.Home) }
+    LaunchedEffect(selectedMainTab) {
+        selectedMainTab?.let { lastMainTab = it }
+    }
     val isProfileSubDestination = currentDestination?.hasRoute(LikedSongsDestination::class) == true ||
         currentDestination?.hasRoute(RecentlyPlayedDestination::class) == true ||
         currentDestination?.hasRoute(ArtistsDestination::class) == true ||
@@ -265,7 +269,8 @@ fun FuzicNavigation(
         currentDestination?.hasRoute(FollowSearchDestination::class) == true ||
         currentDestination?.hasRoute(FollowListDestination::class) == true ||
         currentDestination?.hasRoute(UserProfileDestination::class) == true
-    val selectedTab = selectedMainTab ?: if (isProfileSubDestination) MainTab.Profile else MainTab.Home
+    // Detail/subpages stay visually attached to the tab from which they were opened.
+    val selectedTab = selectedMainTab ?: if (isProfileSubDestination) lastMainTab else MainTab.Home
     val isMainTabDestination = currentDestination?.hasRoute(HomeDestination::class) == true ||
         currentDestination?.hasRoute(SearchDestination::class) == true ||
         currentDestination?.hasRoute(DownloadsDestination::class) == true ||
@@ -307,6 +312,7 @@ fun FuzicNavigation(
                             item(
                                 selected = index == selectedTab.ordinal,
                                 onClick = {
+                                    lastMainTab = tab
                                     navController.navigate(topLevelDestinations[index]) {
                                         launchSingleTop = true
                                         restoreState = true
@@ -772,6 +778,7 @@ fun FuzicNavigation(
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 ArtistsScreen(
                     uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
                     onArtistClick = { navController.navigate(ArtistDestination(it.id)) },
                     onFollowClick = { viewModel.onIntent(ArtistsIntent.ToggleFollow(it)) },
                     onRetryClick = { viewModel.onIntent(ArtistsIntent.Retry) },
