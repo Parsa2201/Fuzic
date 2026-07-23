@@ -17,6 +17,23 @@ package com.androidprj.fuzic.player.local
  *   [LocalPlaybackFileResolver]'s job.
  * - Implementations MAY do light IO (single query) but must be safe to call
  *   on `Dispatchers.IO`.
+ *
+ * ## Logout policy (spec §21 Q6, product call 2026-07-23)
+ *
+ * **Downloads are NOT purged on logout.** Returning to the app and
+ * logging back in must show the same `downloads` rows and the same on-disk
+ * audio files the user accumulated. The auth/logout flow MUST NOT call
+ * [DownloadRepository.deleteDownload] / `purgeAll` / `DownloadWorker.cancel`
+ * on user logout. The Playback Track tolerates a brief stale download
+ * (file gone, row still present) by falling back to the catalog stream
+ * via [LocalPlaybackFileResolver].
+ *
+ * Responsibility split:
+ * - `PlaybackDownloadLookup` is the read side; it never deletes.
+ * - Logout-flow contracts (in the Auth / Downloads Track) must call no
+ *   method that purges downloads.
+ * - User-initiated "Free up space" / "Delete download" actions on the
+ *   Downloads screen are unrelated to logout and continue to work.
  */
 interface PlaybackDownloadLookup {
     /**
@@ -25,3 +42,4 @@ interface PlaybackDownloadLookup {
      */
     suspend fun localUriFor(songId: String): String?
 }
+
