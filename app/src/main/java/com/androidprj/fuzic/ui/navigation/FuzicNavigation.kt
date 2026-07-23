@@ -306,7 +306,7 @@ fun FuzicNavigation(
                         FuzicTopAppBar(
                             onProfileClick = { navController.navigate(ProfileDestination) },
                             onNotificationsClick = { navController.navigate(NotificationsDestination) },
-                            onSettingsClick = { navController.navigate(SettingsDestination) },
+                            onSettingsClick = { navController.navigate(SettingsDestination()) },
                         )
                     }
                 },
@@ -494,7 +494,7 @@ fun FuzicNavigation(
                             }
                             ProfileEntry.LikedSongs -> navController.navigate(LikedSongsDestination)
                             ProfileEntry.RecentlyPlayed -> navController.navigate(RecentlyPlayedDestination)
-                            ProfileEntry.Settings -> navController.navigate(SettingsDestination)
+                            ProfileEntry.Settings -> navController.navigate(SettingsDestination())
                             ProfileEntry.Chat -> navController.navigate(ChatListDestination)
                             ProfileEntry.Logout -> navController.navigate(SettingsDestination(showLogoutConfirmation = true))
                         }
