@@ -257,6 +257,10 @@ fun FuzicNavigation(
     val selectedMainTab = topLevelDestinations.indexOfFirst { destination ->
         currentDestination?.hasRoute(destination::class) == true
     }.takeIf { it >= 0 }?.let(MainTab.entries::get)
+    var lastMainTab by rememberSaveable { mutableStateOf(MainTab.Home) }
+    LaunchedEffect(selectedMainTab) {
+        selectedMainTab?.let { lastMainTab = it }
+    }
     val isProfileSubDestination = currentDestination?.hasRoute(LikedSongsDestination::class) == true ||
         currentDestination?.hasRoute(RecentlyPlayedDestination::class) == true ||
         currentDestination?.hasRoute(ArtistsDestination::class) == true ||
@@ -265,7 +269,8 @@ fun FuzicNavigation(
         currentDestination?.hasRoute(FollowSearchDestination::class) == true ||
         currentDestination?.hasRoute(FollowListDestination::class) == true ||
         currentDestination?.hasRoute(UserProfileDestination::class) == true
-    val selectedTab = selectedMainTab ?: if (isProfileSubDestination) MainTab.Profile else MainTab.Home
+    // Detail/subpages stay visually attached to the tab from which they were opened.
+    val selectedTab = selectedMainTab ?: if (isProfileSubDestination) lastMainTab else MainTab.Home
     val isMainTabDestination = currentDestination?.hasRoute(HomeDestination::class) == true ||
         currentDestination?.hasRoute(SearchDestination::class) == true ||
         currentDestination?.hasRoute(DownloadsDestination::class) == true ||
@@ -307,11 +312,21 @@ fun FuzicNavigation(
                             item(
                                 selected = index == selectedTab.ordinal,
                                 onClick = {
-                                    navController.navigate(topLevelDestinations[index]) {
-                                        launchSingleTop = true
-                                        restoreState = true
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
+                                    lastMainTab = tab
+                                    if (tab == MainTab.Home) {
+                                        val returnedToHome = navController.popBackStack(HomeDestination, inclusive = false)
+                                        if (!returnedToHome) {
+                                            navController.navigate(HomeDestination) {
+                                                launchSingleTop = true
+                                            }
+                                        }
+                                    } else {
+                                        navController.navigate(topLevelDestinations[index]) {
+                                            launchSingleTop = true
+                                            restoreState = true
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
                                         }
                                     }
                                 },
@@ -491,18 +506,7 @@ fun FuzicNavigation(
                 )
             }
             composable<PlaylistsDestination> {
-                val viewModel: PlaylistsViewModel = hiltViewModel()
-                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                PlaylistsScreen(
-                    uiState = uiState,
-                    onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
-                    onNewPlaylistClick = { viewModel.onIntent(PlaylistsIntent.ShowCreate) },
-                    onCreateNameChange = { viewModel.onIntent(PlaylistsIntent.NameChanged(it)) },
-                    onCreateCoverSelected = { viewModel.onIntent(PlaylistsIntent.CoverChanged(it)) },
-                    onCreateConfirmClick = { viewModel.onIntent(PlaylistsIntent.Create) },
-                    onCreateDismissClick = { viewModel.onIntent(PlaylistsIntent.DismissCreate) },
-                    onRetryClick = { viewModel.onIntent(PlaylistsIntent.Retry) },
-                )
+                PlaylistsDestinationContent(navController)
             }
             composable<ProfileDestination> { entry ->
                 val viewModel: ProfileViewModel = hiltViewModel()
@@ -772,6 +776,7 @@ fun FuzicNavigation(
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 ArtistsScreen(
                     uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
                     onArtistClick = { navController.navigate(ArtistDestination(it.id)) },
                     onFollowClick = { viewModel.onIntent(ArtistsIntent.ToggleFollow(it)) },
                     onRetryClick = { viewModel.onIntent(ArtistsIntent.Retry) },
@@ -936,6 +941,22 @@ private fun SessionRestoreScreen(modifier: Modifier = Modifier) {
     ) {
         CircularProgressIndicator()
     }
+}
+
+@Composable
+private fun PlaylistsDestinationContent(navController: NavHostController) {
+    val viewModel: PlaylistsViewModel = hiltViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    PlaylistsScreen(
+        uiState = uiState,
+        onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
+        onNewPlaylistClick = { viewModel.onIntent(PlaylistsIntent.ShowCreate) },
+        onCreateNameChange = { viewModel.onIntent(PlaylistsIntent.NameChanged(it)) },
+        onCreateCoverSelected = { viewModel.onIntent(PlaylistsIntent.CoverChanged(it)) },
+        onCreateConfirmClick = { viewModel.onIntent(PlaylistsIntent.Create) },
+        onCreateDismissClick = { viewModel.onIntent(PlaylistsIntent.DismissCreate) },
+        onRetryClick = { viewModel.onIntent(PlaylistsIntent.Retry) },
+    )
 }
 
 private object NavigationMotion {

@@ -1,6 +1,7 @@
 package com.androidprj.fuzic
 
 import com.androidprj.fuzic.model.mapper.toProfileUser
+import com.androidprj.fuzic.model.mapper.toSongItem
 import com.androidprj.fuzic.model.remote.UserDto
 import com.androidprj.fuzic.model.ui.PlaylistSectionType
 import com.androidprj.fuzic.model.ui.AvatarEditorState
@@ -339,5 +340,18 @@ class ViewModelsTest {
         ).toProfileUser()
 
         assertEquals("parsa_music", profile.username)
+    }
+
+    @Test
+    fun songDtoMappingPreservesPlaybackUrl() {
+        val streamUrl = "https://media.example.test/song.mp3"
+        val song = com.androidprj.fuzic.model.remote.SongDto(
+            id = "song-1",
+            title = "Midnight Drive",
+            artistName = "Luna Ray",
+            audioUrl = streamUrl,
+        ).toSongItem()
+
+        assertEquals(streamUrl, song.audioUrl)
     }
 }

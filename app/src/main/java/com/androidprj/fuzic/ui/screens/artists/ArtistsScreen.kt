@@ -39,6 +39,7 @@ import com.androidprj.fuzic.model.ui.ArtistCollectionItem
 import com.androidprj.fuzic.model.ui.ArtistCollectionUiState
 import com.androidprj.fuzic.model.ui.ArtistItem
 import com.androidprj.fuzic.ui.components.MusicArtwork
+import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.components.previewArtworkUri
@@ -48,6 +49,7 @@ import com.androidprj.fuzic.ui.theme.spacing
 @Composable
 fun ArtistsRoute(
     uiState: ArtistCollectionUiState,
+    onBackClick: () -> Unit,
     onArtistClick: (ArtistItem) -> Unit,
     onFollowClick: (ArtistCollectionItem) -> Unit,
     onRetryClick: () -> Unit,
@@ -55,6 +57,7 @@ fun ArtistsRoute(
 ) {
     ArtistsScreen(
         uiState = uiState,
+        onBackClick = onBackClick,
         onArtistClick = onArtistClick,
         onFollowClick = onFollowClick,
         onRetryClick = onRetryClick,
@@ -65,52 +68,50 @@ fun ArtistsRoute(
 @Composable
 fun ArtistsScreen(
     uiState: ArtistCollectionUiState,
+    onBackClick: () -> Unit,
     onArtistClick: (ArtistItem) -> Unit,
     onFollowClick: (ArtistCollectionItem) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    when {
-        uiState.isLoading -> ArtistsLoadingContent(modifier)
-        uiState.errorMessage != null -> ScreenMessage(
-            icon = Icons.Default.ErrorOutline,
-            title = stringResource(R.string.artists_error_title),
-            message = uiState.errorMessage,
-            action = {
-                Button(onClick = onRetryClick) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                    Spacer(Modifier.width(MaterialTheme.spacing.small))
-                    Text(stringResource(R.string.action_retry))
+    Column(modifier.fillMaxSize()) {
+        DetailTopAppBar(title = stringResource(R.string.artists_title), onBackClick = onBackClick)
+        when {
+            uiState.isLoading -> ArtistsLoadingContent(Modifier.weight(1f))
+            uiState.errorMessage != null -> ScreenMessage(
+                icon = Icons.Default.ErrorOutline,
+                title = stringResource(R.string.artists_error_title),
+                message = uiState.errorMessage,
+                action = {
+                    Button(onClick = onRetryClick) {
+                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Spacer(Modifier.width(MaterialTheme.spacing.small))
+                        Text(stringResource(R.string.action_retry))
+                    }
+                },
+                modifier = Modifier.weight(1f),
+            )
+            uiState.isEmpty -> ScreenMessage(
+                icon = Icons.Default.Person,
+                title = stringResource(R.string.artists_empty_title),
+                message = stringResource(R.string.artists_empty_message),
+                modifier = Modifier.weight(1f),
+            )
+            else -> LazyColumn(
+                modifier = modifier
+                    .weight(1f)
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                contentPadding = PaddingValues(MaterialTheme.spacing.medium),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+            ) {
+                items(uiState.artists, key = { it.artist.id }) { item ->
+                    ArtistCollectionRow(
+                        item = item,
+                        onArtistClick = { onArtistClick(item.artist) },
+                        onFollowClick = { onFollowClick(item) },
+                    )
                 }
-            },
-            modifier = modifier,
-        )
-        uiState.isEmpty -> ScreenMessage(
-            icon = Icons.Default.Person,
-            title = stringResource(R.string.artists_empty_title),
-            message = stringResource(R.string.artists_empty_message),
-            modifier = modifier,
-        )
-        else -> LazyColumn(
-            modifier = modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            contentPadding = PaddingValues(MaterialTheme.spacing.medium),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-        ) {
-            item {
-                Text(
-                    text = stringResource(R.string.artists_title),
-                    style = MaterialTheme.typography.headlineLarge,
-                    modifier = Modifier.padding(bottom = MaterialTheme.spacing.small),
-                )
-            }
-            items(uiState.artists, key = { it.artist.id }) { item ->
-                ArtistCollectionRow(
-                    item = item,
-                    onArtistClick = { onArtistClick(item.artist) },
-                    onFollowClick = { onFollowClick(item) },
-                )
             }
         }
     }
@@ -235,6 +236,7 @@ private fun ArtistsPreview() {
     FuzicTheme {
         ArtistsScreen(
             uiState = sampleArtistCollectionState(),
+            onBackClick = {},
             onArtistClick = {},
             onFollowClick = {},
             onRetryClick = {},
@@ -248,6 +250,7 @@ private fun ArtistsPersianPreview() {
     FuzicTheme {
         ArtistsScreen(
             uiState = sampleArtistCollectionState(),
+            onBackClick = {},
             onArtistClick = {},
             onFollowClick = {},
             onRetryClick = {},
@@ -261,6 +264,7 @@ private fun ArtistsEmptyPreview() {
     FuzicTheme {
         ArtistsScreen(
             uiState = ArtistCollectionUiState(),
+            onBackClick = {},
             onArtistClick = {},
             onFollowClick = {},
             onRetryClick = {},
@@ -274,6 +278,7 @@ private fun ArtistsLoadingPreview() {
     FuzicTheme {
         ArtistsScreen(
             uiState = ArtistCollectionUiState(isLoading = true),
+            onBackClick = {},
             onArtistClick = {},
             onFollowClick = {},
             onRetryClick = {},
@@ -289,6 +294,7 @@ private fun ArtistsErrorPreview() {
             uiState = ArtistCollectionUiState(
                 errorMessage = stringResource(R.string.preview_artists_error_message),
             ),
+            onBackClick = {},
             onArtistClick = {},
             onFollowClick = {},
             onRetryClick = {},

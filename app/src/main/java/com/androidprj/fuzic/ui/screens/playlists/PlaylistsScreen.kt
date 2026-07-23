@@ -117,7 +117,7 @@ fun PlaylistsScreen(
             },
             modifier = modifier
         )
-        uiState.isEmpty -> ScreenMessage(
+        uiState.isEmpty && !uiState.createPlaylistState.isVisible -> ScreenMessage(
             icon = Icons.Default.LibraryMusic,
             title = stringResource(R.string.playlists_empty_title),
             message = stringResource(R.string.playlists_empty_message),
