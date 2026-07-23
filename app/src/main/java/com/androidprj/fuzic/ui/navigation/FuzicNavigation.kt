@@ -389,7 +389,11 @@ fun FuzicNavigation(
                 } else {
                     Modifier.padding(
                         top = paddingValues.calculateTopPadding(),
-                        bottom = 0.dp // Ignore bottom padding to let content float under MiniPlayer
+                        bottom = if (showBottomNavigation) {
+                            0.dp
+                        } else {
+                            paddingValues.calculateBottomPadding()
+                        },
                     )
                 }
                 NavHost(
