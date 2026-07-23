@@ -17,6 +17,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.MarkEmailRead
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Visibility
@@ -244,19 +245,34 @@ fun AuthScreen(
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(MaterialTheme.spacing.large))
-        if (uiState.errorMessage != null) {
+        when {
+            uiState.confirmationEmail != null -> {
+                ScreenMessage(
+                    icon = Icons.Default.MarkEmailRead,
+                    title = stringResource(R.string.auth_confirmation_title),
+                    message = stringResource(R.string.auth_confirmation_message, uiState.confirmationEmail),
+                    fillMaxSize = false,
+                    action = {
+                        TextButton(onClick = onSwitchModeClick) {
+                            Text(stringResource(R.string.auth_confirmation_sign_in))
+                        }
+                    },
+                )
+            }
+            uiState.errorMessage != null -> {
             ScreenMessage(
                 icon = Icons.Default.ErrorOutline,
                 title = stringResource(R.string.auth_error_title),
                 message = uiState.errorMessage,
                 fillMaxSize = false,
                 action = {
-                    TextButton(onClick = onRetryClick) {
+                    TextButton(onClick = onRetryClick, enabled = !uiState.isLoading) {
                         Text(stringResource(R.string.action_retry))
                     }
                 },
             )
-        } else {
+            }
+            else -> {
             AuthForm(
                 uiState = uiState,
                 onNameChange = onNameChange,
@@ -269,6 +285,7 @@ fun AuthScreen(
                 onForgotPasswordClick = onForgotPasswordClick,
                 onSwitchModeClick = onSwitchModeClick,
             )
+            }
         }
         if (uiState.isLoading) {
             LinearProgressIndicator(
@@ -300,6 +317,7 @@ private fun AuthForm(
             isError = uiState.nameErrorRes != null,
             supportingText = uiState.nameErrorRes?.let { errorRes -> { Text(stringResource(errorRes)) } },
             singleLine = true,
+            enabled = !uiState.isLoading,
         )
         Spacer(Modifier.height(MaterialTheme.spacing.medium))
     }
@@ -312,6 +330,7 @@ private fun AuthForm(
         isError = uiState.emailErrorRes != null,
         supportingText = uiState.emailErrorRes?.let { errorRes -> { Text(stringResource(errorRes)) } },
         singleLine = true,
+        enabled = !uiState.isLoading,
     )
     Spacer(Modifier.height(MaterialTheme.spacing.medium))
     PasswordField(
@@ -321,6 +340,7 @@ private fun AuthForm(
         isVisible = uiState.isPasswordVisible,
         errorMessage = uiState.passwordErrorRes?.let { stringResource(it) },
         onVisibilityClick = onPasswordVisibilityClick,
+        enabled = !uiState.isLoading,
     )
     if (uiState.isSignUp) {
         Spacer(Modifier.height(MaterialTheme.spacing.medium))
@@ -331,20 +351,22 @@ private fun AuthForm(
             isVisible = uiState.isConfirmPasswordVisible,
             errorMessage = uiState.confirmPasswordErrorRes?.let { stringResource(it) },
             onVisibilityClick = onConfirmPasswordVisibilityClick,
+            enabled = !uiState.isLoading,
         )
     } else {
         TextButton(
             onClick = onForgotPasswordClick,
+            enabled = !uiState.isLoading,
         ) {
             Text(stringResource(R.string.auth_forgot_password))
         }
     }
     Spacer(Modifier.height(MaterialTheme.spacing.medium))
-    Button(onClick = onSubmitClick, modifier = Modifier.fillMaxWidth()) {
+    Button(onClick = onSubmitClick, enabled = !uiState.isLoading, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(if (uiState.isSignUp) R.string.auth_sign_up else R.string.auth_sign_in))
     }
     Spacer(Modifier.height(MaterialTheme.spacing.small))
-    TextButton(onClick = onSwitchModeClick) {
+    TextButton(onClick = onSwitchModeClick, enabled = !uiState.isLoading) {
         Text(stringResource(if (uiState.isSignUp) R.string.auth_switch_to_sign_in else R.string.auth_switch_to_sign_up))
     }
 }
@@ -357,6 +379,7 @@ private fun PasswordField(
     isVisible: Boolean,
     errorMessage: String?,
     onVisibilityClick: () -> Unit,
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = value,
@@ -365,7 +388,7 @@ private fun PasswordField(
         label = { Text(label) },
         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
         trailingIcon = {
-            IconButton(onClick = onVisibilityClick) {
+            IconButton(onClick = onVisibilityClick, enabled = enabled) {
                 Icon(
                     if (isVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                     contentDescription = stringResource(
@@ -378,6 +401,7 @@ private fun PasswordField(
         isError = errorMessage != null,
         supportingText = errorMessage?.let { { Text(it) } },
         singleLine = true,
+        enabled = enabled,
     )
 }
 
@@ -423,6 +447,32 @@ private fun SignInDarkPreview() {
     FuzicTheme(darkTheme = true) {
         AuthScreen(
             uiState = AuthUiState(email = "parsa@example.com"),
+            onNameChange = {}, onEmailChange = {}, onPasswordChange = {}, onConfirmPasswordChange = {},
+            onPasswordVisibilityClick = {}, onConfirmPasswordVisibilityClick = {}, onSubmitClick = {},
+            onForgotPasswordClick = {}, onSwitchModeClick = {}, onRetryClick = {},
+        )
+    }
+}
+
+@Preview(name = "Sign-up confirmation", showBackground = true)
+@Composable
+private fun SignUpConfirmationPreview() {
+    FuzicTheme {
+        AuthScreen(
+            uiState = AuthUiState(isSignUp = true, confirmationEmail = "parsa@example.com"),
+            onNameChange = {}, onEmailChange = {}, onPasswordChange = {}, onConfirmPasswordChange = {},
+            onPasswordVisibilityClick = {}, onConfirmPasswordVisibilityClick = {}, onSubmitClick = {},
+            onForgotPasswordClick = {}, onSwitchModeClick = {}, onRetryClick = {},
+        )
+    }
+}
+
+@Preview(name = "Sign-up confirmation Persian", locale = "fa", showBackground = true)
+@Composable
+private fun SignUpConfirmationPersianPreview() {
+    FuzicTheme {
+        AuthScreen(
+            uiState = AuthUiState(isSignUp = true, confirmationEmail = "parsa@example.com"),
             onNameChange = {}, onEmailChange = {}, onPasswordChange = {}, onConfirmPasswordChange = {},
             onPasswordVisibilityClick = {}, onConfirmPasswordVisibilityClick = {}, onSubmitClick = {},
             onForgotPasswordClick = {}, onSwitchModeClick = {}, onRetryClick = {},
