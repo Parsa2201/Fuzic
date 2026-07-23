@@ -104,6 +104,22 @@ class Media3PlayerRepository @Inject constructor(
         onExpire = ::pausePlaybackForSleepTimer,
     )
 
+    // Tracks whether a transient audio-focus loss is currently in progress.
+    //
+    // Media3 1.10.1's Player.Listener interface does NOT expose a
+    // dedicated onAudioFocusChange callback (audio focus is handled by the
+    // internal AudioFocusManager and surfaces as Player.STATE_BUFFERING +
+    // isPlaying = false on transient loss). ExoPlayer is built with
+    // `handleAudioFocus = true` in FuzicPlaybackService, so transient loss
+    // already causes the player to pause and emits STATE_BUFFERING — which
+    // Media3PlayerListener.onPlaybackStateChanged converts into
+    // PlayerUiState.isBuffering = true. This flag exists so future
+    // work that needs to distinguish focus-driven buffering from network
+    // buffering has a documented seam. Marked @Volatile so any future
+    // observer on a different thread reads the latest value.
+    @Volatile
+    private var transientFocusLossActive: Boolean = false
+
     // 250 ms progress-polling ticker. Lives in its own file so the
     // repository stays under the 350-line soft cap; restartable via
     // Media3ProgressPoller#start if external code ever needs to reset

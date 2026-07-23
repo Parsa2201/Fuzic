@@ -248,4 +248,5 @@
     <string name="share_to_chat_empty">There are no conversations to share with.</string>
     <string name="share_to_chat_error">Song could not be shared.</string>
     <string name="share_to_chat_success">Song shared.</string>
+    <string name="player_notification_channel_name">Fuzic playback</string>
 </resources>
