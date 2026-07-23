@@ -156,6 +156,7 @@ internal class FakeAuthRepository(
     var currentUserId: String? = "user-1",
     var loginResult: Result<Unit> = Result.success(Unit),
     var signUpResult: Result<Unit> = Result.success(Unit),
+    var userFlow: Flow<ProfileUser?> = flowOf(testProfile),
 ) : AuthRepository {
     var loginCalls = 0
     var signUpCalls = 0
@@ -180,7 +181,7 @@ internal class FakeAuthRepository(
         return logoutResult
     }
 
-    override fun getCurrentUserFlow(): Flow<ProfileUser?> = flowOf(testProfile)
+    override fun getCurrentUserFlow(): Flow<ProfileUser?> = userFlow
 
     override suspend fun getCurrentUserId(): String? = currentUserId
 }

@@ -7,10 +7,13 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -30,7 +33,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
+import androidx.compose.material3.MaterialTheme
 import com.androidprj.fuzic.R
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -237,7 +242,12 @@ fun FuzicNavigation(
         scope.launch { snackbarHostState.showSnackbar(message) }
     }
     val sessionViewModel: SessionViewModel = hiltViewModel()
-    val currentUser by sessionViewModel.currentUser.collectAsStateWithLifecycle()
+    val sessionUiState by sessionViewModel.uiState.collectAsStateWithLifecycle()
+    if (sessionUiState is SessionUiState.Restoring) {
+        SessionRestoreScreen(modifier)
+        return
+    }
+    val currentUser = (sessionUiState as SessionUiState.Ready).currentUser
     val playerViewModel: PlayerViewModel = hiltViewModel()
     val playerUiState by playerViewModel.uiState.collectAsStateWithLifecycle()
     var songActionTarget by remember { mutableStateOf<SongItem?>(null) }
@@ -352,7 +362,7 @@ fun FuzicNavigation(
                 }
                 NavHost(
                     navController = navController,
-                    startDestination = WelcomeDestination,
+                    startDestination = if (currentUser != null) HomeDestination else WelcomeDestination,
                     modifier = navHostModifier,
                     enterTransition = {
                         fadeIn(animationSpec = tween(NavigationMotion.DurationMillis)) +
@@ -898,6 +908,18 @@ fun FuzicNavigation(
             },
         )
     }
+    }
+}
+
+@Composable
+private fun SessionRestoreScreen(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator()
     }
 }
 

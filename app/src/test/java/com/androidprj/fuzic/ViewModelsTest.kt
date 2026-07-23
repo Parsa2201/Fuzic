@@ -12,6 +12,11 @@ import com.androidprj.fuzic.ui.screens.profile.ProfileViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileEditorIntent
 import com.androidprj.fuzic.ui.screens.profile.ProfileEditorViewModel
 import com.androidprj.fuzic.ui.screens.song.SongDetailsViewModel
+import com.androidprj.fuzic.ui.navigation.SessionUiState
+import com.androidprj.fuzic.ui.navigation.SessionViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -54,6 +59,17 @@ class ViewModelsTest {
         assertTrue(viewModel.uiState.value.emailErrorRes != null)
         assertTrue(viewModel.uiState.value.passwordErrorRes != null)
         assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun sessionWaitsForUserRestorationBeforeReportingReady() = runTest {
+        val viewModel = SessionViewModel(FakeAuthRepository())
+
+        assertEquals(SessionUiState.Restoring, viewModel.uiState.value)
+        val ready = async { viewModel.uiState.filterIsInstance<SessionUiState.Ready>().first() }
+        advanceUntilIdle()
+
+        assertEquals(testProfile, ready.await().currentUser)
     }
 
     @Test
