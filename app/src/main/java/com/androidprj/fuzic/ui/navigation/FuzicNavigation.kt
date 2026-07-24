@@ -390,7 +390,10 @@ fun FuzicNavigation(
                     Modifier
                 } else {
                     Modifier
-                        .padding(top = paddingValues.calculateTopPadding())
+                        .padding(
+                            top = paddingValues.calculateTopPadding(),
+                            bottom = paddingValues.calculateBottomPadding(),
+                        )
                         .let { baseModifier ->
                             if (showBottomNavigation) {
                                 baseModifier
