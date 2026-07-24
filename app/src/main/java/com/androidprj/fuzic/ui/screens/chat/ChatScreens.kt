@@ -388,7 +388,11 @@ private fun ChatMessageBubble(
                 ChatMessageType.SongShare -> {
                     val song = message.song
                     if (song != null) {
-                        SongShareCard(song = song, onClick = { onSongClick(song) })
+                        SongShareCard(
+                            song = song,
+                            isMine = message.isMine,
+                            onClick = { onSongClick(song) },
+                        )
                     } else {
                         SharedSongUnavailableCard()
                     }
@@ -443,11 +447,23 @@ private fun SharedSongUnavailableCard() {
 @Composable
 private fun SongShareCard(
     song: SongItem,
+    isMine: Boolean,
     onClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier.width(260.dp).clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isMine) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            },
+            contentColor = if (isMine) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        ),
     ) {
         Row(
             modifier = Modifier.padding(MaterialTheme.spacing.small),
