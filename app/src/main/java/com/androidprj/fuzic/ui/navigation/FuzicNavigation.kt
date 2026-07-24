@@ -863,6 +863,7 @@ fun FuzicNavigation(
                 }
                 ChatDetailScreen(
                     uiState = uiState,
+                    messages = viewModel.messages,
                     onBackClick = { navController.popBackStack() },
                     onDraftChange = { viewModel.onIntent(ChatDetailIntent.DraftChanged(it)) },
                     onSendClick = { viewModel.onIntent(ChatDetailIntent.SendDraft) },

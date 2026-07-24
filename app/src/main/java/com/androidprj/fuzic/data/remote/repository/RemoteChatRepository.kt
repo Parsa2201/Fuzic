@@ -53,11 +53,19 @@ class RemoteChatRepository @Inject constructor(
                 table = "messages"
             }
             channel.subscribe(blockUntilSubscribed = true)
-            emit(PagingData.from(getChatHistory(conversationId).getOrDefault(emptyList())))
+            val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
+                ?: throw Exception("Not logged in")
+            var messages = getChatHistory(conversationId).getOrDefault(emptyList())
+            emit(PagingData.from(messages))
             messageChanges.collect { change ->
-                val message = change.decodeRecord<MessageDto>()
-                if (message.belongsToConversation(conversationId)) {
-                    emit(PagingData.from(getChatHistory(conversationId).getOrDefault(emptyList())))
+                val messageDto = change.decodeRecord<MessageDto>()
+                if (messageDto.belongsToConversation(conversationId)) {
+                    val sharedSong = messageDto.sharedSongId?.let { songId -> getSharedSong(songId) }
+                    val message = messageDto.toChatMessage(currentUserId, sharedSong)
+                    if (messages.none { it.id == message.id }) {
+                        messages = messages + message
+                        emit(PagingData.from(messages))
+                    }
                 }
             }
         }.onStart {

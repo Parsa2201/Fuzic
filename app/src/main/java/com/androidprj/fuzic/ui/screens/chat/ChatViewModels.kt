@@ -81,6 +81,9 @@ class ChatDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ChatDetailUiState())
     val uiState: StateFlow<ChatDetailUiState> = _uiState.asStateFlow()
 
+    private val _messages = MutableStateFlow<PagingData<ChatMessage>>(PagingData.empty())
+    val messages: StateFlow<PagingData<ChatMessage>> = _messages.asStateFlow()
+
     private var messagesJob: Job? = null
     private var typingJob: Job? = null
     private val markedReadMessageIds = mutableSetOf<String>()
@@ -98,7 +101,9 @@ class ChatDetailViewModel @Inject constructor(
     }
 
     internal fun setMessagesForTesting(messages: List<ChatMessage>) {
-        _uiState.value = _uiState.value.copy(messages = PagingData.from(messages), isLoading = false, errorMessage = null)
+        val pagingData = PagingData.from(messages)
+        _messages.value = pagingData
+        _uiState.value = _uiState.value.copy(messages = pagingData, isLoading = false, errorMessage = null)
     }
 
     private fun loadConversation(conversation: ChatConversation) {
@@ -109,8 +114,8 @@ class ChatDetailViewModel @Inject constructor(
         messagesJob = viewModelScope.launch {
             runCatching {
                 chatRepository.observeMessages(conversation.id).collect { messages ->
+                    _messages.value = messages
                     _uiState.value = _uiState.value.copy(
-                        messages = messages,
                         optimisticMessages = emptyList(),
                         isLoading = false,
                         isOffline = false,

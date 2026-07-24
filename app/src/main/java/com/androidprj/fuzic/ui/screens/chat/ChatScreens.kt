@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import androidx.paging.cachedIn
+import androidx.paging.PagingData
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,8 +49,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -79,6 +82,7 @@ import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 @Composable
@@ -143,9 +147,11 @@ fun ChatDetailRoute(
     onRetryClick: () -> Unit,
     onVisibleUnreadMessages: (List<ChatMessage>) -> Unit = {},
     modifier: Modifier = Modifier,
+    messages: Flow<PagingData<ChatMessage>> = flowOf(uiState.messages),
 ) {
     ChatDetailScreen(
         uiState = uiState,
+        messages = messages,
         onBackClick = onBackClick,
         onDraftChange = onDraftChange,
         onSendClick = onSendClick,
@@ -166,6 +172,7 @@ fun ChatDetailScreen(
     onRetryClick: () -> Unit,
     onVisibleUnreadMessages: (List<ChatMessage>) -> Unit = {},
     modifier: Modifier = Modifier,
+    messages: Flow<PagingData<ChatMessage>> = flowOf(uiState.messages),
 ) {
     val conversation = uiState.conversation
     if (conversation == null) {
@@ -195,22 +202,29 @@ fun ChatDetailScreen(
             else -> {
                 val listState = rememberLazyListState()
                 val pagingScope = rememberCoroutineScope()
-                val messagesFlow = remember(uiState.messages, pagingScope) {
-                    flowOf(uiState.messages).cachedIn(pagingScope)
-                }
-                val pagedMessages = messagesFlow.collectAsLazyPagingItems()
+                val cachedMessages = remember(messages, pagingScope) { messages.cachedIn(pagingScope) }
+                val pagedMessages = cachedMessages.collectAsLazyPagingItems()
                 val visibleUnreadMessages = pagedMessages.itemSnapshotList.items.filter {
                     !it.isMine && it.status != ChatMessageStatus.Read
                 }
                 LaunchedEffect(visibleUnreadMessages.map(ChatMessage::id)) {
                     onVisibleUnreadMessages(visibleUnreadMessages)
                 }
-                LaunchedEffect(pagedMessages.itemCount, uiState.optimisticMessages.size) {
-                    if (pagedMessages.itemCount > 0 || uiState.optimisticMessages.isNotEmpty()) {
-                        listState.animateScrollToItem(
-                            (pagedMessages.itemCount + uiState.optimisticMessages.size - 1).coerceAtLeast(0),
-                        )
+                val messageCount = pagedMessages.itemCount + uiState.optimisticMessages.size
+                var previousMessageCount by remember(conversation.id) { mutableIntStateOf(0) }
+                LaunchedEffect(messageCount) {
+                    if (messageCount == 0) return@LaunchedEffect
+                    val targetIndex = (messageCount - 1).coerceAtLeast(0)
+                    if (previousMessageCount == 0) {
+                        listState.scrollToItem(targetIndex)
+                    } else {
+                        val lastVisibleIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                        val isNearBottom = lastVisibleIndex >= listState.layoutInfo.totalItemsCount - 3
+                        if (messageCount > previousMessageCount && isNearBottom) {
+                            listState.animateScrollToItem(targetIndex)
+                        }
                     }
+                    previousMessageCount = messageCount
                 }
                 LazyColumn(
                     modifier = Modifier.weight(1f),
