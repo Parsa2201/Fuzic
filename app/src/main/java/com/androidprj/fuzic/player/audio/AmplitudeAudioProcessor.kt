@@ -23,8 +23,9 @@ import kotlin.math.sqrt
  *    stereo the two channels are averaged into one ring slot.
  * 2. When [ringBuffer] is full, [runFftAndEmit] runs an in-place radix-2 FFT
  *    via [Fft], takes the first 32 non-redundant bins (1..32, skipping DC),
- *    applies the perceptual log scale `log10(1 + mag*9)`, smooths against the
- *    previous frame with `alpha = 0.4`, and pushes the bar values via
+ *    applies a responsive perceptual scale, emphasizes stronger frequency
+ *    bands, smooths against the previous frame with `alpha = 0.4`, and pushes
+ *    the bar values via
  *    [AmplitudeFrameBuffer.push].
  *
  * ## Audio thread safety
@@ -132,8 +133,13 @@ class AmplitudeAudioProcessor(
             val re = real[bin]
             val im = imag[bin]
             val magnitude = sqrt(re * re + im * im) * magnitudeScale
-            // Perceptual scale so small signals still move the bars.
-            val raw = log10(1f + magnitude * 9f)
+            // The gain makes quiet musical details visible. The quadratic
+            // component gives genuinely strong frequency bands more presence
+            // than low-level background signal, while the clamp keeps the UI
+            // visualizer inside its maximum height.
+            val perceptual = log10(1f + magnitude * VISUALIZER_GAIN)
+            val raw = (perceptual + perceptual * perceptual * PEAK_EMPHASIS)
+                .coerceIn(0f, 1f)
             val smoothed =
                 if (hasPrevious) {
                     SMOOTHING_ALPHA * raw + (1f - SMOOTHING_ALPHA) * previousBands[i]
@@ -165,6 +171,8 @@ class AmplitudeAudioProcessor(
         private const val BYTES_PER_PCM_SAMPLE = 2
         private const val INVERSE_SHORT_MAX = 1f / Short.MAX_VALUE.toFloat()
         private const val SMOOTHING_ALPHA = 0.4f
+        private const val VISUALIZER_GAIN = 18f
+        private const val PEAK_EMPHASIS = 0.55f
         private const val MONO_CHANNELS = 1
         private const val STEREO_CHANNELS = 2
         private val ACCEPTABLE_CHANNELS: IntRange = 1..2

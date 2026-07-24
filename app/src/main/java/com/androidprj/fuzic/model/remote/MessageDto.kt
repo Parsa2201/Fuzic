@@ -10,6 +10,7 @@ data class MessageDto(
     @SerialName("receiver_id") val receiverId: String,
     val content: String? = null,
     @SerialName("shared_song_id") val sharedSongId: String? = null,
+    @SerialName("shared_song") val sharedSong: SongDto? = null,
     val status: String = "sent",
     @SerialName("created_at") val createdAt: String? = null
 )

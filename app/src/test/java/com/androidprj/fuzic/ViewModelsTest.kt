@@ -13,6 +13,7 @@ import com.androidprj.fuzic.ui.screens.playlists.PlaylistsViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileViewModel
 import com.androidprj.fuzic.ui.screens.profile.ProfileEditorIntent
 import com.androidprj.fuzic.ui.screens.profile.ProfileEditorViewModel
+import com.androidprj.fuzic.ui.screens.profile.UserProfileViewModel
 // import com.androidprj.fuzic.ui.screens.song.SongDetailsViewModel
 import com.androidprj.fuzic.ui.navigation.SessionUiState
 import com.androidprj.fuzic.ui.navigation.SessionViewModel
@@ -74,6 +75,30 @@ class ViewModelsTest {
         advanceUntilIdle()
 
         assertEquals(testProfile, ready.await().currentUser)
+    }
+
+    @Test
+    fun userProfileFollowToggleRollsBackOnFailure() = runTest {
+        val followRepository = FakeFollowRepository().apply {
+            followResult = Result.failure(IllegalStateException("cannot follow"))
+        }
+        val viewModel = UserProfileViewModel(
+            authRepository = FakeAuthRepository(),
+            userRepository = FakeUserRepository(),
+            followRepository = followRepository,
+            playlistRepository = FakePlaylistRepository(),
+            ioDispatcher = dispatcher,
+            stringProvider = FakeStringProvider,
+        )
+
+        viewModel.load("user-2")
+        advanceUntilIdle()
+        viewModel.toggleFollow()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isFollowing)
+        assertEquals("cannot follow", viewModel.uiState.value.errorMessage)
+        assertEquals(1, followRepository.followCalls)
     }
 
     @Test

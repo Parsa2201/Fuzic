@@ -1,12 +1,9 @@
 package com.androidprj.fuzic.ui.screens.player
 
-import androidx.compose.animation.core.RepeatMode as AnimationRepeatMode
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -112,8 +109,7 @@ import com.androidprj.fuzic.ui.components.fuzicClickable
 import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
-import kotlin.math.abs
-import kotlin.math.sin
+import kotlin.math.pow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -704,16 +700,6 @@ fun AudioVisualizer(
     amplitudes: List<Float> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
-    val transition = rememberInfiniteTransition(label = "playerVisualizer")
-    val phase by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1400),
-            repeatMode = AnimationRepeatMode.Restart,
-        ),
-        label = "playerVisualizerPhase",
-    )
     val visualizerDescription = stringResource(R.string.player_visualizer_description)
     val primaryColor = MaterialTheme.colorScheme.primary
     val secondaryColor = MaterialTheme.colorScheme.secondary
@@ -723,7 +709,7 @@ fun AudioVisualizer(
         },
     ) {
         drawVisualizer(
-            phase = if (isPlaying) phase else 0.15f,
+            isPlaying = isPlaying,
             amplitudes = amplitudes,
             color = primaryColor,
             secondaryColor = secondaryColor,
@@ -732,7 +718,7 @@ fun AudioVisualizer(
 }
 
 private fun DrawScope.drawVisualizer(
-    phase: Float,
+    isPlaying: Boolean,
     amplitudes: List<Float>,
     color: Color,
     secondaryColor: Color,
@@ -743,10 +729,23 @@ private fun DrawScope.drawVisualizer(
     val centerY = size.height / 2f
     repeat(barCount) { index ->
         val normalized = index.toFloat() / barCount
-        val signal = amplitudes.getOrNull(index)
-        val wave = signal ?: abs(sin((normalized * 9f) + phase * 6.28f))
-        val envelope = 0.25f + (1f - abs(normalized - 0.5f) * 1.6f).coerceIn(0f, 1f)
-        val barHeight = size.height * (0.18f + wave * envelope * 0.72f)
+        val barHeight = if (!isPlaying) {
+            // A paused player is silent: retain only a small, static baseline
+            // so the visualizer does not masquerade as active playback.
+            size.height * SILENT_BAR_HEIGHT_FRACTION
+        } else {
+            // Never substitute a decorative wave for missing PCM data. The
+            // bars represent the audio processor's real FFT output only.
+            val signal = amplitudes.getOrNull(index)?.coerceIn(0f, 1f) ?: 0f
+            val frequencyWeight = 1f + normalized * HIGH_BAND_EMPHASIS
+            val emphasizedSignal = (signal * frequencyWeight)
+                .coerceIn(0f, 1f)
+                .pow(SIGNAL_RESPONSE_EXPONENT)
+            val envelope = 0.45f + (1f - kotlin.math.abs(normalized - 0.5f) * 1.25f)
+                .coerceIn(0f, 1f) * 0.55f
+            (size.height * (SILENT_BAR_HEIGHT_FRACTION + emphasizedSignal * envelope * ACTIVE_BAR_RANGE_FRACTION))
+                .coerceAtMost(size.height)
+        }
         val x = gap + index * (barWidth + gap)
         drawLine(
             color = if (index % 3 == 0) secondaryColor else color,
@@ -757,6 +756,11 @@ private fun DrawScope.drawVisualizer(
         )
     }
 }
+
+private const val SILENT_BAR_HEIGHT_FRACTION = 0.06f
+private const val ACTIVE_BAR_RANGE_FRACTION = 0.94f
+private const val HIGH_BAND_EMPHASIS = 0.35f
+private const val SIGNAL_RESPONSE_EXPONENT = 0.62f
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

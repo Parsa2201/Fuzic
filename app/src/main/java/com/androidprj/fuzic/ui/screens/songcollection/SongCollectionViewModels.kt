@@ -30,7 +30,7 @@ class LikedSongsViewModel @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val stringProvider: StringProvider,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(SongCollectionUiState(title = stringProvider.get(R.string.liked_songs_title), isLoading = true))
+    private val _uiState = MutableStateFlow(SongCollectionUiState(isLoading = true))
     val uiState: StateFlow<SongCollectionUiState> = _uiState.asStateFlow()
 
     init {
@@ -47,21 +47,19 @@ class LikedSongsViewModel @Inject constructor(
 
     private fun load() {
         viewModelScope.launch {
-            _uiState.value = SongCollectionUiState(title = stringProvider.get(R.string.liked_songs_title), isLoading = true)
+            _uiState.value = SongCollectionUiState(isLoading = true)
             val userId = withContext(ioDispatcher) { authRepository.getCurrentUserId() }
             if (userId == null) {
                 _uiState.value = SongCollectionUiState(
-                    title = stringProvider.get(R.string.liked_songs_title),
                     errorMessage = stringProvider.get(R.string.auth_error_message),
                 )
                 return@launch
             }
             val result = withContext(ioDispatcher) { interactionRepository.getLikedSongs(userId) }
             _uiState.value = result.fold(
-                onSuccess = { SongCollectionUiState(title = stringProvider.get(R.string.liked_songs_title), songs = it) },
+                onSuccess = { SongCollectionUiState(songs = it) },
                 onFailure = {
                     SongCollectionUiState(
-                        title = stringProvider.get(R.string.liked_songs_title),
                         errorMessage = it.message ?: stringProvider.get(R.string.liked_songs_error_title),
                     )
                 },
@@ -77,7 +75,7 @@ class RecentlyPlayedViewModel @Inject constructor(
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val stringProvider: StringProvider,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(SongCollectionUiState(title = stringProvider.get(R.string.recently_played_title), isLoading = true))
+    private val _uiState = MutableStateFlow(SongCollectionUiState(isLoading = true))
     val uiState: StateFlow<SongCollectionUiState> = _uiState.asStateFlow()
 
     init {
@@ -94,21 +92,19 @@ class RecentlyPlayedViewModel @Inject constructor(
 
     private fun load() {
         viewModelScope.launch {
-            _uiState.value = SongCollectionUiState(title = stringProvider.get(R.string.recently_played_title), isLoading = true)
+            _uiState.value = SongCollectionUiState(isLoading = true)
             val userId = withContext(ioDispatcher) { authRepository.getCurrentUserId() }
             if (userId == null) {
                 _uiState.value = SongCollectionUiState(
-                    title = stringProvider.get(R.string.recently_played_title),
                     errorMessage = stringProvider.get(R.string.auth_error_message),
                 )
                 return@launch
             }
             val result = withContext(ioDispatcher) { interactionRepository.getRecentlyPlayed(userId) }
             _uiState.value = result.fold(
-                onSuccess = { SongCollectionUiState(title = stringProvider.get(R.string.recently_played_title), songs = it) },
+                onSuccess = { SongCollectionUiState(songs = it) },
                 onFailure = {
                     SongCollectionUiState(
-                        title = stringProvider.get(R.string.recently_played_title),
                         errorMessage = it.message ?: stringProvider.get(R.string.recently_played_error_title),
                     )
                 },

@@ -62,6 +62,7 @@ import com.androidprj.fuzic.ui.components.SectionHeader
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
+import com.androidprj.fuzic.ui.theme.OnDarkAccent
 import com.androidprj.fuzic.ui.theme.spacing
 import kotlinx.coroutines.delay
 
@@ -297,14 +298,14 @@ private fun DailyPickCard(
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = OnDarkAccent,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = item.subtitle,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f),
+                    color = OnDarkAccent.copy(alpha = 0.82f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

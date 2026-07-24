@@ -12,8 +12,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -223,7 +225,7 @@ private val topLevelDestinations = listOf(
     SearchDestination,
     DownloadsDestination,
     PlaylistsDestination,
-    ProfileDestination,
+    ChatListDestination,
 )
 
 private const val ProfileUpdatedResultKey = "profile_updated"
@@ -278,7 +280,7 @@ fun FuzicNavigation(
         currentDestination?.hasRoute(SearchDestination::class) == true ||
         currentDestination?.hasRoute(DownloadsDestination::class) == true ||
         currentDestination?.hasRoute(PlaylistsDestination::class) == true ||
-        currentDestination?.hasRoute(ProfileDestination::class) == true
+        currentDestination?.hasRoute(ChatListDestination::class) == true
     val showBottomNavigation = isMainTabDestination || isTabSubDestination
     var isFullPlayerOpen by rememberSaveable { mutableStateOf(false) }
     val hideMiniPlayer = isFullPlayerOpen || currentDestination?.hasRoute(WelcomeDestination::class) == true ||
@@ -342,7 +344,11 @@ fun FuzicNavigation(
                     if (isMainTabDestination) {
                         FuzicTopAppBar(
                             avatarUrl = shellAvatarUrl,
-                            onProfileClick = { navController.navigate(ProfileDestination) },
+                            onProfileClick = {
+                                navController.navigate(ProfileDestination) {
+                                    launchSingleTop = true
+                                }
+                            },
                             onNotificationsClick = { navController.navigate(NotificationsDestination) },
                             onSettingsClick = { navController.navigate(SettingsDestination()) },
                         )
@@ -385,10 +391,22 @@ fun FuzicNavigation(
                 val navHostModifier = if (isWelcomeDestination) {
                     Modifier
                 } else {
-                    Modifier.padding(
-                        top = paddingValues.calculateTopPadding(),
-                        bottom = 0.dp // Ignore bottom padding to let content float under MiniPlayer
-                    )
+                    Modifier
+                        .padding(
+                            top = paddingValues.calculateTopPadding(),
+                            bottom = paddingValues.calculateBottomPadding(),
+                        )
+                        .let { baseModifier ->
+                            if (showBottomNavigation) {
+                                baseModifier
+                            } else {
+                                baseModifier.padding(
+                                    bottom = WindowInsets.navigationBars
+                                        .asPaddingValues()
+                                        .calculateBottomPadding(),
+                                )
+                            }
+                        }
                 }
                 NavHost(
                     navController = navController,
@@ -504,6 +522,7 @@ fun FuzicNavigation(
                         }
                     },
                     onRetryClick = { viewModel.onIntent(SearchIntent.Retry) },
+                    resultsFlow = viewModel.results,
                 )
             }
             composable<DownloadsDestination> {
@@ -559,6 +578,7 @@ fun FuzicNavigation(
                 }
                 ProfileScreen(
                     uiState = uiState,
+                    onBackClick = { navController.popBackStack() },
                     onEditProfileClick = { navController.navigate(EditProfileDestination) },
                     onEntryClick = { entry ->
                         when (entry) {
@@ -571,7 +591,6 @@ fun FuzicNavigation(
                             ProfileEntry.LikedSongs -> navController.navigate(LikedSongsDestination)
                             ProfileEntry.RecentlyPlayed -> navController.navigate(RecentlyPlayedDestination)
                             ProfileEntry.Settings -> navController.navigate(SettingsDestination())
-                            ProfileEntry.Chat -> navController.navigate(ChatListDestination)
                             ProfileEntry.Logout -> navController.navigate(SettingsDestination(showLogoutConfirmation = true))
                         }
                     },
@@ -630,6 +649,22 @@ fun FuzicNavigation(
                     onBackClick = { navController.popBackStack() },
                     onRetryClick = viewModel::retry,
                     onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
+                    onChatClick = { user ->
+                        lastMainTab = MainTab.Chat
+                        navController.navigate(ChatListDestination) {
+                            launchSingleTop = true
+                        }
+                        navController.navigate(
+                            ChatDetailDestination(
+                                conversationId = user.id,
+                                participantId = user.id,
+                                participantUsername = user.username,
+                                participantDisplayName = user.displayName,
+                                participantAvatarUrl = user.avatarUrl,
+                            ),
+                        )
+                    },
+                    onFollowClick = viewModel::toggleFollow,
                 )
             }
             composable<PlaylistDestination> { entry ->
@@ -817,9 +852,11 @@ fun FuzicNavigation(
             composable<ChatListDestination> {
                 val viewModel: ChatListViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(Unit) {
+                    viewModel.onIntent(ChatListIntent.Refresh)
+                }
                 ChatListScreen(
                     uiState = uiState,
-                    onBackClick = { navController.popBackStack() },
                     onConversationClick = { conversation ->
                         navController.navigate(
                             ChatDetailDestination(
@@ -854,14 +891,10 @@ fun FuzicNavigation(
                 }
                 ChatDetailScreen(
                     uiState = uiState,
+                    messages = viewModel.messages,
                     onBackClick = { navController.popBackStack() },
                     onDraftChange = { viewModel.onIntent(ChatDetailIntent.DraftChanged(it)) },
                     onSendClick = { viewModel.onIntent(ChatDetailIntent.SendDraft) },
-                    onShareSongClick = {
-                        playerUiState.currentSong?.let { song ->
-                            navController.navigate(ChatPickerDestination(song.id))
-                        } ?: unavailableAction(unavailableMessage)
-                    },
                     onSongClick = { playerViewModel.onIntent(PlayerIntent.PlayById(it.id)) },
                     onRetryClick = { viewModel.onIntent(ChatDetailIntent.Retry) },
                     onVisibleUnreadMessages = { messages ->

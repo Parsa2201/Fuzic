@@ -48,6 +48,7 @@ fun RecentlyPlayedScreen(
 ) {
     SongCollectionScreen(
         uiState = uiState,
+        title = stringResource(R.string.recently_played_title),
         onBackClick = onBackClick,
         onSongClick = onSongClick,
         onSongMoreClick = onSongMoreClick,
@@ -79,7 +80,7 @@ private fun RecentlyPlayedPreview() {
 private fun RecentlyPlayedEmptyPreview() {
     FuzicTheme {
         RecentlyPlayedScreen(
-            uiState = SongCollectionUiState(title = stringResource(R.string.recently_played_title)),
+            uiState = SongCollectionUiState(),
             onBackClick = {},
             onSongClick = {},
             onSongMoreClick = {},
@@ -94,7 +95,6 @@ private fun RecentlyPlayedLoadingPreview() {
     FuzicTheme {
         RecentlyPlayedScreen(
             uiState = SongCollectionUiState(
-                title = stringResource(R.string.recently_played_title),
                 isLoading = true,
             ),
             onBackClick = {},
@@ -107,7 +107,6 @@ private fun RecentlyPlayedLoadingPreview() {
 
 @Composable
 private fun sampleRecentlyPlayedUiState() = SongCollectionUiState(
-    title = stringResource(R.string.recently_played_title),
     songs = listOf(
         SongItem(
             id = "song-tehran-nights",

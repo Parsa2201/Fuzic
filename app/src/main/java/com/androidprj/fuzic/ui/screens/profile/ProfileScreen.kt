@@ -59,6 +59,7 @@ import com.androidprj.fuzic.model.ui.ProfileUiState
 import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
+import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
@@ -67,6 +68,7 @@ import com.androidprj.fuzic.ui.theme.spacing
 @Composable
 fun ProfileRoute(
     uiState: ProfileUiState,
+    onBackClick: () -> Unit,
     onEditProfileClick: () -> Unit,
     onEntryClick: (ProfileEntry) -> Unit,
     onRetryClick: () -> Unit,
@@ -74,6 +76,7 @@ fun ProfileRoute(
 ) {
     ProfileScreen(
         uiState = uiState,
+        onBackClick = onBackClick,
         onEditProfileClick = onEditProfileClick,
         onEntryClick = onEntryClick,
         onRetryClick = onRetryClick,
@@ -84,38 +87,45 @@ fun ProfileRoute(
 @Composable
 fun ProfileScreen(
     uiState: ProfileUiState,
+    onBackClick: () -> Unit,
     onEditProfileClick: () -> Unit,
     onEntryClick: (ProfileEntry) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    when {
-        uiState.isLoading -> ProfileLoadingContent(modifier)
-        uiState.errorMessage != null -> ScreenMessage(
-            icon = Icons.Default.ErrorOutline,
-            title = stringResource(R.string.profile_error_title),
-            message = uiState.errorMessage,
-            action = {
-                Button(onClick = onRetryClick) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                    Spacer(Modifier.width(MaterialTheme.spacing.small))
-                    Text(stringResource(R.string.action_retry))
-                }
-            },
-            modifier = modifier
+    Column(modifier.fillMaxSize()) {
+        DetailTopAppBar(
+            title = stringResource(R.string.profile_title),
+            onBackClick = onBackClick,
         )
-        uiState.profile == null -> ScreenMessage(
-            icon = Icons.Default.Person,
-            title = stringResource(R.string.profile_empty_title),
-            message = stringResource(R.string.profile_empty_message),
-            modifier = modifier
-        )
-        else -> ProfileContent(
-            uiState = uiState,
-            onEditProfileClick = onEditProfileClick,
-            onEntryClick = onEntryClick,
-            modifier = modifier
-        )
+        when {
+            uiState.isLoading -> ProfileLoadingContent(Modifier.weight(1f))
+            uiState.errorMessage != null -> ScreenMessage(
+                icon = Icons.Default.ErrorOutline,
+                title = stringResource(R.string.profile_error_title),
+                message = uiState.errorMessage,
+                action = {
+                    Button(onClick = onRetryClick) {
+                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Spacer(Modifier.width(MaterialTheme.spacing.small))
+                        Text(stringResource(R.string.action_retry))
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            )
+            uiState.profile == null -> ScreenMessage(
+                icon = Icons.Default.Person,
+                title = stringResource(R.string.profile_empty_title),
+                message = stringResource(R.string.profile_empty_message),
+                modifier = Modifier.weight(1f)
+            )
+            else -> ProfileContent(
+                uiState = uiState,
+                onEditProfileClick = onEditProfileClick,
+                onEntryClick = onEntryClick,
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 
@@ -376,7 +386,6 @@ private val ProfileEntry.icon: ImageVector
         ProfileEntry.LikedSongs -> Icons.Default.Favorite
         ProfileEntry.RecentlyPlayed -> Icons.Default.History
         ProfileEntry.Settings -> Icons.Default.Settings
-        ProfileEntry.Chat -> Icons.AutoMirrored.Filled.Message
         ProfileEntry.Logout -> Icons.AutoMirrored.Filled.Logout
     }
 
@@ -513,6 +522,7 @@ private fun ProfilePreviewState(uiState: ProfileUiState) {
     var selectedEntry by remember { mutableStateOf(ProfileEntry.Settings) }
     ProfileScreen(
         uiState = state,
+        onBackClick = {},
         onEditProfileClick = { selectedEntry = ProfileEntry.Settings },
         onEntryClick = { selectedEntry = it },
         onRetryClick = { state = state.copy(errorMessage = null) }

@@ -55,7 +55,6 @@ data class PlaylistDetails(
 )
 
 data class SongCollectionUiState(
-    val title: String,
     val songs: List<SongItem> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,

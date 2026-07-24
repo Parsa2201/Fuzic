@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
-import kotlinx.coroutines.flow.flowOf
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
@@ -92,6 +91,7 @@ fun SearchRoute(
         onClearHistoryClick = onClearHistoryClick,
         onResultClick = onResultClick,
         onRetryClick = onRetryClick,
+        resultsFlow = kotlinx.coroutines.flow.flowOf(uiState.results),
         modifier = modifier
     )
 }
@@ -107,9 +107,9 @@ fun SearchScreen(
     onClearHistoryClick: () -> Unit,
     onResultClick: (SearchResultItem) -> Unit,
     onRetryClick: () -> Unit,
+    resultsFlow: kotlinx.coroutines.flow.Flow<androidx.paging.PagingData<SearchResultItem>>,
     modifier: Modifier = Modifier
 ) {
-    val resultsFlow = remember(uiState.results) { flowOf(uiState.results) }
     val pagedResults = resultsFlow.collectAsLazyPagingItems()
     LazyColumn(
         modifier = modifier
@@ -613,7 +613,8 @@ private fun SearchPreviewState(uiState: SearchUiState) {
         onHistoryDeleteClick = { query -> state = state.copy(history = state.history - query) },
         onClearHistoryClick = { state = state.copy(history = emptyList()) },
         onResultClick = { selectedResult = it },
-        onRetryClick = { state = state.copy(errorMessage = null) }
+        onRetryClick = { state = state.copy(errorMessage = null) },
+        resultsFlow = kotlinx.coroutines.flow.flowOf(state.results),
     )
 }
 

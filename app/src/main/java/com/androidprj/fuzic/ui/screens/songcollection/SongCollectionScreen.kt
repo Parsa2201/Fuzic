@@ -46,6 +46,7 @@ import com.androidprj.fuzic.ui.theme.spacing
 @Composable
 fun SongCollectionScreen(
     uiState: SongCollectionUiState,
+    title: String,
     onBackClick: () -> Unit,
     onSongClick: (SongItem) -> Unit,
     onSongMoreClick: (SongItem) -> Unit,
@@ -65,7 +66,7 @@ fun SongCollectionScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         DetailTopAppBar(
-            title = uiState.title,
+            title = title,
             onBackClick = onBackClick,
         )
         when {
@@ -154,7 +155,6 @@ private fun SongCollectionPreview() {
     FuzicTheme {
         SongCollectionScreen(
             uiState = SongCollectionUiState(
-                title = stringResource(R.string.liked_songs_title),
                 songs = listOf(
                     SongItem(
                         id = "preview-song",
@@ -164,6 +164,7 @@ private fun SongCollectionPreview() {
                     ),
                 ),
             ),
+            title = stringResource(R.string.liked_songs_title),
             onBackClick = {},
             onSongClick = {},
             onSongMoreClick = {},
@@ -181,7 +182,8 @@ private fun SongCollectionPreview() {
 private fun SongCollectionLoadingPreview() {
     FuzicTheme {
         SongCollectionScreen(
-            uiState = SongCollectionUiState(title = stringResource(R.string.liked_songs_title), isLoading = true),
+            uiState = SongCollectionUiState(isLoading = true),
+            title = stringResource(R.string.liked_songs_title),
             onBackClick = {}, onSongClick = {}, onSongMoreClick = {}, onRetryClick = {},
             emptyIcon = Icons.Default.Refresh, emptyTitle = stringResource(R.string.liked_songs_empty_title),
             emptyMessage = stringResource(R.string.liked_songs_empty_message), errorTitle = stringResource(R.string.liked_songs_error_title),
@@ -194,7 +196,8 @@ private fun SongCollectionLoadingPreview() {
 private fun SongCollectionEmptyPreview() {
     FuzicTheme {
         SongCollectionScreen(
-            uiState = SongCollectionUiState(title = stringResource(R.string.liked_songs_title)),
+            uiState = SongCollectionUiState(),
+            title = stringResource(R.string.liked_songs_title),
             onBackClick = {}, onSongClick = {}, onSongMoreClick = {}, onRetryClick = {},
             emptyIcon = Icons.Default.Refresh, emptyTitle = stringResource(R.string.liked_songs_empty_title),
             emptyMessage = stringResource(R.string.liked_songs_empty_message), errorTitle = stringResource(R.string.liked_songs_error_title),
@@ -207,7 +210,8 @@ private fun SongCollectionEmptyPreview() {
 private fun SongCollectionErrorPreview() {
     FuzicTheme {
         SongCollectionScreen(
-            uiState = SongCollectionUiState(title = stringResource(R.string.liked_songs_title), errorMessage = stringResource(R.string.liked_songs_error_title)),
+            uiState = SongCollectionUiState(errorMessage = stringResource(R.string.liked_songs_error_title)),
+            title = stringResource(R.string.liked_songs_title),
             onBackClick = {}, onSongClick = {}, onSongMoreClick = {}, onRetryClick = {},
             emptyIcon = Icons.Default.Refresh, emptyTitle = stringResource(R.string.liked_songs_empty_title),
             emptyMessage = stringResource(R.string.liked_songs_empty_message), errorTitle = stringResource(R.string.liked_songs_error_title),

@@ -11,6 +11,8 @@ import com.androidprj.fuzic.model.ui.FollowUser
 import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.model.ui.ProfileUser
 import com.androidprj.fuzic.model.ui.SongItem
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 fun SongDto.toSongItem(): SongItem {
     return SongItem(
@@ -58,13 +60,16 @@ fun PlaylistDto.toPlaylistItem(ownerName: String = "", songCountLabel: String = 
     )
 }
 
-fun MessageDto.toChatMessage(currentUserId: String): ChatMessage {
+fun MessageDto.toChatMessage(
+    currentUserId: String,
+    resolvedSong: SongItem? = sharedSong?.toSongItem(),
+): ChatMessage {
     return ChatMessage(
         id = this.id,
         senderId = this.senderId,
         text = this.content,
         type = if (this.sharedSongId != null) ChatMessageType.SongShare else ChatMessageType.Text,
-        song = null, // Will need resolution by the caller
+        song = resolvedSong,
         status = when (this.status) {
             "sending" -> ChatMessageStatus.Sending
             "sent" -> ChatMessageStatus.Sent
@@ -72,7 +77,17 @@ fun MessageDto.toChatMessage(currentUserId: String): ChatMessage {
             "read" -> ChatMessageStatus.Read
             else -> ChatMessageStatus.Sent
         },
-        timeLabel = this.createdAt ?: "", // Will require formatting if DTO had date
+        timeLabel = this.createdAt.toChatTimeLabel(),
         isMine = this.senderId == currentUserId
     )
+}
+
+fun String?.toChatTimeLabel(): String {
+    if (isNullOrBlank()) return ""
+    return runCatching {
+        OffsetDateTime.parse(this)
+            .format(DateTimeFormatter.ofPattern("HH:mm"))
+    }.getOrElse {
+        this
+    }
 }

@@ -15,7 +15,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,6 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 sealed interface ChatListIntent {
+    data object Refresh : ChatListIntent
     data object Retry : ChatListIntent
     data object ClearError : ChatListIntent
 }
@@ -44,6 +47,7 @@ class ChatListViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ChatListUiState(isLoading = true))
     val uiState: StateFlow<ChatListUiState> = _uiState.asStateFlow()
+    private var conversationsJob: Job? = null
 
     init {
         observeConversations()
@@ -51,13 +55,15 @@ class ChatListViewModel @Inject constructor(
 
     fun onIntent(intent: ChatListIntent) {
         when (intent) {
+            ChatListIntent.Refresh,
             ChatListIntent.Retry -> observeConversations()
             ChatListIntent.ClearError -> _uiState.value = _uiState.value.copy(errorMessage = null)
         }
     }
 
     private fun observeConversations() {
-        viewModelScope.launch {
+        conversationsJob?.cancel()
+        conversationsJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             runCatching {
                 chatRepository.observeConversations().collect { conversations ->
@@ -81,9 +87,14 @@ class ChatDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ChatDetailUiState())
     val uiState: StateFlow<ChatDetailUiState> = _uiState.asStateFlow()
 
+    private val _messages = MutableStateFlow<PagingData<ChatMessage>>(PagingData.empty())
+    val messages = _messages.cachedIn(viewModelScope)
+
     private var messagesJob: Job? = null
     private var typingJob: Job? = null
+    private var typingExpiryJob: Job? = null
     private val markedReadMessageIds = mutableSetOf<String>()
+    private var lastTypingSignalAtMillis = 0L
 
     fun onIntent(intent: ChatDetailIntent) {
         when (intent) {
@@ -98,7 +109,9 @@ class ChatDetailViewModel @Inject constructor(
     }
 
     internal fun setMessagesForTesting(messages: List<ChatMessage>) {
-        _uiState.value = _uiState.value.copy(messages = PagingData.from(messages), isLoading = false, errorMessage = null)
+        val pagingData = PagingData.from(messages)
+        _messages.value = pagingData
+        _uiState.value = _uiState.value.copy(messages = pagingData, isLoading = false, errorMessage = null)
     }
 
     private fun loadConversation(conversation: ChatConversation) {
@@ -106,11 +119,13 @@ class ChatDetailViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(conversation = conversation, isLoading = true, errorMessage = null)
         messagesJob?.cancel()
         typingJob?.cancel()
+        typingExpiryJob?.cancel()
+        lastTypingSignalAtMillis = 0L
         messagesJob = viewModelScope.launch {
             runCatching {
                 chatRepository.observeMessages(conversation.id).collect { messages ->
+                    _messages.value = messages
                     _uiState.value = _uiState.value.copy(
-                        messages = messages,
                         optimisticMessages = emptyList(),
                         isLoading = false,
                         isOffline = false,
@@ -131,6 +146,13 @@ class ChatDetailViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isOtherUserTyping = status != null && status.userId == conversation.participant.id,
                     )
+                    typingExpiryJob?.cancel()
+                    if (status != null && status.userId == conversation.participant.id) {
+                        typingExpiryJob = viewModelScope.launch {
+                            delay(TYPING_STATUS_TIMEOUT_MILLIS)
+                            _uiState.value = _uiState.value.copy(isOtherUserTyping = false)
+                        }
+                    }
                 }
             }
         }
@@ -141,10 +163,17 @@ class ChatDetailViewModel @Inject constructor(
         val previousDraft = _uiState.value.draft
         _uiState.value = _uiState.value.copy(draft = draft)
         val conversation = _uiState.value.conversation ?: return
-        if (previousDraft.isBlank() == draft.isBlank()) return
+        val now = System.currentTimeMillis()
+        val shouldStopTyping = previousDraft.isNotBlank() && draft.isBlank()
+        val shouldSendTyping = draft.isNotBlank() && (
+            previousDraft.isBlank() || now - lastTypingSignalAtMillis >= TYPING_SIGNAL_INTERVAL_MILLIS
+        )
+        if (!shouldStopTyping && !shouldSendTyping) return
+        if (shouldSendTyping) lastTypingSignalAtMillis = now
+        if (shouldStopTyping) lastTypingSignalAtMillis = 0L
         viewModelScope.launch {
             withContext(ioDispatcher) {
-                chatRepository.setTyping(conversation.id, draft.isNotBlank())
+                chatRepository.setTyping(conversation.id, shouldSendTyping)
             }
         }
     }
@@ -168,6 +197,7 @@ class ChatDetailViewModel @Inject constructor(
                     withContext(ioDispatcher) {
                         chatRepository.setTyping(conversation.id, false)
                     }
+                    lastTypingSignalAtMillis = 0L
                 },
                 onFailure = { throwable ->
                     _uiState.value = _uiState.value.copy(
@@ -224,5 +254,10 @@ class ChatDetailViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isOffline = true)
             }
         }
+    }
+
+    private companion object {
+        const val TYPING_SIGNAL_INTERVAL_MILLIS = 2_000L
+        const val TYPING_STATUS_TIMEOUT_MILLIS = 5_000L
     }
 }

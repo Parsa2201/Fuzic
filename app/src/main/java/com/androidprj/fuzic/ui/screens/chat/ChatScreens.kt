@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import androidx.paging.PagingData
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,7 +35,6 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -42,12 +43,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,23 +80,22 @@ import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun ChatListRoute(
     uiState: ChatListUiState,
-    onBackClick: () -> Unit,
     onConversationClick: (ChatConversation) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ChatListScreen(uiState, onBackClick, onConversationClick, onRetryClick, modifier)
+    ChatListScreen(uiState, onConversationClick, onRetryClick, modifier)
 }
 
 @Composable
 fun ChatListScreen(
     uiState: ChatListUiState,
-    onBackClick: () -> Unit,
     onConversationClick: (ChatConversation) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -96,7 +103,6 @@ fun ChatListScreen(
     Column(
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        DetailTopAppBar(stringResource(R.string.chat_title), onBackClick)
         when {
             uiState.isLoading -> ChatLoading()
             uiState.errorMessage != null -> ChatStateMessage(
@@ -130,18 +136,18 @@ fun ChatDetailRoute(
     onBackClick: () -> Unit,
     onDraftChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    onShareSongClick: () -> Unit,
     onSongClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
     onVisibleUnreadMessages: (List<ChatMessage>) -> Unit = {},
     modifier: Modifier = Modifier,
+    messages: Flow<PagingData<ChatMessage>> = flowOf(uiState.messages),
 ) {
     ChatDetailScreen(
         uiState = uiState,
+        messages = messages,
         onBackClick = onBackClick,
         onDraftChange = onDraftChange,
         onSendClick = onSendClick,
-        onShareSongClick = onShareSongClick,
         onSongClick = onSongClick,
         onRetryClick = onRetryClick,
         onVisibleUnreadMessages = onVisibleUnreadMessages,
@@ -155,11 +161,11 @@ fun ChatDetailScreen(
     onBackClick: () -> Unit,
     onDraftChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    onShareSongClick: () -> Unit,
     onSongClick: (SongItem) -> Unit,
     onRetryClick: () -> Unit,
     onVisibleUnreadMessages: (List<ChatMessage>) -> Unit = {},
     modifier: Modifier = Modifier,
+    messages: Flow<PagingData<ChatMessage>> = flowOf(uiState.messages),
 ) {
     val conversation = uiState.conversation
     if (conversation == null) {
@@ -188,23 +194,32 @@ fun ChatDetailScreen(
             )
             else -> {
                 val listState = rememberLazyListState()
-                val messagesFlow = remember(uiState.messages) { flowOf(uiState.messages) }
-                val pagedMessages = messagesFlow.collectAsLazyPagingItems()
+                val pagedMessages = messages.collectAsLazyPagingItems()
                 val visibleUnreadMessages = pagedMessages.itemSnapshotList.items.filter {
                     !it.isMine && it.status != ChatMessageStatus.Read
                 }
                 LaunchedEffect(visibleUnreadMessages.map(ChatMessage::id)) {
                     onVisibleUnreadMessages(visibleUnreadMessages)
                 }
-                LaunchedEffect(pagedMessages.itemCount, uiState.optimisticMessages.size) {
-                    if (pagedMessages.itemCount > 0 || uiState.optimisticMessages.isNotEmpty()) {
-                        listState.animateScrollToItem(0)
+                val messageCount = pagedMessages.itemCount + uiState.optimisticMessages.size
+                var previousMessageCount by remember(conversation.id) { mutableIntStateOf(0) }
+                LaunchedEffect(messageCount) {
+                    if (messageCount == 0) return@LaunchedEffect
+                    val targetIndex = (messageCount - 1).coerceAtLeast(0)
+                    if (previousMessageCount == 0) {
+                        listState.scrollToItem(targetIndex)
+                    } else {
+                        val lastVisibleIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                        val isNearBottom = lastVisibleIndex >= listState.layoutInfo.totalItemsCount - 3
+                        if (messageCount > previousMessageCount && isNearBottom) {
+                            listState.animateScrollToItem(targetIndex)
+                        }
                     }
+                    previousMessageCount = messageCount
                 }
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     state = listState,
-                    reverseLayout = true,
                     contentPadding = PaddingValues(MaterialTheme.spacing.medium),
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                 ) {
@@ -217,12 +232,6 @@ fun ChatDetailScreen(
                             )
                         }
                     } else {
-                        items(uiState.optimisticMessages.asReversed(), key = { "optimistic-${it.id}" }) { message ->
-                            ChatMessageBubble(
-                                message = message,
-                                onSongClick = onSongClick,
-                            )
-                        }
                         items(
                             count = pagedMessages.itemCount,
                             key = pagedMessages.itemKey { it.id },
@@ -233,18 +242,21 @@ fun ChatDetailScreen(
                                 onSongClick = onSongClick,
                             )
                         }
-                    }
-                    if (uiState.isOtherUserTyping) {
-                        item {
-                            TypingIndicator()
+                        items(uiState.optimisticMessages, key = { "optimistic-${it.id}" }) { message ->
+                            ChatMessageBubble(
+                                message = message,
+                                onSongClick = onSongClick,
+                            )
                         }
                     }
+                }
+                if (uiState.isOtherUserTyping) {
+                    TypingIndicator()
                 }
                 ChatComposer(
                     draft = uiState.draft,
                     onDraftChange = onDraftChange,
                     onSendClick = onSendClick,
-                    onShareSongClick = onShareSongClick,
                 )
             }
         }
@@ -328,7 +340,11 @@ private fun ChatHeader(
             Column {
                 Text(conversation.participant.displayName, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    if (conversation.isOnline) stringResource(R.string.follow_search_title) else "@${conversation.participant.username}",
+                    if (conversation.isOnline) {
+                        stringResource(R.string.follow_search_title)
+                    } else {
+                        stringResource(R.string.username_format, conversation.participant.username)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -373,8 +389,17 @@ private fun ChatMessageBubble(
                         color = if (message.isMine) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                ChatMessageType.SongShare -> message.song?.let { song ->
-                    SongShareCard(song = song, onClick = { onSongClick(song) })
+                ChatMessageType.SongShare -> {
+                    val song = message.song
+                    if (song != null) {
+                        SongShareCard(
+                            song = song,
+                            isMine = message.isMine,
+                            onClick = { onSongClick(song) },
+                        )
+                    } else {
+                        SharedSongUnavailableCard()
+                    }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -410,13 +435,39 @@ private fun MessageStatusIcon(status: ChatMessageStatus) {
 }
 
 @Composable
+private fun SharedSongUnavailableCard() {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(18.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.chat_shared_song_unavailable),
+            modifier = Modifier.padding(MaterialTheme.spacing.medium),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
 private fun SongShareCard(
     song: SongItem,
+    isMine: Boolean,
     onClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier.width(260.dp).clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isMine) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            },
+            contentColor = if (isMine) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        ),
     ) {
         Row(
             modifier = Modifier.padding(MaterialTheme.spacing.small),
@@ -440,15 +491,50 @@ private fun SongShareCard(
 
 @Composable
 private fun TypingIndicator() {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(18.dp),
+    val transition = rememberInfiniteTransition(label = "typing-indicator")
+    val firstAlpha by transition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(500), RepeatMode.Reverse),
+        label = "typing-dot-1",
+    )
+    val secondAlpha by transition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(500, delayMillis = 140), RepeatMode.Reverse),
+        label = "typing-dot-2",
+    )
+    val thirdAlpha by transition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(500, delayMillis = 280), RepeatMode.Reverse),
+        label = "typing-dot-3",
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = MaterialTheme.spacing.medium),
+        horizontalArrangement = Arrangement.Start,
     ) {
-        Text(
-            text = stringResource(R.string.chat_typing),
-            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
-            style = MaterialTheme.typography.bodySmall,
-        )
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = RoundedCornerShape(18.dp),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                listOf(firstAlpha, secondAlpha, thirdAlpha).forEach { alpha ->
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha)),
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -457,32 +543,57 @@ private fun ChatComposer(
     draft: String,
     onDraftChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    onShareSongClick: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(MaterialTheme.spacing.small),
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .imePadding()
+            .padding(MaterialTheme.spacing.small),
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
-        IconButton(onClick = onShareSongClick) {
-            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.chat_share_song))
-        }
-        OutlinedTextField(
-            value = draft,
-            onValueChange = onDraftChange,
-            modifier = Modifier.weight(1f),
-            placeholder = { Text(stringResource(R.string.chat_message_placeholder)) },
-            maxLines = 4,
-        )
-        IconButton(
-            onClick = onSendClick,
-            enabled = draft.isNotBlank(),
-            colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
+        Row(
+            modifier = Modifier.padding(start = MaterialTheme.spacing.medium, end = MaterialTheme.spacing.small),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
         ) {
-            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.chat_send))
+            BasicTextField(
+                value = draft,
+                onValueChange = onDraftChange,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = MaterialTheme.spacing.medium),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                ),
+                maxLines = 5,
+                decorationBox = { innerTextField ->
+                    if (draft.isBlank()) {
+                        Text(
+                            text = stringResource(R.string.chat_message_placeholder),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    innerTextField()
+                },
+            )
+            IconButton(
+                onClick = onSendClick,
+                enabled = draft.isNotBlank(),
+                modifier = Modifier
+                    .padding(bottom = MaterialTheme.spacing.small)
+                    .size(40.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.chat_send))
+            }
         }
     }
 }
@@ -522,7 +633,7 @@ private fun ChatStateMessage(
 @Composable
 private fun ChatListPreview() {
     FuzicTheme {
-        ChatListScreen(ChatListUiState(sampleConversations()), {}, {}, {})
+        ChatListScreen(ChatListUiState(sampleConversations()), {}, {})
     }
 }
 
@@ -530,7 +641,7 @@ private fun ChatListPreview() {
 @Composable
 private fun ChatListEmptyPreview() {
     FuzicTheme {
-        ChatListScreen(ChatListUiState(), {}, {}, {})
+        ChatListScreen(ChatListUiState(), {}, {})
     }
 }
 
@@ -538,7 +649,7 @@ private fun ChatListEmptyPreview() {
 @Composable
 private fun ChatListLoadingPreview() {
     FuzicTheme {
-        ChatListScreen(ChatListUiState(isLoading = true), {}, {}, {})
+        ChatListScreen(ChatListUiState(isLoading = true), {}, {})
     }
 }
 
@@ -579,7 +690,7 @@ private fun ChatDetailSendingPreview() {
                     ChatMessage(
                         id = "sending",
                         senderId = "me",
-                        text = "Check this out",
+                        text = stringResource(R.string.preview_chat_message_check_this_out),
                         status = ChatMessageStatus.Sending,
                         timeLabel = "10:32",
                         isMine = true,
@@ -612,7 +723,7 @@ private fun ChatDetailMessageTypesPreview() {
                         ChatMessage(
                             id = "incoming-text",
                             senderId = "raha",
-                            text = "I found a new playlist for you.",
+                            text = stringResource(R.string.preview_chat_message_found_playlist),
                             status = ChatMessageStatus.Delivered,
                             timeLabel = "10:30",
                             isMine = false,
@@ -620,7 +731,7 @@ private fun ChatDetailMessageTypesPreview() {
                         ChatMessage(
                             id = "sent-text",
                             senderId = "me",
-                            text = "Nice, send it over!",
+                            text = stringResource(R.string.preview_chat_message_nice_send),
                             status = ChatMessageStatus.Sent,
                             timeLabel = "10:31",
                             isMine = true,
@@ -628,7 +739,7 @@ private fun ChatDetailMessageTypesPreview() {
                         ChatMessage(
                             id = "read-text",
                             senderId = "me",
-                            text = "Added it to my library.",
+                            text = stringResource(R.string.preview_chat_message_added_library),
                             status = ChatMessageStatus.Read,
                             timeLabel = "10:32",
                             isMine = true,
@@ -645,7 +756,7 @@ private fun ChatDetailMessageTypesPreview() {
                         ChatMessage(
                             id = "sending-text",
                             senderId = "me",
-                            text = "Listening now!",
+                            text = stringResource(R.string.preview_chat_message_listening),
                             status = ChatMessageStatus.Sending,
                             timeLabel = "10:34",
                             isMine = true,
@@ -655,7 +766,6 @@ private fun ChatDetailMessageTypesPreview() {
             onBackClick = {},
             onDraftChange = {},
             onSendClick = {},
-            onShareSongClick = {},
             onSongClick = {},
             onRetryClick = {},
         )
@@ -668,7 +778,7 @@ private fun ChatErrorPreview() {
     FuzicTheme {
         ChatListScreen(
             ChatListUiState(errorMessage = stringResource(R.string.chat_error_title)),
-            {}, {}, {},
+            {}, {},
         )
     }
 }
@@ -697,14 +807,14 @@ private fun sampleChatDetailState() = ChatDetailUiState(
         ChatMessage(
             id = "one",
             senderId = "raha",
-            text = "I found a new playlist for you.",
+            text = stringResource(R.string.preview_chat_message_found_playlist),
             timeLabel = "10:30",
             isMine = false,
         ),
         ChatMessage(
             id = "two",
             senderId = "me",
-            text = "Nice, send it over!",
+            text = stringResource(R.string.preview_chat_message_nice_send),
             status = ChatMessageStatus.Read,
             timeLabel = "10:31",
             isMine = true,

@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +24,7 @@ import androidx.compose.runtime.Composable
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.ui.components.DetailTopAppBar
+import com.androidprj.fuzic.ui.components.MusicArtwork
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import com.androidprj.fuzic.ui.components.fuzicShimmer
 import androidx.compose.ui.Modifier
@@ -69,7 +71,24 @@ fun ChatPickerScreen(uiState: ChatPickerUiState, onBackClick: () -> Unit, onConv
             uiState.errorMessage != null -> ScreenMessage(Icons.Default.Share, stringResource(R.string.share_to_chat_title), uiState.errorMessage)
             uiState.isLoading -> ChatPickerLoadingContent()
             !uiState.isLoading && uiState.conversations.isEmpty() -> ScreenMessage(Icons.Default.Share, stringResource(R.string.share_to_chat_title), stringResource(R.string.share_to_chat_empty))
-            else -> LazyColumn { items(uiState.conversations, key = { it.id }) { conversation -> ListItem(headlineContent = { Text(conversation.participant.displayName) }, supportingContent = { Text(conversation.lastMessagePreview) }, modifier = Modifier.fillMaxWidth().clickable { onConversationClick(conversation) }) } }
+            else -> LazyColumn {
+                items(uiState.conversations, key = { it.id }) { conversation ->
+                    ListItem(
+                        headlineContent = { Text(conversation.participant.displayName) },
+                        supportingContent = { Text(conversation.lastMessagePreview) },
+                        leadingContent = {
+                            MusicArtwork(
+                                artworkUrl = conversation.participant.avatarUrl,
+                                fallbackIcon = Icons.Default.Person,
+                                contentDescription = conversation.participant.displayName,
+                                modifier = Modifier.size(48.dp),
+                                shape = CircleShape,
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().clickable { onConversationClick(conversation) },
+                    )
+                }
+            }
         }
     }
 }
@@ -104,9 +123,13 @@ private fun ChatPickerEnglishPreview() {
                 conversations = listOf(
                     ChatConversation(
                         id = "conversation-preview",
-                        participant = FollowUser("user-preview", "nika", "Nika"),
-                        lastMessagePreview = "That new release is excellent.",
-                        lastMessageTimeLabel = "Now",
+                        participant = FollowUser(
+                            "user-preview",
+                            "nika",
+                            stringResource(R.string.preview_artist_nika),
+                        ),
+                        lastMessagePreview = stringResource(R.string.preview_chat_picker_message),
+                        lastMessageTimeLabel = stringResource(R.string.preview_chat_picker_now),
                     ),
                 ),
                 isLoading = false,
