@@ -50,6 +50,7 @@ fun LikedSongsScreen(
 ) {
     SongCollectionScreen(
         uiState = uiState,
+        title = stringResource(R.string.liked_songs_title),
         onBackClick = onBackClick,
         onSongClick = onSongClick,
         onSongMoreClick = onSongMoreClick,
@@ -81,7 +82,7 @@ private fun LikedSongsPreview() {
 private fun LikedSongsEmptyPreview() {
     FuzicTheme {
         LikedSongsScreen(
-            uiState = SongCollectionUiState(title = stringResource(R.string.liked_songs_title)),
+            uiState = SongCollectionUiState(),
             onBackClick = {},
             onSongClick = {},
             onSongMoreClick = {},
@@ -96,7 +97,6 @@ private fun LikedSongsLoadingPreview() {
     FuzicTheme {
         LikedSongsScreen(
             uiState = SongCollectionUiState(
-                title = stringResource(R.string.liked_songs_title),
                 isLoading = true,
             ),
             onBackClick = {},
@@ -113,7 +113,6 @@ private fun LikedSongsErrorPreview() {
     FuzicTheme {
         LikedSongsScreen(
             uiState = SongCollectionUiState(
-                title = stringResource(R.string.liked_songs_title),
                 errorMessage = stringResource(R.string.liked_songs_error_title),
             ),
             onBackClick = {},
@@ -126,7 +125,6 @@ private fun LikedSongsErrorPreview() {
 
 @Composable
 private fun sampleLikedSongsUiState() = SongCollectionUiState(
-    title = stringResource(R.string.liked_songs_title),
     songs = listOf(
         SongItem(
             id = "song-midnight-drive",
