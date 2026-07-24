@@ -25,11 +25,15 @@ import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.decodeRecord
 import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
@@ -67,19 +71,25 @@ class RemoteChatRepository @Inject constructor(
         val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
         if (currentUserId == null) return flowOf(null)
         val channel = supabaseClient.channel(typingChannel(conversationId))
-        return flow {
-            channel.subscribe(blockUntilSubscribed = true)
-            emitAll(channel.broadcastFlow<TypingEvent>(TYPING_EVENT).map { event ->
-                if (event.userId != currentUserId && event.isTyping) {
-                    TypingStatus(
-                        conversationId = conversationId,
-                        userId = event.userId,
-                        updatedAtEpochMillis = System.currentTimeMillis(),
-                    )
-                } else {
-                    null
+        return channelFlow {
+            // Register the callback before joining the channel. Realtime broadcasts that
+            // arrive immediately after the join acknowledgement would otherwise be lost.
+            val typingEvents = channel.broadcastFlow<TypingEvent>(TYPING_EVENT)
+                .map { event ->
+                    if (event.userId != currentUserId && event.isTyping) {
+                        TypingStatus(
+                            conversationId = conversationId,
+                            userId = event.userId,
+                            updatedAtEpochMillis = System.currentTimeMillis(),
+                        )
+                    } else {
+                        null
+                    }
                 }
-            })
+                .onEach(::send)
+                .launchIn(this)
+            channel.subscribe(blockUntilSubscribed = true)
+            awaitClose { typingEvents.cancel() }
         }.onStart {
             supabaseClient.realtime.connect()
         }.onCompletion {
@@ -121,12 +131,13 @@ class RemoteChatRepository @Inject constructor(
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
                 ?: throw Exception("Not logged in")
             val channel = supabaseClient.channel(typingChannel(conversationId))
-            channel.subscribe(blockUntilSubscribed = true)
+            // A short-lived typing event must not be put on a websocket queue and then
+            // immediately removed. An unsubscribed channel uses Supabase's HTTP broadcast,
+            // which delivers the event before this call returns.
             channel.broadcast(
                 event = TYPING_EVENT,
                 message = TypingEvent(userId = currentUserId, isTyping = isTyping),
             )
-            supabaseClient.realtime.removeChannel(channel)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
