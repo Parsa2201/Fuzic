@@ -263,5 +263,18 @@
     <string name="share_to_chat_empty">There are no conversations to share with.</string>
     <string name="share_to_chat_error">Song could not be shared.</string>
     <string name="share_to_chat_success">Song shared.</string>
+    <string name="preview_chat_message_check_this_out">Check this out</string>
+    <string name="preview_chat_message_found_playlist">I found a new playlist for you.</string>
+    <string name="preview_chat_message_nice_send">Nice, send it over!</string>
+    <string name="preview_chat_message_added_library">Added it to my library.</string>
+    <string name="preview_chat_message_listening">Listening now!</string>
+    <string name="preview_chat_picker_message">That new release is excellent.</string>
+    <string name="preview_chat_picker_now">Now</string>
+    <string name="preview_playlist_night_drive">Night Drive</string>
+    <string name="preview_playlist_focus">Focus</string>
+    <string name="preview_playlist_owner">Parsa</string>
+    <string name="preview_playlist_song_count_18">18 songs</string>
+    <string name="preview_playlist_song_count_24">24 songs</string>
+    <string name="username_format">@%1$s</string>
     <string name="player_notification_channel_name">Fuzic playback</string>
 </resources>

@@ -263,5 +263,18 @@
     <string name="share_to_chat_empty">گفتگویی برای اشتراک‌گذاری وجود ندارد.</string>
     <string name="share_to_chat_error">آهنگ اشتراک‌گذاری نشد.</string>
     <string name="share_to_chat_success">آهنگ اشتراک‌گذاری شد.</string>
+    <string name="preview_chat_message_check_this_out">این را ببین</string>
+    <string name="preview_chat_message_found_playlist">یک پلی‌لیست تازه برایت پیدا کردم.</string>
+    <string name="preview_chat_message_nice_send">عالیه، بفرستش!</string>
+    <string name="preview_chat_message_added_library">به کتابخانه‌ام اضافه‌اش کردم.</string>
+    <string name="preview_chat_message_listening">الان دارم گوش می‌دهم!</string>
+    <string name="preview_chat_picker_message">انتشار جدید واقعاً عالی است.</string>
+    <string name="preview_chat_picker_now">اکنون</string>
+    <string name="preview_playlist_night_drive">رانندگی شبانه</string>
+    <string name="preview_playlist_focus">تمرکز</string>
+    <string name="preview_playlist_owner">پارسا</string>
+    <string name="preview_playlist_song_count_18">۱۸ آهنگ</string>
+    <string name="preview_playlist_song_count_24">۲۴ آهنگ</string>
+    <string name="username_format">@%1$s</string>
     <string name="player_notification_channel_name">پخش فوزیک</string>
 </resources>

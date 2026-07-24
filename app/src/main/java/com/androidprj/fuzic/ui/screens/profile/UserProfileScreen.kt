@@ -160,7 +160,10 @@ private fun UserProfileEnglishPreview() {
 private fun UserProfileErrorPersianPreview() {
     FuzicTheme {
         UserProfileScreen(
-            uiState = UserProfileUiState(isLoading = false, errorMessage = "Profile could not be loaded."),
+            uiState = UserProfileUiState(
+                isLoading = false,
+                errorMessage = stringResource(R.string.user_profile_error),
+            ),
             onBackClick = {},
             onRetryClick = {},
             onPlaylistClick = {},
@@ -231,7 +234,7 @@ fun UserProfileScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(uiState.user.displayName, style = MaterialTheme.typography.headlineMedium)
                         Text(
-                            "@${uiState.user.username}",
+                            stringResource(R.string.username_format, uiState.user.username),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

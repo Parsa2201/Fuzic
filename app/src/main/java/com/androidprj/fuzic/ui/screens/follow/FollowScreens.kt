@@ -178,7 +178,11 @@ private fun FollowUserRow(
         )
         Column(Modifier.weight(1f)) {
             Text(user.displayName, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("@${user.username}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                stringResource(R.string.username_format, user.username),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         when {
             user.isCurrentUser -> Text(stringResource(R.string.follow_self_label), style = MaterialTheme.typography.labelMedium)

@@ -82,8 +82,18 @@ private fun AddToPlaylistEnglishPreview() {
     FuzicTheme {
         AddToPlaylistScreen(
             playlists = listOf(
-                PlaylistItem("night-drive", "Night Drive", "Parsa", "18 songs"),
-                PlaylistItem("focus", "Focus", "Parsa", "24 songs"),
+                PlaylistItem(
+                    "night-drive",
+                    stringResource(R.string.preview_playlist_night_drive),
+                    stringResource(R.string.preview_playlist_owner),
+                    stringResource(R.string.preview_playlist_song_count_18),
+                ),
+                PlaylistItem(
+                    "focus",
+                    stringResource(R.string.preview_playlist_focus),
+                    stringResource(R.string.preview_playlist_owner),
+                    stringResource(R.string.preview_playlist_song_count_24),
+                ),
             ),
             isLoading = false,
             errorMessage = null,

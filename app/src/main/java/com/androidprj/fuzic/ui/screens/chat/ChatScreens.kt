@@ -340,7 +340,11 @@ private fun ChatHeader(
             Column {
                 Text(conversation.participant.displayName, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    if (conversation.isOnline) stringResource(R.string.follow_search_title) else "@${conversation.participant.username}",
+                    if (conversation.isOnline) {
+                        stringResource(R.string.follow_search_title)
+                    } else {
+                        stringResource(R.string.username_format, conversation.participant.username)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -686,7 +690,7 @@ private fun ChatDetailSendingPreview() {
                     ChatMessage(
                         id = "sending",
                         senderId = "me",
-                        text = "Check this out",
+                        text = stringResource(R.string.preview_chat_message_check_this_out),
                         status = ChatMessageStatus.Sending,
                         timeLabel = "10:32",
                         isMine = true,
@@ -719,7 +723,7 @@ private fun ChatDetailMessageTypesPreview() {
                         ChatMessage(
                             id = "incoming-text",
                             senderId = "raha",
-                            text = "I found a new playlist for you.",
+                            text = stringResource(R.string.preview_chat_message_found_playlist),
                             status = ChatMessageStatus.Delivered,
                             timeLabel = "10:30",
                             isMine = false,
@@ -727,7 +731,7 @@ private fun ChatDetailMessageTypesPreview() {
                         ChatMessage(
                             id = "sent-text",
                             senderId = "me",
-                            text = "Nice, send it over!",
+                            text = stringResource(R.string.preview_chat_message_nice_send),
                             status = ChatMessageStatus.Sent,
                             timeLabel = "10:31",
                             isMine = true,
@@ -735,7 +739,7 @@ private fun ChatDetailMessageTypesPreview() {
                         ChatMessage(
                             id = "read-text",
                             senderId = "me",
-                            text = "Added it to my library.",
+                            text = stringResource(R.string.preview_chat_message_added_library),
                             status = ChatMessageStatus.Read,
                             timeLabel = "10:32",
                             isMine = true,
@@ -752,7 +756,7 @@ private fun ChatDetailMessageTypesPreview() {
                         ChatMessage(
                             id = "sending-text",
                             senderId = "me",
-                            text = "Listening now!",
+                            text = stringResource(R.string.preview_chat_message_listening),
                             status = ChatMessageStatus.Sending,
                             timeLabel = "10:34",
                             isMine = true,
@@ -803,14 +807,14 @@ private fun sampleChatDetailState() = ChatDetailUiState(
         ChatMessage(
             id = "one",
             senderId = "raha",
-            text = "I found a new playlist for you.",
+            text = stringResource(R.string.preview_chat_message_found_playlist),
             timeLabel = "10:30",
             isMine = false,
         ),
         ChatMessage(
             id = "two",
             senderId = "me",
-            text = "Nice, send it over!",
+            text = stringResource(R.string.preview_chat_message_nice_send),
             status = ChatMessageStatus.Read,
             timeLabel = "10:31",
             isMine = true,

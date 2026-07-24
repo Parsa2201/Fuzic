@@ -246,7 +246,9 @@ private fun ProfileEditorUploadingPreview() {
 private fun ProfileEditorUploadErrorPreview() {
     FuzicTheme {
         ProfileEditorScreen(
-            uiState = previewEditorState(AvatarEditorState.None).copy(errorMessage = "Upload failed. Try again."),
+            uiState = previewEditorState(AvatarEditorState.None).copy(
+                errorMessage = stringResource(R.string.edit_profile_error),
+            ),
             onBackClick = {}, onDisplayNameChange = {}, onUsernameChange = {}, onAvatarSelected = {}, onDeleteAvatarClick = {}, onSaveClick = {}, onRetryClick = {}, onDiscardChangesClick = {}, onDismissDiscardClick = {},
         )
     }

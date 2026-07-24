@@ -123,9 +123,13 @@ private fun ChatPickerEnglishPreview() {
                 conversations = listOf(
                     ChatConversation(
                         id = "conversation-preview",
-                        participant = FollowUser("user-preview", "nika", "Nika"),
-                        lastMessagePreview = "That new release is excellent.",
-                        lastMessageTimeLabel = "Now",
+                        participant = FollowUser(
+                            "user-preview",
+                            "nika",
+                            stringResource(R.string.preview_artist_nika),
+                        ),
+                        lastMessagePreview = stringResource(R.string.preview_chat_picker_message),
+                        lastMessageTimeLabel = stringResource(R.string.preview_chat_picker_now),
                     ),
                 ),
                 isLoading = false,
