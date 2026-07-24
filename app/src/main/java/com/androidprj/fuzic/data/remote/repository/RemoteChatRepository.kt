@@ -78,7 +78,7 @@ class RemoteChatRepository @Inject constructor(
     override fun observeTypingStatus(conversationId: String): Flow<TypingStatus?> {
         val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
         if (currentUserId == null) return flowOf(null)
-        val channel = supabaseClient.channel(typingChannel(conversationId))
+        val channel = supabaseClient.channel(typingChannel(currentUserId, conversationId))
         return channelFlow {
             // Register the callback before joining the channel. Realtime broadcasts that
             // arrive immediately after the join acknowledgement would otherwise be lost.
@@ -138,7 +138,7 @@ class RemoteChatRepository @Inject constructor(
         return try {
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
                 ?: throw Exception("Not logged in")
-            val channel = supabaseClient.channel(typingChannel(conversationId))
+            val channel = supabaseClient.channel(typingChannel(currentUserId, conversationId))
             // A short-lived typing event must not be put on a websocket queue and then
             // immediately removed. An unsubscribed channel uses Supabase's HTTP broadcast,
             // which delivers the event before this call returns.
@@ -305,7 +305,12 @@ class RemoteChatRepository @Inject constructor(
 
     private fun messageChannel(conversationId: String) = "chat:$conversationId:messages"
 
-    private fun typingChannel(conversationId: String) = "chat:$conversationId:typing"
+    /**
+     * Both people in a direct conversation pass the other person's id as the
+     * conversation id. Sort the two ids so they join the exact same broadcast topic.
+     */
+    private fun typingChannel(currentUserId: String, participantId: String): String =
+        "chat:${listOf(currentUserId, participantId).sorted().joinToString(":")}:typing"
 
     @kotlinx.serialization.Serializable
     private data class TypingEvent(
