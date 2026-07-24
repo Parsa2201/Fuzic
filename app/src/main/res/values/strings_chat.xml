@@ -7,6 +7,7 @@
     <string name="chat_message_placeholder">Write a message</string>
     <string name="chat_send">Send message</string>
     <string name="chat_share_song">Share song</string>
+    <string name="chat_shared_song_unavailable">Shared song is unavailable</string>
     <string name="chat_typing">Typing…</string>
     <string name="chat_no_messages_title">Start the conversation</string>
     <string name="chat_no_messages_message">Send a message to say hello.</string>

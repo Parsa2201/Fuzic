@@ -380,8 +380,13 @@ private fun ChatMessageBubble(
                         color = if (message.isMine) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                ChatMessageType.SongShare -> message.song?.let { song ->
-                    SongShareCard(song = song, onClick = { onSongClick(song) })
+                ChatMessageType.SongShare -> {
+                    val song = message.song
+                    if (song != null) {
+                        SongShareCard(song = song, onClick = { onSongClick(song) })
+                    } else {
+                        SharedSongUnavailableCard()
+                    }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -414,6 +419,20 @@ private fun MessageStatusIcon(status: ChatMessageStatus) {
         modifier = Modifier.size(14.dp),
         tint = if (status == ChatMessageStatus.Read) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+@Composable
+private fun SharedSongUnavailableCard() {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(18.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.chat_shared_song_unavailable),
+            modifier = Modifier.padding(MaterialTheme.spacing.medium),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 @Composable

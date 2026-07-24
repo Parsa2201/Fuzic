@@ -2,16 +2,20 @@ package com.androidprj.fuzic.data.remote.repository
 
 import androidx.paging.PagingData
 import com.androidprj.fuzic.model.remote.MessageDto
+import com.androidprj.fuzic.model.remote.SongDto
 import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.model.ui.ChatMessage
+import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.model.mapper.toFollowUser
 import com.androidprj.fuzic.model.mapper.toChatMessage
 import com.androidprj.fuzic.model.mapper.toChatTimeLabel
+import com.androidprj.fuzic.model.mapper.toSongItem
 import com.androidprj.fuzic.model.ui.TypingStatus
 import com.androidprj.fuzic.repository.ChatRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
@@ -137,7 +141,7 @@ class RemoteChatRepository @Inject constructor(
         return try {
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
             val messages = supabaseClient.postgrest["messages"]
-                .select {
+                .select(columns = MessageWithSongColumns) {
                     filter {
                         or {
                             and {
@@ -166,7 +170,7 @@ class RemoteChatRepository @Inject constructor(
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
                 ?: throw Exception("Not logged in")
             val messages = supabaseClient.postgrest["messages"]
-                .select {
+                .select(columns = MessageWithSongColumns) {
                     filter {
                         or {
                             eq("sender_id", currentUserId)
@@ -199,7 +203,7 @@ class RemoteChatRepository @Inject constructor(
                     ChatConversation(
                         id = participantId,
                         participant = participant.toFollowUser(),
-                        lastMessagePreview = latestMessage.content.orEmpty(),
+                        lastMessagePreview = latestMessage.content ?: latestMessage.sharedSong?.title.orEmpty(),
                         lastMessageTimeLabel = latestMessage.createdAt.toChatTimeLabel(),
                         unreadCount = if (
                             latestMessage.receiverId == currentUserId &&
@@ -230,7 +234,10 @@ class RemoteChatRepository @Inject constructor(
             val insertedMessage = supabaseClient.postgrest["messages"]
                 .insert(message) { select() }
                 .decodeSingle<MessageDto>()
-            Result.success(insertedMessage.toChatMessage(currentUserId))
+            val sharedSong = insertedMessage.sharedSongId?.let { songId ->
+                getSharedSong(songId)
+            }
+            Result.success(insertedMessage.toChatMessage(currentUserId, sharedSong))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -248,6 +255,13 @@ class RemoteChatRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    private suspend fun getSharedSong(songId: String): SongItem? = runCatching {
+        supabaseClient.postgrest["songs"]
+            .select { filter { eq("id", songId) } }
+            .decodeSingle<SongDto>()
+            .toSongItem()
+    }.getOrNull()
 
     private fun observeMessageInserts(userId: String): Flow<ChatMessage> {
         val currentUserId = supabaseClient.auth.currentUserOrNull()?.id 
@@ -282,6 +296,7 @@ class RemoteChatRepository @Inject constructor(
 
     private companion object {
         const val TYPING_EVENT = "typing"
+        val MessageWithSongColumns = Columns.raw("*, shared_song:songs(*)")
     }
 
     @kotlinx.serialization.Serializable

@@ -7,6 +7,7 @@
     <string name="chat_message_placeholder">پیامی بنویس</string>
     <string name="chat_send">ارسال پیام</string>
     <string name="chat_share_song">اشتراک آهنگ</string>
+    <string name="chat_shared_song_unavailable">آهنگ اشتراک‌گذاری‌شده در دسترس نیست</string>
     <string name="chat_typing">در حال نوشتن…</string>
     <string name="chat_no_messages_title">گفتگو را شروع کن</string>
     <string name="chat_no_messages_message">برای سلام کردن یک پیام بفرست.</string>
