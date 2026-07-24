@@ -646,14 +646,15 @@ fun FuzicNavigation(
                     onSongClick = { playerViewModel.onIntent(PlayerIntent.PlayById(it.id)) },
                     onSongMoreClick = { songActionTarget = it },
                     onRemoveSongClick = { song -> viewModel.onIntent(PlaylistDetailsIntent.RemoveSong(song.id)) },
-                    onSaveEdit = { name, cover ->
+                    onSaveEdit = { name, cover, category, visibility ->
                         navController.previousBackStackEntry?.savedStateHandle?.set("playlist_updated", true)
                         viewModel.onIntent(
                             PlaylistDetailsIntent.SaveEdit(
                                 com.androidprj.fuzic.model.ui.UpdatePlaylistRequest(
                                     title = name,
                                     coverImageUrl = cover,
-                                    visibility = com.androidprj.fuzic.model.ui.PlaylistVisibility.Public
+                                    category = category,
+                                    visibility = visibility
                                 )
                             )
                         )
@@ -689,6 +690,8 @@ fun FuzicNavigation(
                     onNewPlaylistClick = { viewModel.showCreatePlaylist() },
                     onHideCreatePlaylist = { viewModel.hideCreatePlaylist() },
                     onNewPlaylistNameChange = { viewModel.onNewPlaylistNameChange(it) },
+                    onNewPlaylistCategoryChange = { viewModel.onNewPlaylistCategoryChange(it) },
+                    onNewPlaylistVisibilityChange = { viewModel.onNewPlaylistVisibilityChange(it) },
                     onCreatePlaylistSubmit = { viewModel.createPlaylist() }
                 )
             }
@@ -1036,6 +1039,8 @@ private fun PlaylistsDestinationContent(navController: NavHostController, entry:
         onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
         onNewPlaylistClick = { viewModel.onIntent(PlaylistsIntent.ShowCreate) },
         onCreateNameChange = { viewModel.onIntent(PlaylistsIntent.NameChanged(it)) },
+        onCreateCategoryChange = { viewModel.onIntent(PlaylistsIntent.CategoryChanged(it)) },
+        onCreateVisibilityChange = { viewModel.onIntent(PlaylistsIntent.VisibilityChanged(it)) },
         onCreateCoverSelected = { viewModel.onIntent(PlaylistsIntent.CoverChanged(it)) },
         onCreateConfirmClick = { viewModel.onIntent(PlaylistsIntent.Create) },
         onCreateDismissClick = { viewModel.onIntent(PlaylistsIntent.DismissCreate) },

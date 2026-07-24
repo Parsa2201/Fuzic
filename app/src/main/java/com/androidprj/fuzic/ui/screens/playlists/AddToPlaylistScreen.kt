@@ -51,6 +51,8 @@ data class AddToPlaylistUiState(
     val isComplete: Boolean = false,
     val showCreateDialog: Boolean = false,
     val newPlaylistName: String = "",
+    val newPlaylistCategory: com.androidprj.fuzic.model.ui.PlaylistCategory = com.androidprj.fuzic.model.ui.PlaylistCategory.Local,
+    val newPlaylistVisibility: com.androidprj.fuzic.model.ui.PlaylistVisibility = com.androidprj.fuzic.model.ui.PlaylistVisibility.Private,
     val newPlaylistError: String? = null
 )
 
@@ -91,6 +93,8 @@ class AddToPlaylistViewModel @Inject constructor(
     fun hideCreatePlaylist() { _uiState.update { it.copy(showCreateDialog = false, newPlaylistName = "", newPlaylistError = null) } }
     
     fun onNewPlaylistNameChange(name: String) { _uiState.update { it.copy(newPlaylistName = name, newPlaylistError = null) } }
+    fun onNewPlaylistCategoryChange(category: com.androidprj.fuzic.model.ui.PlaylistCategory) { _uiState.update { it.copy(newPlaylistCategory = category) } }
+    fun onNewPlaylistVisibilityChange(visibility: com.androidprj.fuzic.model.ui.PlaylistVisibility) { _uiState.update { it.copy(newPlaylistVisibility = visibility) } }
     
     fun createPlaylist() = viewModelScope.launch {
         val name = _uiState.value.newPlaylistName
@@ -99,7 +103,8 @@ class AddToPlaylistViewModel @Inject constructor(
             playlistRepository.createPlaylist(
                 com.androidprj.fuzic.model.ui.CreatePlaylistRequest(
                     title = name, 
-                    visibility = com.androidprj.fuzic.model.ui.PlaylistVisibility.Public
+                    category = _uiState.value.newPlaylistCategory,
+                    visibility = _uiState.value.newPlaylistVisibility
                 )
             ) 
         }
@@ -138,6 +143,8 @@ private fun AddToPlaylistEnglishPreview() {
             onPlaylistClick = {},
             onNewPlaylistClick = {},
             onHideCreatePlaylist = {},
+            onNewPlaylistCategoryChange = {},
+            onNewPlaylistVisibilityChange = {},
             onNewPlaylistNameChange = {},
             onCreatePlaylistSubmit = {}
         )
@@ -159,6 +166,8 @@ private fun AddToPlaylistEmptyPersianPreview() {
             onPlaylistClick = {},
             onNewPlaylistClick = {},
             onHideCreatePlaylist = {},
+            onNewPlaylistCategoryChange = {},
+            onNewPlaylistVisibilityChange = {},
             onNewPlaylistNameChange = {},
             onCreatePlaylistSubmit = {}
         )
@@ -178,6 +187,8 @@ fun AddToPlaylistScreen(
     onNewPlaylistClick: () -> Unit,
     onHideCreatePlaylist: () -> Unit,
     onNewPlaylistNameChange: (String) -> Unit,
+    onNewPlaylistCategoryChange: (com.androidprj.fuzic.model.ui.PlaylistCategory) -> Unit,
+    onNewPlaylistVisibilityChange: (com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
     onCreatePlaylistSubmit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

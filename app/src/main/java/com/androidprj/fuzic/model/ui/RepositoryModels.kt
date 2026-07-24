@@ -17,6 +17,7 @@ data class DownloadRequest(
  */
 data class CreatePlaylistRequest(
     val title: String,
+    val category: PlaylistCategory = PlaylistCategory.Local,
     val visibility: PlaylistVisibility = PlaylistVisibility.Private,
     val coverImageUrl: String? = null,
 )
@@ -24,6 +25,12 @@ data class CreatePlaylistRequest(
 enum class PlaylistVisibility {
     Public,
     Private,
+}
+
+enum class PlaylistCategory {
+    Global,
+    Local,
+    None,
 }
 
 data class TypingStatus(

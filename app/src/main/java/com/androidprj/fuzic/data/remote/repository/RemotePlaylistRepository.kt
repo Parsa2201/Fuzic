@@ -31,7 +31,7 @@ class RemotePlaylistRepository @Inject constructor(
         return try {
             val playlists = supabaseClient.postgrest["playlists"]
                 .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, playlist_songs(count)")) { 
-                    filter { eq("is_public", true) } 
+                    filter { eq("type", "global") } 
                     range(offset, offset + limit - 1)
                 }
                 .decodeList<PlaylistDto>()
@@ -43,7 +43,18 @@ class RemotePlaylistRepository @Inject constructor(
     }
 
     override suspend fun getLocalPlaylists(offset: Long, limit: Long): Result<List<PlaylistItem>> {
-        return Result.success(emptyList()) // Local Room cache to be implemented
+        return try {
+            val playlists = supabaseClient.postgrest["playlists"]
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, playlist_songs(count)")) { 
+                    filter { eq("type", "local") }
+                    range(offset, offset + limit - 1)
+                }
+                .decodeList<PlaylistDto>()
+                .map { it.toPlaylistItem() }
+            Result.success(playlists)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun getUserPlaylists(userId: String, offset: Long, limit: Long): Result<List<PlaylistItem>> {
@@ -107,11 +118,14 @@ class RemotePlaylistRepository @Inject constructor(
                 finalCoverUrl = bucket.publicUrl(path)
             }
             
+            val isGlobal = request.category == com.androidprj.fuzic.model.ui.PlaylistCategory.Global
+            val isPublic = if (isGlobal) true else request.visibility == com.androidprj.fuzic.model.ui.PlaylistVisibility.Public
+
             val newPlaylist = InsertPlaylistDto(
                 title = request.title,
                 ownerId = userId,
-                type = USER_PLAYLIST_TYPE,
-                isPublic = request.visibility == PlaylistVisibility.Public,
+                type = if (request.category == com.androidprj.fuzic.model.ui.PlaylistCategory.None) null else request.category.name.lowercase(),
+                isPublic = isPublic,
                 coverImageUrl = finalCoverUrl
             )
             val result = supabaseClient.postgrest["playlists"]
@@ -152,9 +166,13 @@ class RemotePlaylistRepository @Inject constructor(
                 finalCoverUrl = bucket.publicUrl(path)
             }
             
+            val isGlobal = request.category == com.androidprj.fuzic.model.ui.PlaylistCategory.Global
+            val isPublic = if (isGlobal) true else request.visibility == com.androidprj.fuzic.model.ui.PlaylistVisibility.Public
+
             val updatedPlaylist = UpdatePlaylistDto(
                 title = request.title,
-                isPublic = request.visibility == PlaylistVisibility.Public,
+                isPublic = isPublic,
+                type = if (request.category == com.androidprj.fuzic.model.ui.PlaylistCategory.None) null else request.category.name.lowercase(),
                 coverImageUrl = finalCoverUrl
             )
             val result = supabaseClient.postgrest["playlists"]
@@ -219,8 +237,9 @@ class RemotePlaylistRepository @Inject constructor(
 
     @kotlinx.serialization.Serializable
     private data class UpdatePlaylistDto(
-        val title: String,
-        @kotlinx.serialization.SerialName("is_public") val isPublic: Boolean,
+        val title: String? = null,
+        @kotlinx.serialization.SerialName("is_public") val isPublic: Boolean? = null,
+        val type: String? = null,
         @kotlinx.serialization.SerialName("cover_image_url") val coverImageUrl: String? = null
     )
 

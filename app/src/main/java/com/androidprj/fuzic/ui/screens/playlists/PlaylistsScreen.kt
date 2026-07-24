@@ -72,6 +72,8 @@ fun PlaylistsRoute(
     onPlaylistClick: (PlaylistItem) -> Unit,
     onNewPlaylistClick: () -> Unit,
     onCreateNameChange: (String) -> Unit,
+    onCreateCategoryChange: (com.androidprj.fuzic.model.ui.PlaylistCategory) -> Unit,
+    onCreateVisibilityChange: (com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
     onCreateCoverSelected: (String?) -> Unit,
     onCreateConfirmClick: () -> Unit,
     onCreateDismissClick: () -> Unit,
@@ -83,6 +85,8 @@ fun PlaylistsRoute(
         onPlaylistClick = onPlaylistClick,
         onNewPlaylistClick = onNewPlaylistClick,
         onCreateNameChange = onCreateNameChange,
+        onCreateCategoryChange = onCreateCategoryChange,
+        onCreateVisibilityChange = onCreateVisibilityChange,
         onCreateCoverSelected = onCreateCoverSelected,
         onCreateConfirmClick = onCreateConfirmClick,
         onCreateDismissClick = onCreateDismissClick,
@@ -97,6 +101,8 @@ fun PlaylistsScreen(
     onPlaylistClick: (PlaylistItem) -> Unit,
     onNewPlaylistClick: () -> Unit,
     onCreateNameChange: (String) -> Unit,
+    onCreateCategoryChange: (com.androidprj.fuzic.model.ui.PlaylistCategory) -> Unit,
+    onCreateVisibilityChange: (com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
     onCreateCoverSelected: (String?) -> Unit,
     onCreateConfirmClick: () -> Unit,
     onCreateDismissClick: () -> Unit,
@@ -136,6 +142,8 @@ fun PlaylistsScreen(
             onPlaylistClick = onPlaylistClick,
             onNewPlaylistClick = onNewPlaylistClick,
             onCreateNameChange = onCreateNameChange,
+            onCreateCategoryChange = onCreateCategoryChange,
+            onCreateVisibilityChange = onCreateVisibilityChange,
             onCreateCoverSelected = onCreateCoverSelected,
             onCreateConfirmClick = onCreateConfirmClick,
             onCreateDismissClick = onCreateDismissClick,
@@ -150,6 +158,8 @@ private fun PlaylistsContent(
     onPlaylistClick: (PlaylistItem) -> Unit,
     onNewPlaylistClick: () -> Unit,
     onCreateNameChange: (String) -> Unit,
+    onCreateCategoryChange: (com.androidprj.fuzic.model.ui.PlaylistCategory) -> Unit,
+    onCreateVisibilityChange: (com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
     onCreateCoverSelected: (String?) -> Unit,
     onCreateConfirmClick: () -> Unit,
     onCreateDismissClick: () -> Unit,
@@ -176,6 +186,8 @@ private fun PlaylistsContent(
                     CreatePlaylistForm(
                         state = uiState.createPlaylistState,
                         onNameChange = onCreateNameChange,
+                        onCategoryChange = onCreateCategoryChange,
+                        onVisibilityChange = onCreateVisibilityChange,
                         onCoverSelected = onCreateCoverSelected,
                         onConfirmClick = onCreateConfirmClick,
                         onDismissClick = onCreateDismissClick
@@ -227,10 +239,13 @@ private fun PlaylistsHeader(
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun CreatePlaylistForm(
     state: CreatePlaylistUiState,
     onNameChange: (String) -> Unit,
+    onCategoryChange: (com.androidprj.fuzic.model.ui.PlaylistCategory) -> Unit,
+    onVisibilityChange: (com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
     onCoverSelected: (String?) -> Unit,
     onConfirmClick: () -> Unit,
     onDismissClick: () -> Unit,
@@ -265,6 +280,46 @@ private fun CreatePlaylistForm(
                     }
                 }
             )
+            var categoryExpanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            androidx.compose.material3.ExposedDropdownMenuBox(
+                expanded = categoryExpanded,
+                onExpandedChange = { categoryExpanded = !categoryExpanded }
+            ) {
+                OutlinedTextField(
+                    value = state.category.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Category") },
+                    trailingIcon = { androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false }
+                ) {
+                    com.androidprj.fuzic.model.ui.PlaylistCategory.values().forEach { category ->
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(category.name) },
+                            onClick = {
+                                onCategoryChange(category)
+                                categoryExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            if (state.category != com.androidprj.fuzic.model.ui.PlaylistCategory.Global) {
+                androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Public", style = MaterialTheme.typography.bodyMedium)
+                    androidx.compose.material3.Switch(
+                        checked = state.visibility == com.androidprj.fuzic.model.ui.PlaylistVisibility.Public,
+                        onCheckedChange = { isPublic -> 
+                            val vis = if (isPublic) com.androidprj.fuzic.model.ui.PlaylistVisibility.Public else com.androidprj.fuzic.model.ui.PlaylistVisibility.Private
+                            onVisibilityChange(vis)
+                        }
+                    )
+                }
+            }
             Text(
                 text = stringResource(R.string.playlists_cover_label),
                 style = MaterialTheme.typography.titleMedium,
@@ -610,6 +665,8 @@ private fun CreatePlaylistFormPreview() {
                 ),
             ),
             onNameChange = { state = state.copy(name = it) },
+            onCategoryChange = {},
+            onVisibilityChange = {},
             onCoverSelected = { state = state.copy(selectedCoverUri = it) },
             onConfirmClick = { },
             onDismissClick = { },
@@ -666,6 +723,8 @@ private fun PlaylistsPreviewState(uiState: PlaylistsUiState) {
         onPlaylistClick = { selectedPlaylist = it },
         onNewPlaylistClick = { state = state.copy(createPlaylistState = state.createPlaylistState.copy(isVisible = true)) },
         onCreateNameChange = { state = state.copy(createPlaylistState = state.createPlaylistState.copy(name = it)) },
+        onCreateCategoryChange = { state = state.copy(createPlaylistState = state.createPlaylistState.copy(category = it)) },
+        onCreateVisibilityChange = { state = state.copy(createPlaylistState = state.createPlaylistState.copy(visibility = it)) },
         onCreateCoverSelected = { uri ->
             state = state.copy(
                 createPlaylistState = state.createPlaylistState.copy(selectedCoverUri = uri),

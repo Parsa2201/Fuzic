@@ -77,11 +77,16 @@ private val Context.settingsDataStore by preferencesDataStore(name = "app_settin
                 .decodeList<SongWrapper>()
                 .map { it.song.toSongItem() }
 
+            val category = when (playlist.type) { "global" -> com.androidprj.fuzic.model.ui.PlaylistCategory.Global; "local" -> com.androidprj.fuzic.model.ui.PlaylistCategory.Local; else -> com.androidprj.fuzic.model.ui.PlaylistCategory.None }
+            val visibility = if (playlist.isPublic) com.androidprj.fuzic.model.ui.PlaylistVisibility.Public else com.androidprj.fuzic.model.ui.PlaylistVisibility.Private
+
             Result.success(PlaylistDetails(
                 id = playlist.id,
                 title = playlist.title,
                 description = "",
                 artworkUrl = playlist.coverImageUrl,
+                category = category,
+                visibility = visibility,
                 ownerId = playlist.ownerId,
                 ownerName = owner?.name ?: owner?.username ?: "Unknown",
                 songs = songs

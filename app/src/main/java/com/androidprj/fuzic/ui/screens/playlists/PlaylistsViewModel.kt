@@ -10,6 +10,8 @@ import com.androidprj.fuzic.model.ui.CreatePlaylistRequest
 import com.androidprj.fuzic.model.ui.PlaylistSection
 import com.androidprj.fuzic.model.ui.PlaylistSectionType
 import com.androidprj.fuzic.model.ui.PlaylistsUiState
+import com.androidprj.fuzic.model.ui.PlaylistCategory
+import com.androidprj.fuzic.model.ui.PlaylistVisibility
 import com.androidprj.fuzic.repository.AuthRepository
 import com.androidprj.fuzic.repository.PlaylistRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +32,8 @@ sealed interface PlaylistsIntent {
     data object DismissCreate : PlaylistsIntent
     data class NameChanged(val value: String) : PlaylistsIntent
     data class CoverChanged(val value: String?) : PlaylistsIntent
+    data class CategoryChanged(val value: PlaylistCategory) : PlaylistsIntent
+    data class VisibilityChanged(val value: PlaylistVisibility) : PlaylistsIntent
     data object Create : PlaylistsIntent
 }
 
@@ -59,6 +63,8 @@ class PlaylistsViewModel @Inject constructor(
                 it.copy(createPlaylistState = it.createPlaylistState.copy(selectedCoverUri = intent.value))
             }
             PlaylistsIntent.Create -> createPlaylist()
+            is PlaylistsIntent.CategoryChanged -> _uiState.update { it.copy(createPlaylistState = it.createPlaylistState.copy(category = intent.value)) }
+            is PlaylistsIntent.VisibilityChanged -> _uiState.update { it.copy(createPlaylistState = it.createPlaylistState.copy(visibility = intent.value)) }
         }
     }
 
@@ -130,6 +136,8 @@ class PlaylistsViewModel @Inject constructor(
                 playlistRepository.createPlaylist(
                     CreatePlaylistRequest(
                         title = title,
+                        category = createState.category,
+                        visibility = createState.visibility,
                         coverImageUrl = createState.selectedCoverUri,
                     )
                 )

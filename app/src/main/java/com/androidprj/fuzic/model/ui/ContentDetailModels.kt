@@ -53,6 +53,8 @@ data class PlaylistDetails(
     val title: String,
     val description: String,
     val artworkUrl: String? = null,
+    val category: PlaylistCategory = PlaylistCategory.Local,
+    val visibility: PlaylistVisibility = PlaylistVisibility.Private,
     val ownerId: String,
     val ownerName: String,
     val songs: List<SongItem> = emptyList(),

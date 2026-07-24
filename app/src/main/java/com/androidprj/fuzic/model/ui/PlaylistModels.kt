@@ -31,6 +31,8 @@ data class CreatePlaylistUiState(
     val isVisible: Boolean = false,
     val name: String = "",
     val hasNameConflict: Boolean = false,
+    val category: PlaylistCategory = PlaylistCategory.Local,
+    val visibility: PlaylistVisibility = PlaylistVisibility.Private,
     val selectedCoverUri: String? = null,
     val availableCoverUris: List<String> = emptyList(),
 )
