@@ -826,6 +826,9 @@ fun FuzicNavigation(
             composable<ChatListDestination> {
                 val viewModel: ChatListViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(Unit) {
+                    viewModel.onIntent(ChatListIntent.Refresh)
+                }
                 ChatListScreen(
                     uiState = uiState,
                     onBackClick = { navController.popBackStack() },

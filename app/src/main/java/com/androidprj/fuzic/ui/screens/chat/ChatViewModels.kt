@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 sealed interface ChatListIntent {
+    data object Refresh : ChatListIntent
     data object Retry : ChatListIntent
     data object ClearError : ChatListIntent
 }
@@ -46,6 +47,7 @@ class ChatListViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ChatListUiState(isLoading = true))
     val uiState: StateFlow<ChatListUiState> = _uiState.asStateFlow()
+    private var conversationsJob: Job? = null
 
     init {
         observeConversations()
@@ -53,13 +55,15 @@ class ChatListViewModel @Inject constructor(
 
     fun onIntent(intent: ChatListIntent) {
         when (intent) {
+            ChatListIntent.Refresh,
             ChatListIntent.Retry -> observeConversations()
             ChatListIntent.ClearError -> _uiState.value = _uiState.value.copy(errorMessage = null)
         }
     }
 
     private fun observeConversations() {
-        viewModelScope.launch {
+        conversationsJob?.cancel()
+        conversationsJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             runCatching {
                 chatRepository.observeConversations().collect { conversations ->

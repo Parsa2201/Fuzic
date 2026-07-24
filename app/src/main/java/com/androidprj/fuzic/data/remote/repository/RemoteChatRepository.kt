@@ -48,9 +48,14 @@ class RemoteChatRepository @Inject constructor(
     override fun observeMessages(conversationId: String): Flow<PagingData<ChatMessage>> {
         val channel = supabaseClient.channel(messageChannel(conversationId))
         return flow<PagingData<ChatMessage>> {
-            val messageChanges = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
-                table = "messages"
-            }
+            val messageChanges = merge(
+                channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+                    table = "messages"
+                },
+                channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
+                    table = "messages"
+                },
+            )
             channel.subscribe(blockUntilSubscribed = true)
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
                 ?: throw Exception("Not logged in")
@@ -59,9 +64,19 @@ class RemoteChatRepository @Inject constructor(
             messageChanges.collect { change ->
                 val messageDto = change.decodeRecord<MessageDto>()
                 if (messageDto.belongsToConversation(conversationId)) {
-                    val sharedSong = messageDto.sharedSongId?.let { songId -> getSharedSong(songId) }
-                    val message = messageDto.toChatMessage(currentUserId, sharedSong)
-                    if (messages.none { it.id == message.id }) {
+                    val existingMessage = messages.firstOrNull { it.id == messageDto.id }
+                    if (existingMessage != null) {
+                        messages = messages.map { message ->
+                            if (message.id == messageDto.id) {
+                                message.copy(status = messageDto.toChatMessage(currentUserId).status)
+                            } else {
+                                message
+                            }
+                        }
+                        emit(PagingData.from(messages))
+                    } else {
+                        val sharedSong = messageDto.sharedSongId?.let { songId -> getSharedSong(songId) }
+                        val message = messageDto.toChatMessage(currentUserId, sharedSong)
                         messages = messages + message
                         emit(PagingData.from(messages))
                     }
@@ -232,13 +247,10 @@ class RemoteChatRepository @Inject constructor(
                         participant = participant.toFollowUser(),
                         lastMessagePreview = latestMessage.content ?: latestMessage.sharedSong?.title.orEmpty(),
                         lastMessageTimeLabel = latestMessage.createdAt.toChatTimeLabel(),
-                        unreadCount = if (
-                            latestMessage.receiverId == currentUserId &&
-                            latestMessage.status != "read"
-                        ) {
-                            1
-                        } else {
-                            0
+                        unreadCount = messages.count { message ->
+                            message.senderId == participantId &&
+                                message.receiverId == currentUserId &&
+                                message.status != "read"
                         },
                     )
                 }
