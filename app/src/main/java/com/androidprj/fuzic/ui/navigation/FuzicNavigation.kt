@@ -681,8 +681,15 @@ fun FuzicNavigation(
                     playlists = uiState.playlists,
                     isLoading = uiState.isLoading,
                     errorMessage = uiState.errorMessage,
+                    showCreateDialog = uiState.showCreateDialog,
+                    newPlaylistName = uiState.newPlaylistName,
+                    newPlaylistError = uiState.newPlaylistError,
                     onBackClick = { navController.popBackStack() },
                     onPlaylistClick = { viewModel.addSong(it, args.songId) },
+                    onNewPlaylistClick = { viewModel.showCreatePlaylist() },
+                    onHideCreatePlaylist = { viewModel.hideCreatePlaylist() },
+                    onNewPlaylistNameChange = { viewModel.onNewPlaylistNameChange(it) },
+                    onCreatePlaylistSubmit = { viewModel.createPlaylist() }
                 )
             }
             composable<ChatPickerDestination> { entry ->

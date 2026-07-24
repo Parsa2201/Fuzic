@@ -193,7 +193,7 @@ private fun PlaylistsContent(
                     SectionHeader(titleRes = section.titleRes)
                 }
             }
-            items(section.playlists, key = { it.id }) { playlist ->
+            items(section.playlists, key = { "${section.type}_${it.id}" }) { playlist ->
                 PlaylistCard(
                     playlist = playlist,
                     sectionType = section.type,
@@ -348,51 +348,53 @@ private fun PlaylistCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.clickable(onClick = onClick)
+    androidx.compose.material3.ElevatedCard(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = androidx.compose.material3.CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-        ) {
-            if (playlist.artworkUrl != null) {
-                MusicArtwork(
-                    artworkUrl = playlist.artworkUrl,
-                    fallbackIcon = Icons.AutoMirrored.Filled.PlaylistPlay,
-                    contentDescription = playlist.title,
-                    modifier = Modifier.fillMaxSize()
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+            ) {
+                if (playlist.artworkUrl != null) {
+                    MusicArtwork(
+                        artworkUrl = playlist.artworkUrl,
+                        fallbackIcon = Icons.AutoMirrored.Filled.PlaylistPlay,
+                        contentDescription = playlist.title,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    PlaylistGradientArtwork(
+                        id = playlist.id,
+                        sectionType = sectionType,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = playlist.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-            } else {
-                PlaylistGradientArtwork(
-                    id = playlist.id,
-                    sectionType = sectionType,
-                    modifier = Modifier.fillMaxSize()
+                androidx.compose.foundation.layout.Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "${playlist.subtitle} • ${playlist.songCountLabel}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
-        Spacer(Modifier.height(MaterialTheme.spacing.small))
-        Text(
-            text = playlist.title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = playlist.subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = playlist.songCountLabel,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
     }
 }
 

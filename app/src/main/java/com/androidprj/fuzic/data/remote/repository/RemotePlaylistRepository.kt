@@ -84,10 +84,24 @@ class RemotePlaylistRepository @Inject constructor(
             
             var finalCoverUrl = request.coverImageUrl
             if (finalCoverUrl != null && finalCoverUrl.startsWith("content://")) {
-                val imageBytes = appContext.contentResolver.openInputStream(Uri.parse(finalCoverUrl))
-                    ?.use { it.readBytes() }
-                    ?: throw Exception("Failed to read selected cover image")
-                val path = "$userId/${UUID.randomUUID()}.jpg"
+                val imageBytes = appContext.contentResolver.openInputStream(android.net.Uri.parse(finalCoverUrl))
+                    ?.use { inputStream ->
+                        val original = android.graphics.BitmapFactory.decodeStream(inputStream)
+                        val ratio = 500f / maxOf(original.width, original.height)
+                        val scaled = if (ratio < 1f) {
+                            android.graphics.Bitmap.createScaledBitmap(
+                                original, 
+                                (original.width * ratio).toInt(), 
+                                (original.height * ratio).toInt(), 
+                                true
+                            )
+                        } else original
+                        
+                        val out = java.io.ByteArrayOutputStream()
+                        scaled.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, out)
+                        out.toByteArray()
+                    } ?: throw Exception("Failed to process selected cover image")
+                val path = "$userId/${java.util.UUID.randomUUID()}.jpg"
                 val bucket = supabaseClient.storage.from("covers")
                 bucket.upload(path, imageBytes)
                 finalCoverUrl = bucket.publicUrl(path)
@@ -115,10 +129,24 @@ class RemotePlaylistRepository @Inject constructor(
             
             var finalCoverUrl = request.coverImageUrl
             if (finalCoverUrl != null && finalCoverUrl.startsWith("content://")) {
-                val imageBytes = appContext.contentResolver.openInputStream(Uri.parse(finalCoverUrl))
-                    ?.use { it.readBytes() }
-                    ?: throw Exception("Failed to read selected cover image")
-                val path = "$userId/${UUID.randomUUID()}.jpg"
+                val imageBytes = appContext.contentResolver.openInputStream(android.net.Uri.parse(finalCoverUrl))
+                    ?.use { inputStream ->
+                        val original = android.graphics.BitmapFactory.decodeStream(inputStream)
+                        val ratio = 500f / maxOf(original.width, original.height)
+                        val scaled = if (ratio < 1f) {
+                            android.graphics.Bitmap.createScaledBitmap(
+                                original, 
+                                (original.width * ratio).toInt(), 
+                                (original.height * ratio).toInt(), 
+                                true
+                            )
+                        } else original
+                        
+                        val out = java.io.ByteArrayOutputStream()
+                        scaled.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, out)
+                        out.toByteArray()
+                    } ?: throw Exception("Failed to process selected cover image")
+                val path = "$userId/${java.util.UUID.randomUUID()}.jpg"
                 val bucket = supabaseClient.storage.from("covers")
                 bucket.upload(path, imageBytes)
                 finalCoverUrl = bucket.publicUrl(path)

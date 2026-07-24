@@ -85,9 +85,9 @@
     <string name="playlists_create_title">ایجاد پلی لیست</string>
     <string name="playlists_name_label">نام پلی لیست</string>
     <string name="playlists_name_conflict_message">پلی لیستی با این نام وجود دارد.</string>
-    <string name="playlists_section_global">پلی لیست های جهانی</string>
-    <string name="playlists_section_local">پلی لیست های محلی</string>
-    <string name="playlists_section_mine">پلی لیست های من</string>
+    <string name="playlists_section_global">موسیقی جهان</string>
+    <string name="playlists_section_local">موسیقی داخلی</string>
+    <string name="playlists_section_mine">پلیلیستهای من</string>
     <string name="playlists_empty_title">اولین پلی لیستت را بساز</string>
     <string name="playlists_empty_message">برای آهنگ ها و حال و هوای مورد علاقه ات پلی لیست بساز.</string>
     <string name="playlists_error_title">پلی لیست ها در دسترس نیستند</string>
