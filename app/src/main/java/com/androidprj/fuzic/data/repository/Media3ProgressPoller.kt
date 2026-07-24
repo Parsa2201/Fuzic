@@ -83,10 +83,8 @@ internal class Media3ProgressPoller(
                     )
                 }
             }
-            // Stop polling once Media3 reached the end of the current
-            // item — onMediaItemTransition will fire next and reset
-            // the playhead to 0 for the new media item.
-            if (player.playbackState == Player.STATE_ENDED) break
+            // We keep polling even if STATE_ENDED, so the UI can pick up
+            // the new song when playback resumes or a new item is selected.
             delay(PROGRESS_POLL_INTERVAL_MS)
         }
     }
