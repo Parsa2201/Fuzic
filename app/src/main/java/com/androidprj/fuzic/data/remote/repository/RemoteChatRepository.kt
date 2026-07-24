@@ -3,6 +3,7 @@ package com.androidprj.fuzic.data.remote.repository
 import androidx.paging.PagingData
 import com.androidprj.fuzic.model.remote.MessageDto
 import com.androidprj.fuzic.model.remote.SongDto
+import com.androidprj.fuzic.model.remote.TypingDto
 import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.model.ui.ChatMessage
 import com.androidprj.fuzic.model.ui.SongItem
@@ -19,8 +20,6 @@ import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
-import io.github.jan.supabase.realtime.broadcast
-import io.github.jan.supabase.realtime.broadcastFlow
 import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.decodeRecord
 import io.github.jan.supabase.realtime.realtime
@@ -29,10 +28,10 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -77,14 +76,24 @@ class RemoteChatRepository @Inject constructor(
 
     override fun observeTypingStatus(conversationId: String): Flow<TypingStatus?> {
         val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
-        if (currentUserId == null) return flowOf(null)
+            ?: return flow { emit(null) }
         val channel = supabaseClient.channel(typingChannel(currentUserId, conversationId))
         return channelFlow {
-            // Register the callback before joining the channel. Realtime broadcasts that
-            // arrive immediately after the join acknowledgement would otherwise be lost.
-            val typingEvents = channel.broadcastFlow<TypingEvent>(TYPING_EVENT)
+            // Both inserts and updates can be the first typing signal for a participant.
+            // Register callbacks before joining so no event is lost during subscription.
+            val typingEvents = merge(
+                channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+                    table = "typing"
+                }.map { it.decodeRecord<TypingDto>() },
+                channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
+                    table = "typing"
+                }.map { it.decodeRecord<TypingDto>() },
+            )
+                .filter { event ->
+                    event.userId == conversationId && event.participantId == currentUserId
+                }
                 .map { event ->
-                    if (event.userId != currentUserId && event.isTyping) {
+                    if (event.isTyping) {
                         TypingStatus(
                             conversationId = conversationId,
                             userId = event.userId,
@@ -138,13 +147,12 @@ class RemoteChatRepository @Inject constructor(
         return try {
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
                 ?: throw Exception("Not logged in")
-            val channel = supabaseClient.channel(typingChannel(currentUserId, conversationId))
-            // A short-lived typing event must not be put on a websocket queue and then
-            // immediately removed. An unsubscribed channel uses Supabase's HTTP broadcast,
-            // which delivers the event before this call returns.
-            channel.broadcast(
-                event = TYPING_EVENT,
-                message = TypingEvent(userId = currentUserId, isTyping = isTyping),
+            supabaseClient.postgrest["typing"].upsert(
+                TypingDto(
+                    userId = currentUserId,
+                    participantId = conversationId,
+                    isTyping = isTyping,
+                ),
             )
             Result.success(Unit)
         } catch (e: Exception) {
@@ -305,21 +313,10 @@ class RemoteChatRepository @Inject constructor(
 
     private fun messageChannel(conversationId: String) = "chat:$conversationId:messages"
 
-    /**
-     * Both people in a direct conversation pass the other person's id as the
-     * conversation id. Sort the two ids so they join the exact same broadcast topic.
-     */
     private fun typingChannel(currentUserId: String, participantId: String): String =
         "chat:${listOf(currentUserId, participantId).sorted().joinToString(":")}:typing"
 
-    @kotlinx.serialization.Serializable
-    private data class TypingEvent(
-        val userId: String,
-        val isTyping: Boolean,
-    )
-
     private companion object {
-        const val TYPING_EVENT = "typing"
         val MessageWithSongColumns = Columns.raw("*, shared_song:songs(*)")
     }
 

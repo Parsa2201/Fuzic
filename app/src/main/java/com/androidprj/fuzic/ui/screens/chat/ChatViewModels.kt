@@ -15,7 +15,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -82,11 +84,13 @@ class ChatDetailViewModel @Inject constructor(
     val uiState: StateFlow<ChatDetailUiState> = _uiState.asStateFlow()
 
     private val _messages = MutableStateFlow<PagingData<ChatMessage>>(PagingData.empty())
-    val messages: StateFlow<PagingData<ChatMessage>> = _messages.asStateFlow()
+    val messages = _messages.cachedIn(viewModelScope)
 
     private var messagesJob: Job? = null
     private var typingJob: Job? = null
+    private var typingExpiryJob: Job? = null
     private val markedReadMessageIds = mutableSetOf<String>()
+    private var lastTypingSignalAtMillis = 0L
 
     fun onIntent(intent: ChatDetailIntent) {
         when (intent) {
@@ -111,6 +115,8 @@ class ChatDetailViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(conversation = conversation, isLoading = true, errorMessage = null)
         messagesJob?.cancel()
         typingJob?.cancel()
+        typingExpiryJob?.cancel()
+        lastTypingSignalAtMillis = 0L
         messagesJob = viewModelScope.launch {
             runCatching {
                 chatRepository.observeMessages(conversation.id).collect { messages ->
@@ -136,6 +142,13 @@ class ChatDetailViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isOtherUserTyping = status != null && status.userId == conversation.participant.id,
                     )
+                    typingExpiryJob?.cancel()
+                    if (status != null && status.userId == conversation.participant.id) {
+                        typingExpiryJob = viewModelScope.launch {
+                            delay(TYPING_STATUS_TIMEOUT_MILLIS)
+                            _uiState.value = _uiState.value.copy(isOtherUserTyping = false)
+                        }
+                    }
                 }
             }
         }
@@ -146,10 +159,17 @@ class ChatDetailViewModel @Inject constructor(
         val previousDraft = _uiState.value.draft
         _uiState.value = _uiState.value.copy(draft = draft)
         val conversation = _uiState.value.conversation ?: return
-        if (previousDraft.isBlank() == draft.isBlank()) return
+        val now = System.currentTimeMillis()
+        val shouldStopTyping = previousDraft.isNotBlank() && draft.isBlank()
+        val shouldSendTyping = draft.isNotBlank() && (
+            previousDraft.isBlank() || now - lastTypingSignalAtMillis >= TYPING_SIGNAL_INTERVAL_MILLIS
+        )
+        if (!shouldStopTyping && !shouldSendTyping) return
+        if (shouldSendTyping) lastTypingSignalAtMillis = now
+        if (shouldStopTyping) lastTypingSignalAtMillis = 0L
         viewModelScope.launch {
             withContext(ioDispatcher) {
-                chatRepository.setTyping(conversation.id, draft.isNotBlank())
+                chatRepository.setTyping(conversation.id, shouldSendTyping)
             }
         }
     }
@@ -173,6 +193,7 @@ class ChatDetailViewModel @Inject constructor(
                     withContext(ioDispatcher) {
                         chatRepository.setTyping(conversation.id, false)
                     }
+                    lastTypingSignalAtMillis = 0L
                 },
                 onFailure = { throwable ->
                     _uiState.value = _uiState.value.copy(
@@ -229,5 +250,10 @@ class ChatDetailViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isOffline = true)
             }
         }
+    }
+
+    private companion object {
+        const val TYPING_SIGNAL_INTERVAL_MILLIS = 2_000L
+        const val TYPING_STATUS_TIMEOUT_MILLIS = 5_000L
     }
 }

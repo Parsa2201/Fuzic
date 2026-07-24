@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
-import androidx.paging.cachedIn
 import androidx.paging.PagingData
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,7 +50,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -201,9 +199,7 @@ fun ChatDetailScreen(
             )
             else -> {
                 val listState = rememberLazyListState()
-                val pagingScope = rememberCoroutineScope()
-                val cachedMessages = remember(messages, pagingScope) { messages.cachedIn(pagingScope) }
-                val pagedMessages = cachedMessages.collectAsLazyPagingItems()
+                val pagedMessages = messages.collectAsLazyPagingItems()
                 val visibleUnreadMessages = pagedMessages.itemSnapshotList.items.filter {
                     !it.isMine && it.status != ChatMessageStatus.Read
                 }
