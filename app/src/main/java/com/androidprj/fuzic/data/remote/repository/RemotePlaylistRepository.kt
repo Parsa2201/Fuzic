@@ -221,9 +221,28 @@ class RemotePlaylistRepository @Inject constructor(
         }
     }
 
+    override suspend fun getPlaylistIdsContainingSong(songId: String): Result<List<String>> {
+        return try {
+            val result = supabaseClient.postgrest["playlist_songs"]
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("playlist_id")) {
+                    filter { eq("song_id", songId) }
+                }
+                .decodeList<PlaylistIdDto>()
+                .map { it.playlistId }
+            Result.success(result)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     @kotlinx.serialization.Serializable
     private data class SongWrapper(
         @kotlinx.serialization.SerialName("songs") val song: SongDto
+    )
+
+    @kotlinx.serialization.Serializable
+    private data class PlaylistIdDto(
+        @kotlinx.serialization.SerialName("playlist_id") val playlistId: String
     )
     
     @kotlinx.serialization.Serializable

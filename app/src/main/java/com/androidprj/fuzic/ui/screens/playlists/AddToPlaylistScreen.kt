@@ -26,6 +26,9 @@ import com.androidprj.fuzic.ui.components.DetailTopAppBar
 import com.androidprj.fuzic.ui.components.ScreenMessage
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.androidprj.fuzic.di.IoDispatcher
@@ -45,10 +48,11 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.update
 
 data class AddToPlaylistUiState(
+    val songId: String = "",
+    val addedPlaylistIds: Set<String> = emptySet(),
     val playlists: List<PlaylistItem> = emptyList(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
-    val isComplete: Boolean = false,
     val showCreateDialog: Boolean = false,
     val newPlaylistName: String = "",
     val newPlaylistCategory: com.androidprj.fuzic.model.ui.PlaylistCategory = com.androidprj.fuzic.model.ui.PlaylistCategory.Local,
@@ -66,26 +70,90 @@ class AddToPlaylistViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AddToPlaylistUiState())
     val uiState: StateFlow<AddToPlaylistUiState> = _uiState.asStateFlow()
 
-    fun load() = viewModelScope.launch {
-        _uiState.value = AddToPlaylistUiState()
+    fun load(songId: String) = viewModelScope.launch {
+        _uiState.value = AddToPlaylistUiState(songId = songId)
         val userId = withContext(ioDispatcher) { authRepository.getCurrentUserId() }
         if (userId == null) {
             _uiState.value = AddToPlaylistUiState(isLoading = false, errorMessage = stringProvider.get(R.string.auth_error_message))
             return@launch
         }
-        val result = withContext(ioDispatcher) { playlistRepository.getUserPlaylists(userId) }
-        _uiState.value = result.fold(
-            onSuccess = { AddToPlaylistUiState(playlists = it, isLoading = false) },
-            onFailure = { AddToPlaylistUiState(isLoading = false, errorMessage = it.message ?: stringProvider.get(R.string.add_to_playlist_error)) },
+        val playlistsResult = withContext(ioDispatcher) { playlistRepository.getUserPlaylists(userId) }
+        val addedResult = withContext(ioDispatcher) { playlistRepository.getPlaylistIdsContainingSong(songId) }
+        
+        _uiState.value = playlistsResult.fold(
+            onSuccess = { playlists -> 
+                val addedIds = addedResult.getOrNull()?.toSet() ?: emptySet()
+                AddToPlaylistUiState(
+                    songId = songId,
+                    playlists = playlists, 
+                    addedPlaylistIds = addedIds,
+                    isLoading = false
+                ) 
+            },
+            onFailure = { AddToPlaylistUiState(songId = songId, isLoading = false, errorMessage = it.message ?: stringProvider.get(R.string.add_to_playlist_error)) },
         )
     }
 
-    fun addSong(playlist: PlaylistItem, songId: String) = viewModelScope.launch {
-        val result = withContext(ioDispatcher) { playlistRepository.addSongToPlaylist(playlist.id, songId) }
-        _uiState.value = result.fold(
-            onSuccess = { _uiState.value.copy(isComplete = true, errorMessage = null) },
-            onFailure = { _uiState.value.copy(errorMessage = it.message ?: stringProvider.get(R.string.add_to_playlist_error)) },
-        )
+    fun toggleSongInPlaylist(playlist: PlaylistItem) = viewModelScope.launch {
+        val songId = _uiState.value.songId
+        if (songId.isEmpty()) return@launch
+        
+        val isAdded = _uiState.value.addedPlaylistIds.contains(playlist.id)
+        if (isAdded) {
+            // Optimistic update
+            _uiState.update { state -> 
+                state.copy(
+                    addedPlaylistIds = state.addedPlaylistIds - playlist.id,
+                    playlists = state.playlists.map { 
+                        if (it.id == playlist.id) it.copy(songCountLabel = decrementSongCount(it.songCountLabel)) else it
+                    }
+                )
+            }
+            val result = withContext(ioDispatcher) { playlistRepository.removeSongFromPlaylist(playlist.id, songId) }
+            result.onFailure {
+                // Revert update on failure
+                _uiState.update { state -> 
+                    state.copy(
+                        addedPlaylistIds = state.addedPlaylistIds + playlist.id,
+                        playlists = state.playlists.map { 
+                            if (it.id == playlist.id) it.copy(songCountLabel = incrementSongCount(it.songCountLabel)) else it
+                        }
+                    )
+                }
+            }
+        } else {
+            // Optimistic update
+            _uiState.update { state -> 
+                state.copy(
+                    addedPlaylistIds = state.addedPlaylistIds + playlist.id,
+                    playlists = state.playlists.map { 
+                        if (it.id == playlist.id) it.copy(songCountLabel = incrementSongCount(it.songCountLabel)) else it
+                    }
+                )
+            }
+            val result = withContext(ioDispatcher) { playlistRepository.addSongToPlaylist(playlist.id, songId) }
+            result.onFailure {
+                // Revert update on failure
+                _uiState.update { state -> 
+                    state.copy(
+                        addedPlaylistIds = state.addedPlaylistIds - playlist.id,
+                        playlists = state.playlists.map { 
+                            if (it.id == playlist.id) it.copy(songCountLabel = decrementSongCount(it.songCountLabel)) else it
+                        }
+                    )
+                }
+            }
+        }
+    }
+    
+    private fun incrementSongCount(label: String): String {
+        val count = label.substringBefore(" ").toIntOrNull() ?: 0
+        return "${count + 1} songs"
+    }
+
+    private fun decrementSongCount(label: String): String {
+        val count = label.substringBefore(" ").toIntOrNull() ?: 0
+        return "${maxOf(0, count - 1)} songs"
     }
 
     fun showCreatePlaylist() { _uiState.update { it.copy(showCreateDialog = true) } }
@@ -130,6 +198,8 @@ class AddToPlaylistViewModel @Inject constructor(
 private fun AddToPlaylistEnglishPreview() {
     FuzicTheme {
         AddToPlaylistScreen(
+            songId = "song1",
+            addedPlaylistIds = setOf("night-drive"),
             playlists = listOf(
                 PlaylistItem("night-drive", "Night Drive", "Parsa", "18 songs"),
                 PlaylistItem("focus", "Focus", "Parsa", "24 songs"),
@@ -156,6 +226,8 @@ private fun AddToPlaylistEnglishPreview() {
 private fun AddToPlaylistEmptyPersianPreview() {
     FuzicTheme {
         AddToPlaylistScreen(
+            songId = "",
+            addedPlaylistIds = emptySet(),
             playlists = emptyList(),
             isLoading = false,
             errorMessage = null,
@@ -176,6 +248,8 @@ private fun AddToPlaylistEmptyPersianPreview() {
 
 @Composable
 fun AddToPlaylistScreen(
+    songId: String,
+    addedPlaylistIds: Set<String>,
     playlists: List<PlaylistItem>,
     isLoading: Boolean,
     errorMessage: String?,
@@ -241,6 +315,7 @@ fun AddToPlaylistScreen(
             !isLoading && playlists.isEmpty() -> ScreenMessage(Icons.AutoMirrored.Filled.PlaylistPlay, stringResource(R.string.add_to_playlist_title), stringResource(R.string.add_to_playlist_empty))
             else -> LazyColumn {
                 items(playlists, key = { it.id }) { playlist ->
+                    val isAdded = addedPlaylistIds.contains(playlist.id)
                     ListItem(
                         headlineContent = { Text(playlist.title, style = MaterialTheme.typography.titleMedium) },
                         supportingContent = { Text("${playlist.subtitle} • ${playlist.songCountLabel}", style = MaterialTheme.typography.bodyMedium) },
@@ -253,6 +328,22 @@ fun AddToPlaylistScreen(
                                     .size(56.dp)
                                     .clip(RoundedCornerShape(8.dp))
                             )
+                        },
+                        trailingContent = {
+                            androidx.compose.material3.IconButton(onClick = { onPlaylistClick(playlist) }) {
+                                if (isAdded) {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = androidx.compose.material.icons.Icons.Default.CheckCircle,
+                                        contentDescription = "Added",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                } else {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = androidx.compose.material.icons.Icons.Default.AddCircleOutline,
+                                        contentDescription = "Add"
+                                    )
+                                }
+                            }
                         },
                         modifier = Modifier.fillMaxWidth().clickable { onPlaylistClick(playlist) },
                     )

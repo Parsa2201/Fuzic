@@ -671,14 +671,10 @@ fun FuzicNavigation(
                 val viewModel: AddToPlaylistViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val addToPlaylistSuccess = stringResource(R.string.add_to_playlist_success)
-                LaunchedEffect(Unit) { viewModel.load() }
-                LaunchedEffect(uiState.isComplete) {
-                    if (uiState.isComplete) {
-                        snackbarHostState.showSnackbar(addToPlaylistSuccess)
-                        navController.popBackStack()
-                    }
-                }
+                LaunchedEffect(Unit) { viewModel.load(args.songId) }
                 AddToPlaylistScreen(
+                    songId = uiState.songId,
+                    addedPlaylistIds = uiState.addedPlaylistIds,
                     playlists = uiState.playlists,
                     isLoading = uiState.isLoading,
                     errorMessage = uiState.errorMessage,
@@ -686,7 +682,7 @@ fun FuzicNavigation(
                     newPlaylistName = uiState.newPlaylistName,
                     newPlaylistError = uiState.newPlaylistError,
                     onBackClick = { navController.popBackStack() },
-                    onPlaylistClick = { viewModel.addSong(it, args.songId) },
+                    onPlaylistClick = { viewModel.toggleSongInPlaylist(it) },
                     onNewPlaylistClick = { viewModel.showCreatePlaylist() },
                     onHideCreatePlaylist = { viewModel.hideCreatePlaylist() },
                     onNewPlaylistNameChange = { viewModel.onNewPlaylistNameChange(it) },
