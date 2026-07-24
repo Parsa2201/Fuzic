@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Explicit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Icon
@@ -78,6 +79,7 @@ fun SongListItem(
     onMoreClick: () -> Unit,
     modifier: Modifier = Modifier,
     showAlbum: Boolean = true,
+    onRemoveClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -134,6 +136,15 @@ fun SongListItem(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        if (onRemoveClick != null) {
+            IconButton(onClick = onRemoveClick) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Remove song",
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            }
         }
         IconButton(onClick = onMoreClick) {
             Icon(

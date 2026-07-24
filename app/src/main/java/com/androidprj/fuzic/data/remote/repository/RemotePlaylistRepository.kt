@@ -4,6 +4,7 @@ import com.androidprj.fuzic.model.remote.PlaylistDto
 import com.androidprj.fuzic.model.remote.PlaylistDtoSong
 import com.androidprj.fuzic.model.remote.SongDto
 import com.androidprj.fuzic.model.ui.CreatePlaylistRequest
+import com.androidprj.fuzic.model.ui.UpdatePlaylistRequest
 import com.androidprj.fuzic.model.ui.PlaylistItem
 import com.androidprj.fuzic.model.ui.PlaylistVisibility
 import com.androidprj.fuzic.model.ui.SongItem
@@ -16,15 +17,21 @@ import io.github.jan.supabase.postgrest.postgrest
 import javax.inject.Inject
 import java.util.UUID
 
+import android.content.Context
+import android.net.Uri
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.jan.supabase.storage.storage
+
 class RemotePlaylistRepository @Inject constructor(
-    private val supabaseClient: SupabaseClient
+    private val supabaseClient: SupabaseClient,
+    @ApplicationContext private val appContext: Context
 ) : PlaylistRepository {
 
     override suspend fun getGlobalPlaylists(offset: Long, limit: Long): Result<List<PlaylistItem>> {
         return try {
             val playlists = supabaseClient.postgrest["playlists"]
-                .select { 
-                    filter { eq("is_public", true) } 
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, playlist_songs(count)")) { 
+                    filter { eq("type", "global") } 
                     range(offset, offset + limit - 1)
                 }
                 .decodeList<PlaylistDto>()
@@ -36,13 +43,24 @@ class RemotePlaylistRepository @Inject constructor(
     }
 
     override suspend fun getLocalPlaylists(offset: Long, limit: Long): Result<List<PlaylistItem>> {
-        return Result.success(emptyList()) // Local Room cache to be implemented
+        return try {
+            val playlists = supabaseClient.postgrest["playlists"]
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, playlist_songs(count)")) { 
+                    filter { eq("type", "local") }
+                    range(offset, offset + limit - 1)
+                }
+                .decodeList<PlaylistDto>()
+                .map { it.toPlaylistItem() }
+            Result.success(playlists)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     override suspend fun getUserPlaylists(userId: String, offset: Long, limit: Long): Result<List<PlaylistItem>> {
         return try {
             val playlists = supabaseClient.postgrest["playlists"]
-                .select { 
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, playlist_songs(count)")) { 
                     filter { eq("owner_id", userId) }
                     range(offset, offset + limit - 1)
                 }
@@ -74,15 +92,94 @@ class RemotePlaylistRepository @Inject constructor(
     override suspend fun createPlaylist(request: CreatePlaylistRequest): Result<PlaylistItem> {
         return try {
             val userId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
+            
+            var finalCoverUrl = request.coverImageUrl
+            if (finalCoverUrl != null && finalCoverUrl.startsWith("content://")) {
+                val imageBytes = appContext.contentResolver.openInputStream(android.net.Uri.parse(finalCoverUrl))
+                    ?.use { inputStream ->
+                        val original = android.graphics.BitmapFactory.decodeStream(inputStream)
+                        val ratio = 500f / maxOf(original.width, original.height)
+                        val scaled = if (ratio < 1f) {
+                            android.graphics.Bitmap.createScaledBitmap(
+                                original, 
+                                (original.width * ratio).toInt(), 
+                                (original.height * ratio).toInt(), 
+                                true
+                            )
+                        } else original
+                        
+                        val out = java.io.ByteArrayOutputStream()
+                        scaled.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, out)
+                        out.toByteArray()
+                    } ?: throw Exception("Failed to process selected cover image")
+                val path = "$userId/${java.util.UUID.randomUUID()}.jpg"
+                val bucket = supabaseClient.storage.from("covers")
+                bucket.upload(path, imageBytes)
+                finalCoverUrl = bucket.publicUrl(path)
+            }
+            
+            val isGlobal = request.category == com.androidprj.fuzic.model.ui.PlaylistCategory.Global
+            val isPublic = if (isGlobal) true else request.visibility == com.androidprj.fuzic.model.ui.PlaylistVisibility.Public
+
             val newPlaylist = InsertPlaylistDto(
                 title = request.title,
                 ownerId = userId,
-                type = USER_PLAYLIST_TYPE,
-                isPublic = request.visibility == PlaylistVisibility.Public,
-                coverImageUrl = request.coverImageUrl
+                type = if (request.category == com.androidprj.fuzic.model.ui.PlaylistCategory.None) null else request.category.name.lowercase(),
+                isPublic = isPublic,
+                coverImageUrl = finalCoverUrl
             )
             val result = supabaseClient.postgrest["playlists"]
                 .insert(newPlaylist) { select() }
+                .decodeSingle<PlaylistDto>()
+            Result.success(result.toPlaylistItem())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updatePlaylist(playlistId: String, request: UpdatePlaylistRequest): Result<PlaylistItem> {
+        return try {
+            val userId = supabaseClient.auth.currentUserOrNull()?.id ?: throw Exception("Not logged in")
+            
+            var finalCoverUrl = request.coverImageUrl
+            if (finalCoverUrl != null && finalCoverUrl.startsWith("content://")) {
+                val imageBytes = appContext.contentResolver.openInputStream(android.net.Uri.parse(finalCoverUrl))
+                    ?.use { inputStream ->
+                        val original = android.graphics.BitmapFactory.decodeStream(inputStream)
+                        val ratio = 500f / maxOf(original.width, original.height)
+                        val scaled = if (ratio < 1f) {
+                            android.graphics.Bitmap.createScaledBitmap(
+                                original, 
+                                (original.width * ratio).toInt(), 
+                                (original.height * ratio).toInt(), 
+                                true
+                            )
+                        } else original
+                        
+                        val out = java.io.ByteArrayOutputStream()
+                        scaled.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, out)
+                        out.toByteArray()
+                    } ?: throw Exception("Failed to process selected cover image")
+                val path = "$userId/${java.util.UUID.randomUUID()}.jpg"
+                val bucket = supabaseClient.storage.from("covers")
+                bucket.upload(path, imageBytes)
+                finalCoverUrl = bucket.publicUrl(path)
+            }
+            
+            val isGlobal = request.category == com.androidprj.fuzic.model.ui.PlaylistCategory.Global
+            val isPublic = if (isGlobal) true else request.visibility == com.androidprj.fuzic.model.ui.PlaylistVisibility.Public
+
+            val updatedPlaylist = UpdatePlaylistDto(
+                title = request.title,
+                isPublic = isPublic,
+                type = if (request.category == com.androidprj.fuzic.model.ui.PlaylistCategory.None) null else request.category.name.lowercase(),
+                coverImageUrl = finalCoverUrl
+            )
+            val result = supabaseClient.postgrest["playlists"]
+                .update(updatedPlaylist) { 
+                    filter { eq("id", playlistId) } 
+                    select() 
+                }
                 .decodeSingle<PlaylistDto>()
             Result.success(result.toPlaylistItem())
         } catch (e: Exception) {
@@ -124,9 +221,28 @@ class RemotePlaylistRepository @Inject constructor(
         }
     }
 
+    override suspend fun getPlaylistIdsContainingSong(songId: String): Result<List<String>> {
+        return try {
+            val result = supabaseClient.postgrest["playlist_songs"]
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("playlist_id")) {
+                    filter { eq("song_id", songId) }
+                }
+                .decodeList<PlaylistIdDto>()
+                .map { it.playlistId }
+            Result.success(result)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     @kotlinx.serialization.Serializable
     private data class SongWrapper(
         @kotlinx.serialization.SerialName("songs") val song: SongDto
+    )
+
+    @kotlinx.serialization.Serializable
+    private data class PlaylistIdDto(
+        @kotlinx.serialization.SerialName("playlist_id") val playlistId: String
     )
     
     @kotlinx.serialization.Serializable
@@ -135,6 +251,14 @@ class RemotePlaylistRepository @Inject constructor(
         @kotlinx.serialization.SerialName("owner_id") val ownerId: String,
         val type: String?,
         @kotlinx.serialization.SerialName("is_public") val isPublic: Boolean,
+        @kotlinx.serialization.SerialName("cover_image_url") val coverImageUrl: String? = null
+    )
+
+    @kotlinx.serialization.Serializable
+    private data class UpdatePlaylistDto(
+        val title: String? = null,
+        @kotlinx.serialization.SerialName("is_public") val isPublic: Boolean? = null,
+        val type: String? = null,
         @kotlinx.serialization.SerialName("cover_image_url") val coverImageUrl: String? = null
     )
 

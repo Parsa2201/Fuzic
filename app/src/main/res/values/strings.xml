@@ -89,9 +89,9 @@
     <string name="playlists_create_title">Create playlist</string>
     <string name="playlists_name_label">Playlist name</string>
     <string name="playlists_name_conflict_message">A playlist with this name already exists.</string>
-    <string name="playlists_section_global">Global playlists</string>
-    <string name="playlists_section_local">Local playlists</string>
-    <string name="playlists_section_mine">My playlists</string>
+    <string name="playlists_section_global">Global Music</string>
+    <string name="playlists_section_local">Local Music</string>
+    <string name="playlists_section_mine">Personal Playlists</string>
     <string name="playlists_empty_title">Create your first playlist</string>
     <string name="playlists_empty_message">Build a playlist for your favorite songs and moods.</string>
     <string name="playlists_error_title">Playlists are unavailable</string>

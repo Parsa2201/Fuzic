@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,7 +27,8 @@ fun SongActionSheet(
     song: SongItem,
     onDismiss: () -> Unit,
     onPlayClick: () -> Unit,
-    onAddToPlaylistClick: () -> Unit,
+    onAddToPlaylistClick: (() -> Unit)? = null,
+    onRemoveFromPlaylistClick: (() -> Unit)? = null,
     onShareClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -41,11 +43,20 @@ fun SongActionSheet(
                 leadingContent = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onPlayClick),
             )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.action_add_to_playlist)) },
-                leadingContent = { Icon(Icons.Default.Add, contentDescription = null) },
-                modifier = Modifier.fillMaxWidth().clickable(onClick = onAddToPlaylistClick),
-            )
+            if (onAddToPlaylistClick != null) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.action_add_to_playlist)) },
+                    leadingContent = { Icon(Icons.Default.Add, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onAddToPlaylistClick),
+                )
+            }
+            if (onRemoveFromPlaylistClick != null) {
+                ListItem(
+                    headlineContent = { Text("Remove from playlist") },
+                    leadingContent = { Icon(Icons.Default.Delete, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onRemoveFromPlaylistClick),
+                )
+            }
             ListItem(
                 headlineContent = { Text(stringResource(R.string.player_share_to_chat)) },
                 leadingContent = { Icon(Icons.Default.Share, contentDescription = null) },

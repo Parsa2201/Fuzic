@@ -72,6 +72,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -377,10 +378,16 @@ private fun PlayerContent(
         )
         Spacer(Modifier.height(MaterialTheme.spacing.small))
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            var dragProgress by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<Float?>(null) }
+            val currentProgress = dragProgress ?: uiState.progress.coerceIn(0f, 1f)
             @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
             Slider(
-                value = uiState.progress.coerceIn(0f, 1f),
-                onValueChange = onSeek,
+                value = currentProgress,
+                onValueChange = { dragProgress = it },
+                onValueChangeFinished = {
+                    dragProgress?.let { onSeek(it) }
+                    dragProgress = null
+                },
                 modifier = Modifier.fillMaxWidth(),
                 thumb = {
                     val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "bufferingThumb")

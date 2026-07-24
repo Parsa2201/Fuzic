@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
@@ -71,6 +72,8 @@ fun PlaylistsRoute(
     onPlaylistClick: (PlaylistItem) -> Unit,
     onNewPlaylistClick: () -> Unit,
     onCreateNameChange: (String) -> Unit,
+    onCreateCategoryChange: (com.androidprj.fuzic.model.ui.PlaylistCategory) -> Unit,
+    onCreateVisibilityChange: (com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
     onCreateCoverSelected: (String?) -> Unit,
     onCreateConfirmClick: () -> Unit,
     onCreateDismissClick: () -> Unit,
@@ -82,6 +85,8 @@ fun PlaylistsRoute(
         onPlaylistClick = onPlaylistClick,
         onNewPlaylistClick = onNewPlaylistClick,
         onCreateNameChange = onCreateNameChange,
+        onCreateCategoryChange = onCreateCategoryChange,
+        onCreateVisibilityChange = onCreateVisibilityChange,
         onCreateCoverSelected = onCreateCoverSelected,
         onCreateConfirmClick = onCreateConfirmClick,
         onCreateDismissClick = onCreateDismissClick,
@@ -96,6 +101,8 @@ fun PlaylistsScreen(
     onPlaylistClick: (PlaylistItem) -> Unit,
     onNewPlaylistClick: () -> Unit,
     onCreateNameChange: (String) -> Unit,
+    onCreateCategoryChange: (com.androidprj.fuzic.model.ui.PlaylistCategory) -> Unit,
+    onCreateVisibilityChange: (com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
     onCreateCoverSelected: (String?) -> Unit,
     onCreateConfirmClick: () -> Unit,
     onCreateDismissClick: () -> Unit,
@@ -135,6 +142,8 @@ fun PlaylistsScreen(
             onPlaylistClick = onPlaylistClick,
             onNewPlaylistClick = onNewPlaylistClick,
             onCreateNameChange = onCreateNameChange,
+            onCreateCategoryChange = onCreateCategoryChange,
+            onCreateVisibilityChange = onCreateVisibilityChange,
             onCreateCoverSelected = onCreateCoverSelected,
             onCreateConfirmClick = onCreateConfirmClick,
             onCreateDismissClick = onCreateDismissClick,
@@ -149,37 +158,58 @@ private fun PlaylistsContent(
     onPlaylistClick: (PlaylistItem) -> Unit,
     onNewPlaylistClick: () -> Unit,
     onCreateNameChange: (String) -> Unit,
+    onCreateCategoryChange: (com.androidprj.fuzic.model.ui.PlaylistCategory) -> Unit,
+    onCreateVisibilityChange: (com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
     onCreateCoverSelected: (String?) -> Unit,
     onCreateConfirmClick: () -> Unit,
     onCreateDismissClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(MaterialTheme.spacing.medium),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
     ) {
-        item {
-            PlaylistsHeader(onNewPlaylistClick = onNewPlaylistClick)
-        }
-        if (uiState.createPlaylistState.isVisible) {
-            item {
-                CreatePlaylistForm(
-                    state = uiState.createPlaylistState,
-                    onNameChange = onCreateNameChange,
-                    onCoverSelected = onCreateCoverSelected,
-                    onConfirmClick = onCreateConfirmClick,
-                    onDismissClick = onCreateDismissClick
-                )
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Column {
+                PlaylistsHeader(onNewPlaylistClick = onNewPlaylistClick)
+                Spacer(Modifier.height(MaterialTheme.spacing.small))
             }
         }
-        uiState.sections.forEach { section ->
-            item {
-                PlaylistSectionGrid(
-                    section = section,
-                    onPlaylistClick = onPlaylistClick
+        if (uiState.createPlaylistState.isVisible) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column {
+                    CreatePlaylistForm(
+                        state = uiState.createPlaylistState,
+                        onNameChange = onCreateNameChange,
+                        onCategoryChange = onCreateCategoryChange,
+                        onVisibilityChange = onCreateVisibilityChange,
+                        onCoverSelected = onCreateCoverSelected,
+                        onConfirmClick = onCreateConfirmClick,
+                        onDismissClick = onCreateDismissClick
+                    )
+                    Spacer(Modifier.height(MaterialTheme.spacing.small))
+                }
+            }
+        }
+        uiState.sections.forEachIndexed { index, section ->
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column {
+                    if (index > 0) {
+                        Spacer(Modifier.height(MaterialTheme.spacing.medium))
+                    }
+                    SectionHeader(titleRes = section.titleRes)
+                }
+            }
+            items(section.playlists, key = { "${section.type}_${it.id}" }) { playlist ->
+                PlaylistCard(
+                    playlist = playlist,
+                    sectionType = section.type,
+                    onClick = { onPlaylistClick(playlist) }
                 )
             }
         }
@@ -209,10 +239,13 @@ private fun PlaylistsHeader(
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun CreatePlaylistForm(
     state: CreatePlaylistUiState,
     onNameChange: (String) -> Unit,
+    onCategoryChange: (com.androidprj.fuzic.model.ui.PlaylistCategory) -> Unit,
+    onVisibilityChange: (com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
     onCoverSelected: (String?) -> Unit,
     onConfirmClick: () -> Unit,
     onDismissClick: () -> Unit,
@@ -247,6 +280,46 @@ private fun CreatePlaylistForm(
                     }
                 }
             )
+            var categoryExpanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            androidx.compose.material3.ExposedDropdownMenuBox(
+                expanded = categoryExpanded,
+                onExpandedChange = { categoryExpanded = !categoryExpanded }
+            ) {
+                OutlinedTextField(
+                    value = state.category.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Category") },
+                    trailingIcon = { androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = categoryExpanded,
+                    onDismissRequest = { categoryExpanded = false }
+                ) {
+                    com.androidprj.fuzic.model.ui.PlaylistCategory.values().forEach { category ->
+                        androidx.compose.material3.DropdownMenuItem(
+                            text = { Text(category.name) },
+                            onClick = {
+                                onCategoryChange(category)
+                                categoryExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            if (state.category != com.androidprj.fuzic.model.ui.PlaylistCategory.Global) {
+                androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Public", style = MaterialTheme.typography.bodyMedium)
+                    androidx.compose.material3.Switch(
+                        checked = state.visibility == com.androidprj.fuzic.model.ui.PlaylistVisibility.Public,
+                        onCheckedChange = { isPublic -> 
+                            val vis = if (isPublic) com.androidprj.fuzic.model.ui.PlaylistVisibility.Public else com.androidprj.fuzic.model.ui.PlaylistVisibility.Private
+                            onVisibilityChange(vis)
+                        }
+                    )
+                }
+            }
             Text(
                 text = stringResource(R.string.playlists_cover_label),
                 style = MaterialTheme.typography.titleMedium,
@@ -321,34 +394,7 @@ private fun CoverOption(
     }
 }
 
-@Composable
-private fun PlaylistSectionGrid(
-    section: PlaylistSection,
-    onPlaylistClick: (PlaylistItem) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
-    ) {
-        SectionHeader(titleRes = section.titleRes)
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 160.dp),
-            modifier = Modifier.height(gridHeightFor(section.playlists.size)),
-            userScrollEnabled = false,
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
-        ) {
-            items(section.playlists, key = { it.id }) { playlist ->
-                PlaylistCard(
-                    playlist = playlist,
-                    sectionType = section.type,
-                    onClick = { onPlaylistClick(playlist) }
-                )
-            }
-        }
-    }
-}
+
 
 @Composable
 private fun PlaylistCard(
@@ -357,51 +403,53 @@ private fun PlaylistCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.clickable(onClick = onClick)
+    androidx.compose.material3.ElevatedCard(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = androidx.compose.material3.CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-        ) {
-            if (playlist.artworkUrl != null) {
-                MusicArtwork(
-                    artworkUrl = playlist.artworkUrl,
-                    fallbackIcon = Icons.AutoMirrored.Filled.PlaylistPlay,
-                    contentDescription = playlist.title,
-                    modifier = Modifier.fillMaxSize()
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+            ) {
+                if (playlist.artworkUrl != null) {
+                    MusicArtwork(
+                        artworkUrl = playlist.artworkUrl,
+                        fallbackIcon = Icons.AutoMirrored.Filled.PlaylistPlay,
+                        contentDescription = playlist.title,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    PlaylistGradientArtwork(
+                        id = playlist.id,
+                        sectionType = sectionType,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = playlist.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-            } else {
-                PlaylistGradientArtwork(
-                    id = playlist.id,
-                    sectionType = sectionType,
-                    modifier = Modifier.fillMaxSize()
+                androidx.compose.foundation.layout.Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "${playlist.subtitle} • ${playlist.songCountLabel}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
-        Spacer(Modifier.height(MaterialTheme.spacing.small))
-        Text(
-            text = playlist.title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = playlist.subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            text = playlist.songCountLabel,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
     }
 }
 
@@ -456,55 +504,63 @@ private data class PlaylistGradientSpec(
 
 @Composable
 private fun PlaylistsLoadingContent(modifier: Modifier = Modifier) {
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(MaterialTheme.spacing.medium),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.large)
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
     ) {
-        item {
-            Box(
-                modifier = Modifier
-                    .width(PlaylistsSizes.TitleSkeletonWidth)
-                    .height(PlaylistsSizes.TitleSkeletonHeight)
-                    .fuzicShimmer(MaterialTheme.shapes.small)
-            )
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .width(PlaylistsSizes.TitleSkeletonWidth)
+                        .height(PlaylistsSizes.TitleSkeletonHeight)
+                        .fuzicShimmer(MaterialTheme.shapes.small)
+                )
+                Spacer(Modifier.height(MaterialTheme.spacing.small))
+            }
         }
-        items(3) {
-            PlaylistGridLoadingSection()
-        }
-    }
-}
-
-@Composable
-private fun PlaylistGridLoadingSection() {
-    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
-        Box(
-            modifier = Modifier
-                .width(PlaylistsSizes.SectionSkeletonWidth)
-                .height(PlaylistsSizes.TextSkeletonHeight)
-                .fuzicShimmer(MaterialTheme.shapes.small)
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)) {
-            repeat(2) {
-                Column(modifier = Modifier.weight(1f)) {
+        repeat(3) { index ->
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Column {
+                    if (index > 0) {
+                        Spacer(Modifier.height(MaterialTheme.spacing.medium))
+                    }
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                            .fuzicShimmer(MaterialTheme.shapes.medium)
-                    )
-                    Spacer(Modifier.height(MaterialTheme.spacing.small))
-                    Box(
-                        modifier = Modifier
-                            .width(PlaylistsSizes.CardTitleSkeletonWidth)
+                            .width(PlaylistsSizes.SectionSkeletonWidth)
                             .height(PlaylistsSizes.TextSkeletonHeight)
                             .fuzicShimmer(MaterialTheme.shapes.small)
                     )
                 }
             }
+            items(2) {
+                PlaylistCardSkeleton()
+            }
         }
+    }
+}
+
+@Composable
+private fun PlaylistCardSkeleton(modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .fuzicShimmer(MaterialTheme.shapes.medium)
+        )
+        Spacer(Modifier.height(MaterialTheme.spacing.small))
+        Box(
+            modifier = Modifier
+                .width(PlaylistsSizes.CardTitleSkeletonWidth)
+                .height(PlaylistsSizes.TextSkeletonHeight)
+                .fuzicShimmer(MaterialTheme.shapes.small)
+        )
     }
 }
 
@@ -515,10 +571,7 @@ private object PlaylistsSizes {
     val SectionSkeletonWidth = 160.dp
     val TextSkeletonHeight = 16.dp
     val CardTitleSkeletonWidth = 120.dp
-    val GridRowHeight = 218.dp
 }
-
-private fun gridHeightFor(itemCount: Int) = PlaylistsSizes.GridRowHeight * ((itemCount + 1) / 2)
 
 @Preview(name = "Playlists content - English", showBackground = true)
 @Composable
@@ -612,6 +665,8 @@ private fun CreatePlaylistFormPreview() {
                 ),
             ),
             onNameChange = { state = state.copy(name = it) },
+            onCategoryChange = {},
+            onVisibilityChange = {},
             onCoverSelected = { state = state.copy(selectedCoverUri = it) },
             onConfirmClick = { },
             onDismissClick = { },
@@ -620,19 +675,7 @@ private fun CreatePlaylistFormPreview() {
     }
 }
 
-@Preview(name = "Playlist section grid", showBackground = true)
-@Composable
-private fun PlaylistSectionGridPreview() {
-    FuzicTheme {
-        val section = samplePlaylistSections().first()
-        var selectedPlaylist by remember { mutableStateOf(section.playlists.first()) }
-        PlaylistSectionGrid(
-            section = section,
-            onPlaylistClick = { selectedPlaylist = it },
-            modifier = Modifier.padding(MaterialTheme.spacing.medium)
-        )
-    }
-}
+
 
 @Preview(name = "Playlist card", showBackground = true)
 @Composable
@@ -680,6 +723,8 @@ private fun PlaylistsPreviewState(uiState: PlaylistsUiState) {
         onPlaylistClick = { selectedPlaylist = it },
         onNewPlaylistClick = { state = state.copy(createPlaylistState = state.createPlaylistState.copy(isVisible = true)) },
         onCreateNameChange = { state = state.copy(createPlaylistState = state.createPlaylistState.copy(name = it)) },
+        onCreateCategoryChange = { state = state.copy(createPlaylistState = state.createPlaylistState.copy(category = it)) },
+        onCreateVisibilityChange = { state = state.copy(createPlaylistState = state.createPlaylistState.copy(visibility = it)) },
         onCreateCoverSelected = { uri ->
             state = state.copy(
                 createPlaylistState = state.createPlaylistState.copy(selectedCoverUri = uri),

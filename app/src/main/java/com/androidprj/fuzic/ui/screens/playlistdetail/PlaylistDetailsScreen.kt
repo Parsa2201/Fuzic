@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -20,12 +22,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.androidprj.fuzic.R
 import com.androidprj.fuzic.model.ui.PlaylistDetails
 import com.androidprj.fuzic.model.ui.PlaylistDetailsUiState
@@ -39,6 +44,7 @@ import com.androidprj.fuzic.ui.components.previewArtworkUri
 import com.androidprj.fuzic.ui.theme.FuzicTheme
 import com.androidprj.fuzic.ui.theme.spacing
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistDetailsRoute(
     uiState: PlaylistDetailsUiState,
@@ -46,6 +52,9 @@ fun PlaylistDetailsRoute(
     onPlayAllClick: (PlaylistDetails) -> Unit,
     onSongClick: (SongItem) -> Unit,
     onSongMoreClick: (SongItem) -> Unit,
+    onRemoveSongClick: (SongItem) -> Unit,
+    onSaveEdit: (String, String?, com.androidprj.fuzic.model.ui.PlaylistCategory, com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
+    onDeletePlaylist: () -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -55,11 +64,15 @@ fun PlaylistDetailsRoute(
         onPlayAllClick = onPlayAllClick,
         onSongClick = onSongClick,
         onSongMoreClick = onSongMoreClick,
+        onRemoveSongClick = onRemoveSongClick,
+        onSaveEdit = onSaveEdit,
+        onDeletePlaylist = onDeletePlaylist,
         onRetryClick = onRetryClick,
         modifier = modifier,
     )
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistDetailsScreen(
     uiState: PlaylistDetailsUiState,
@@ -67,9 +80,34 @@ fun PlaylistDetailsScreen(
     onPlayAllClick: (PlaylistDetails) -> Unit,
     onSongClick: (SongItem) -> Unit,
     onSongMoreClick: (SongItem) -> Unit,
+    onRemoveSongClick: (SongItem) -> Unit,
+    onSaveEdit: (String, String?, com.androidprj.fuzic.model.ui.PlaylistCategory, com.androidprj.fuzic.model.ui.PlaylistVisibility) -> Unit,
+    onDeletePlaylist: () -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showEditDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showDeleteDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
+    var editName by androidx.compose.runtime.remember(uiState.playlist?.title) { 
+        androidx.compose.runtime.mutableStateOf(uiState.playlist?.title ?: "") 
+    }
+    var editCover by androidx.compose.runtime.remember(uiState.playlist?.artworkUrl) { 
+        androidx.compose.runtime.mutableStateOf(uiState.playlist?.artworkUrl) 
+    }
+    var editCategory by androidx.compose.runtime.remember(uiState.playlist?.category) {
+        androidx.compose.runtime.mutableStateOf(uiState.playlist?.category ?: com.androidprj.fuzic.model.ui.PlaylistCategory.Local)
+    }
+    var editVisibility by androidx.compose.runtime.remember(uiState.playlist?.visibility) {
+        androidx.compose.runtime.mutableStateOf(uiState.playlist?.visibility ?: com.androidprj.fuzic.model.ui.PlaylistVisibility.Private)
+    }
+    
+    val coverPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) editCover = uri.toString()
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -78,6 +116,16 @@ fun PlaylistDetailsScreen(
         DetailTopAppBar(
             title = stringResource(R.string.playlist_details_title),
             onBackClick = onBackClick,
+            actions = {
+                if (uiState.isOwner) {
+                    androidx.compose.material3.IconButton(onClick = { showEditDialog = true }) {
+                        Icon(androidx.compose.material.icons.Icons.Default.Edit, contentDescription = "Edit Playlist")
+                    }
+                    androidx.compose.material3.IconButton(onClick = { showDeleteDialog = true }) {
+                        Icon(androidx.compose.material.icons.Icons.Default.Delete, contentDescription = "Delete Playlist")
+                    }
+                }
+            }
         )
         when {
             uiState.isLoading -> DetailLoadingContent()
@@ -103,8 +151,108 @@ fun PlaylistDetailsScreen(
                 onPlayAllClick = onPlayAllClick,
                 onSongClick = onSongClick,
                 onSongMoreClick = onSongMoreClick,
+                onRemoveSongClick = onRemoveSongClick,
             )
         }
+    }
+
+    if (showDeleteDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Delete Playlist") },
+            text = { Text("Are you sure you want to delete this playlist? This action cannot be undone.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDeletePlaylist()
+                        onBackClick() // navigate back immediately
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    if (showEditDialog && uiState.playlist != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Edit Playlist") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = editName,
+                        onValueChange = { editName = it },
+                        label = { Text("Name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    var categoryExpanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                    androidx.compose.material3.ExposedDropdownMenuBox(
+                        expanded = categoryExpanded,
+                        onExpandedChange = { categoryExpanded = !categoryExpanded }
+                    ) {
+                        androidx.compose.material3.OutlinedTextField(
+                            value = editCategory.name,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Category") },
+                            trailingIcon = { androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = categoryExpanded,
+                            onDismissRequest = { categoryExpanded = false }
+                        ) {
+                            com.androidprj.fuzic.model.ui.PlaylistCategory.values().forEach { category ->
+                                androidx.compose.material3.DropdownMenuItem(
+                                    text = { Text(category.name) },
+                                    onClick = {
+                                        editCategory = category
+                                        categoryExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    if (editCategory != com.androidprj.fuzic.model.ui.PlaylistCategory.Global) {
+                        androidx.compose.foundation.layout.Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("Public", style = MaterialTheme.typography.bodyMedium)
+                            androidx.compose.material3.Switch(
+                                checked = editVisibility == com.androidprj.fuzic.model.ui.PlaylistVisibility.Public,
+                                onCheckedChange = { isPublic -> 
+                                    editVisibility = if (isPublic) com.androidprj.fuzic.model.ui.PlaylistVisibility.Public else com.androidprj.fuzic.model.ui.PlaylistVisibility.Private
+                                }
+                            )
+                        }
+                    }
+                    Button(onClick = { coverPicker.launch("image/*") }) {
+                        Text("Change Cover Image")
+                    }
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showEditDialog = false
+                        onSaveEdit(editName, editCover, editCategory, editVisibility)
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showEditDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
     }
 }
 
@@ -114,6 +262,7 @@ private fun PlaylistDetailsContent(
     onPlayAllClick: (PlaylistDetails) -> Unit,
     onSongClick: (SongItem) -> Unit,
     onSongMoreClick: (SongItem) -> Unit,
+    onRemoveSongClick: (SongItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -169,6 +318,7 @@ private fun PlaylistDetailsContent(
                     song = song,
                     onClick = { onSongClick(song) },
                     onMoreClick = { onSongMoreClick(song) },
+                    onRemoveClick = if (playlist.ownerId.isNotEmpty()) { { onRemoveSongClick(song) } } else null
                 )
             }
         } else {
@@ -184,6 +334,7 @@ private fun PlaylistDetailsContent(
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Preview(name = "Playlist details - English", showBackground = true)
 @Composable
 private fun PlaylistDetailsPreview() {
@@ -194,11 +345,15 @@ private fun PlaylistDetailsPreview() {
             onPlayAllClick = {},
             onSongClick = {},
             onSongMoreClick = {},
+            onRemoveSongClick = {},
+            onSaveEdit = { _, _, _, _ -> },
+            onDeletePlaylist = {},
             onRetryClick = {},
         )
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Preview(name = "Playlist details - Persian", locale = "fa", showBackground = true)
 @Composable
 private fun PlaylistDetailsPersianPreview() {
@@ -209,11 +364,15 @@ private fun PlaylistDetailsPersianPreview() {
             onPlayAllClick = {},
             onSongClick = {},
             onSongMoreClick = {},
+            onRemoveSongClick = {},
+            onSaveEdit = { _, _, _, _ -> },
+            onDeletePlaylist = {},
             onRetryClick = {},
         )
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Preview(name = "Playlist details empty - Persian", locale = "fa", showBackground = true)
 @Composable
 private fun PlaylistDetailsEmptyPreview() {
@@ -226,11 +385,15 @@ private fun PlaylistDetailsEmptyPreview() {
             onPlayAllClick = {},
             onSongClick = {},
             onSongMoreClick = {},
+            onRemoveSongClick = {},
+            onSaveEdit = { _, _, _, _ -> },
+            onDeletePlaylist = {},
             onRetryClick = {},
         )
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Preview(name = "Playlist details loading - Persian", locale = "fa", showBackground = true)
 @Composable
 private fun PlaylistDetailsLoadingPreview() {
@@ -241,6 +404,9 @@ private fun PlaylistDetailsLoadingPreview() {
             onPlayAllClick = {},
             onSongClick = {},
             onSongMoreClick = {},
+            onRemoveSongClick = {},
+            onSaveEdit = { _, _, _, _ -> },
+            onDeletePlaylist = {},
             onRetryClick = {},
         )
     }
@@ -253,6 +419,7 @@ private fun samplePlaylistDetailsUiState() = PlaylistDetailsUiState(
         title = stringResource(R.string.preview_playlist_tehran_drive),
         description = stringResource(R.string.preview_playlist_description),
         ownerName = stringResource(R.string.preview_profile_display_name),
+        ownerId = "",
         artworkUrl = previewArtworkUri(R.drawable.preview_artwork_tehran),
         songs = listOf(
             SongItem(

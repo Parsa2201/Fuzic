@@ -8,7 +8,6 @@ data class SongItem(
     val album: String? = null,
     val durationLabel: String? = null,
     val isExplicit: Boolean = false,
-    /** Stream/download source resolved by the catalog repository; never a storage implementation detail. */
     val audioUrl: String? = null,
 )
 
@@ -28,8 +27,7 @@ data class ArtistDetailsUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 ) {
-    val isEmpty: Boolean
-        get() = !isLoading && errorMessage == null && popularSongs.isEmpty()
+    val isEmpty: Boolean get() = !isLoading && errorMessage == null && popularSongs.isEmpty()
 }
 
 data class ArtistItem(
@@ -41,8 +39,11 @@ data class ArtistItem(
 
 data class PlaylistDetailsUiState(
     val playlist: PlaylistDetails? = null,
+    val isOwner: Boolean = false,
+    val isEditing: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val actionErrorMessage: String? = null,
 )
 
 data class PlaylistDetails(
@@ -50,6 +51,9 @@ data class PlaylistDetails(
     val title: String,
     val description: String,
     val artworkUrl: String? = null,
+    val category: PlaylistCategory = PlaylistCategory.Local,
+    val visibility: PlaylistVisibility = PlaylistVisibility.Private,
+    val ownerId: String,
     val ownerName: String,
     val songs: List<SongItem> = emptyList(),
 )
@@ -59,6 +63,5 @@ data class SongCollectionUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 ) {
-    val isEmpty: Boolean
-        get() = !isLoading && errorMessage == null && songs.isEmpty()
+    val isEmpty: Boolean get() = !isLoading && errorMessage == null && songs.isEmpty()
 }

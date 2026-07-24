@@ -560,8 +560,8 @@ fun FuzicNavigation(
                     }
                 )
             }
-            composable<PlaylistsDestination> {
-                PlaylistsDestinationContent(navController)
+            composable<PlaylistsDestination> { entry ->
+                PlaylistsDestinationContent(navController, entry)
             }
             composable<ProfileDestination> { entry ->
                 val viewModel: ProfileViewModel = hiltViewModel()
@@ -680,6 +680,24 @@ fun FuzicNavigation(
                     onPlayAllClick = { viewModel.onIntent(PlaylistDetailsIntent.PlayAll(it)) },
                     onSongClick = { playerViewModel.onIntent(PlayerIntent.PlayById(it.id)) },
                     onSongMoreClick = { songActionTarget = it },
+                    onRemoveSongClick = { song -> viewModel.onIntent(PlaylistDetailsIntent.RemoveSong(song.id)) },
+                    onSaveEdit = { name, cover, category, visibility ->
+                        navController.previousBackStackEntry?.savedStateHandle?.set("playlist_updated", true)
+                        viewModel.onIntent(
+                            PlaylistDetailsIntent.SaveEdit(
+                                com.androidprj.fuzic.model.ui.UpdatePlaylistRequest(
+                                    title = name,
+                                    coverImageUrl = cover,
+                                    category = category,
+                                    visibility = visibility
+                                )
+                            )
+                        )
+                    },
+                    onDeletePlaylist = { 
+                        navController.previousBackStackEntry?.savedStateHandle?.set("playlist_updated", true)
+                        viewModel.onIntent(PlaylistDetailsIntent.DeletePlaylist) 
+                    },
                     onRetryClick = { viewModel.onIntent(PlaylistDetailsIntent.Retry) },
                 )
             }
@@ -688,19 +706,24 @@ fun FuzicNavigation(
                 val viewModel: AddToPlaylistViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val addToPlaylistSuccess = stringResource(R.string.add_to_playlist_success)
-                LaunchedEffect(Unit) { viewModel.load() }
-                LaunchedEffect(uiState.isComplete) {
-                    if (uiState.isComplete) {
-                        snackbarHostState.showSnackbar(addToPlaylistSuccess)
-                        navController.popBackStack()
-                    }
-                }
+                LaunchedEffect(Unit) { viewModel.load(args.songId) }
                 AddToPlaylistScreen(
+                    songId = uiState.songId,
+                    addedPlaylistIds = uiState.addedPlaylistIds,
                     playlists = uiState.playlists,
                     isLoading = uiState.isLoading,
                     errorMessage = uiState.errorMessage,
+                    showCreateDialog = uiState.showCreateDialog,
+                    newPlaylistName = uiState.newPlaylistName,
+                    newPlaylistError = uiState.newPlaylistError,
                     onBackClick = { navController.popBackStack() },
-                    onPlaylistClick = { viewModel.addSong(it, args.songId) },
+                    onPlaylistClick = { viewModel.toggleSongInPlaylist(it) },
+                    onNewPlaylistClick = { viewModel.showCreatePlaylist() },
+                    onHideCreatePlaylist = { viewModel.hideCreatePlaylist() },
+                    onNewPlaylistNameChange = { viewModel.onNewPlaylistNameChange(it) },
+                    onNewPlaylistCategoryChange = { viewModel.onNewPlaylistCategoryChange(it) },
+                    onNewPlaylistVisibilityChange = { viewModel.onNewPlaylistVisibilityChange(it) },
+                    onCreatePlaylistSubmit = { viewModel.createPlaylist() }
                 )
             }
             composable<ChatPickerDestination> { entry ->
@@ -1025,14 +1048,28 @@ private fun SessionRestoreScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun PlaylistsDestinationContent(navController: NavHostController) {
+private fun PlaylistsDestinationContent(navController: NavHostController, entry: androidx.navigation.NavBackStackEntry) {
     val viewModel: PlaylistsViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val playlistUpdated by entry.savedStateHandle
+        .getStateFlow("playlist_updated", false)
+        .collectAsStateWithLifecycle()
+
+    LaunchedEffect(playlistUpdated) {
+        if (playlistUpdated) {
+            entry.savedStateHandle["playlist_updated"] = false
+            viewModel.onIntent(PlaylistsIntent.Retry)
+        }
+    }
+
     PlaylistsScreen(
         uiState = uiState,
         onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },
         onNewPlaylistClick = { viewModel.onIntent(PlaylistsIntent.ShowCreate) },
         onCreateNameChange = { viewModel.onIntent(PlaylistsIntent.NameChanged(it)) },
+        onCreateCategoryChange = { viewModel.onIntent(PlaylistsIntent.CategoryChanged(it)) },
+        onCreateVisibilityChange = { viewModel.onIntent(PlaylistsIntent.VisibilityChanged(it)) },
         onCreateCoverSelected = { viewModel.onIntent(PlaylistsIntent.CoverChanged(it)) },
         onCreateConfirmClick = { viewModel.onIntent(PlaylistsIntent.Create) },
         onCreateDismissClick = { viewModel.onIntent(PlaylistsIntent.DismissCreate) },

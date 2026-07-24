@@ -50,12 +50,14 @@ fun UserDto.toFollowUser(currentUserId: String? = null): FollowUser {
     )
 }
 
-fun PlaylistDto.toPlaylistItem(ownerName: String = "", songCountLabel: String = "0 Songs"): PlaylistItem {
+fun PlaylistDto.toPlaylistItem(ownerName: String = ""): PlaylistItem {
+    val count = this.playlistSongsCount?.firstOrNull()?.count ?: 0
+    val label = if (count == 1) "1 Song" else "$count Songs"
     return PlaylistItem(
         id = this.id,
         title = this.title,
         subtitle = ownerName,
-        songCountLabel = songCountLabel,
+        songCountLabel = label,
         artworkUrl = this.coverImageUrl
     )
 }
