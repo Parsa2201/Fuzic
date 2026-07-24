@@ -541,8 +541,8 @@ fun FuzicNavigation(
                     }
                 )
             }
-            composable<PlaylistsDestination> {
-                PlaylistsDestinationContent(navController)
+            composable<PlaylistsDestination> { entry ->
+                PlaylistsDestinationContent(navController, entry)
             }
             composable<ProfileDestination> { entry ->
                 val viewModel: ProfileViewModel = hiltViewModel()
@@ -647,6 +647,7 @@ fun FuzicNavigation(
                     onSongMoreClick = { songActionTarget = it },
                     onRemoveSongClick = { song -> viewModel.onIntent(PlaylistDetailsIntent.RemoveSong(song.id)) },
                     onSaveEdit = { name, cover ->
+                        navController.previousBackStackEntry?.savedStateHandle?.set("playlist_updated", true)
                         viewModel.onIntent(
                             PlaylistDetailsIntent.SaveEdit(
                                 com.androidprj.fuzic.model.ui.UpdatePlaylistRequest(
@@ -657,7 +658,10 @@ fun FuzicNavigation(
                             )
                         )
                     },
-                    onDeletePlaylist = { viewModel.onIntent(PlaylistDetailsIntent.DeletePlaylist) },
+                    onDeletePlaylist = { 
+                        navController.previousBackStackEntry?.savedStateHandle?.set("playlist_updated", true)
+                        viewModel.onIntent(PlaylistDetailsIntent.DeletePlaylist) 
+                    },
                     onRetryClick = { viewModel.onIntent(PlaylistDetailsIntent.Retry) },
                 )
             }
@@ -1005,9 +1009,21 @@ private fun SessionRestoreScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun PlaylistsDestinationContent(navController: NavHostController) {
+private fun PlaylistsDestinationContent(navController: NavHostController, entry: androidx.navigation.NavBackStackEntry) {
     val viewModel: PlaylistsViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val playlistUpdated by entry.savedStateHandle
+        .getStateFlow("playlist_updated", false)
+        .collectAsStateWithLifecycle()
+
+    LaunchedEffect(playlistUpdated) {
+        if (playlistUpdated) {
+            entry.savedStateHandle["playlist_updated"] = false
+            viewModel.onIntent(PlaylistsIntent.Retry)
+        }
+    }
+
     PlaylistsScreen(
         uiState = uiState,
         onPlaylistClick = { navController.navigate(PlaylistDestination(it.id)) },

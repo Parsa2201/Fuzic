@@ -30,7 +30,7 @@ class RemotePlaylistRepository @Inject constructor(
     override suspend fun getGlobalPlaylists(offset: Long, limit: Long): Result<List<PlaylistItem>> {
         return try {
             val playlists = supabaseClient.postgrest["playlists"]
-                .select { 
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, playlist_songs(count)")) { 
                     filter { eq("is_public", true) } 
                     range(offset, offset + limit - 1)
                 }
@@ -49,7 +49,7 @@ class RemotePlaylistRepository @Inject constructor(
     override suspend fun getUserPlaylists(userId: String, offset: Long, limit: Long): Result<List<PlaylistItem>> {
         return try {
             val playlists = supabaseClient.postgrest["playlists"]
-                .select { 
+                .select(columns = io.github.jan.supabase.postgrest.query.Columns.raw("*, playlist_songs(count)")) { 
                     filter { eq("owner_id", userId) }
                     range(offset, offset + limit - 1)
                 }
