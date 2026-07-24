@@ -299,10 +299,19 @@ class RemoteChatRepository @Inject constructor(
 
     private suspend fun markMessageAsRead(messageId: String): Result<Unit> {
         return try {
-            supabaseClient.postgrest["messages"].update(
-                { "status" to "read" }
+            val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
+                ?: throw Exception("Not logged in")
+            val updatedMessages = supabaseClient.postgrest["messages"].update(
+                { this["status"] = "read" }
             ) {
-                filter { eq("id", messageId) }
+                filter {
+                    eq("id", messageId)
+                    eq("receiver_id", currentUserId)
+                }
+                select()
+            }.decodeList<MessageDto>()
+            check(updatedMessages.size == 1) {
+                "Read receipt was not applied to the message"
             }
             Result.success(Unit)
         } catch (e: Exception) {
