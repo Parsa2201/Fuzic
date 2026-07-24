@@ -547,7 +547,11 @@ private fun ChatComposer(
         modifier = Modifier
             .fillMaxWidth()
             .imePadding()
-            .padding(MaterialTheme.spacing.small),
+            .padding(
+                start = MaterialTheme.spacing.small,
+                top = MaterialTheme.spacing.small,
+                end = MaterialTheme.spacing.small,
+            ),
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
