@@ -214,7 +214,6 @@ private fun FuzicMainTabContent(
         )
         MainTab.Chat -> ChatListScreen(
             uiState = ChatListUiState(),
-            onBackClick = null,
             onConversationClick = {},
             onRetryClick = {},
             modifier = contentModifier

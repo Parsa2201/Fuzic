@@ -86,18 +86,16 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun ChatListRoute(
     uiState: ChatListUiState,
-    onBackClick: (() -> Unit)?,
     onConversationClick: (ChatConversation) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ChatListScreen(uiState, onBackClick, onConversationClick, onRetryClick, modifier)
+    ChatListScreen(uiState, onConversationClick, onRetryClick, modifier)
 }
 
 @Composable
 fun ChatListScreen(
     uiState: ChatListUiState,
-    onBackClick: (() -> Unit)?,
     onConversationClick: (ChatConversation) -> Unit,
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -105,9 +103,6 @@ fun ChatListScreen(
     Column(
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        if (onBackClick != null) {
-            DetailTopAppBar(stringResource(R.string.chat_title), onBackClick)
-        }
         when {
             uiState.isLoading -> ChatLoading()
             uiState.errorMessage != null -> ChatStateMessage(
@@ -618,7 +613,7 @@ private fun ChatStateMessage(
 @Composable
 private fun ChatListPreview() {
     FuzicTheme {
-        ChatListScreen(ChatListUiState(sampleConversations()), {}, {}, {})
+        ChatListScreen(ChatListUiState(sampleConversations()), {}, {})
     }
 }
 
@@ -626,7 +621,7 @@ private fun ChatListPreview() {
 @Composable
 private fun ChatListEmptyPreview() {
     FuzicTheme {
-        ChatListScreen(ChatListUiState(), {}, {}, {})
+        ChatListScreen(ChatListUiState(), {}, {})
     }
 }
 
@@ -634,7 +629,7 @@ private fun ChatListEmptyPreview() {
 @Composable
 private fun ChatListLoadingPreview() {
     FuzicTheme {
-        ChatListScreen(ChatListUiState(isLoading = true), {}, {}, {})
+        ChatListScreen(ChatListUiState(isLoading = true), {}, {})
     }
 }
 
@@ -763,7 +758,7 @@ private fun ChatErrorPreview() {
     FuzicTheme {
         ChatListScreen(
             ChatListUiState(errorMessage = stringResource(R.string.chat_error_title)),
-            {}, {}, {},
+            {}, {},
         )
     }
 }

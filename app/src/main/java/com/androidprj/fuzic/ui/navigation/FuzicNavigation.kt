@@ -831,7 +831,6 @@ fun FuzicNavigation(
                 }
                 ChatListScreen(
                     uiState = uiState,
-                    onBackClick = { navController.popBackStack() },
                     onConversationClick = { conversation ->
                         navController.navigate(
                             ChatDetailDestination(
