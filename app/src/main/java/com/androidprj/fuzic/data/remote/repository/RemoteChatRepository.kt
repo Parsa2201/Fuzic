@@ -6,6 +6,7 @@ import com.androidprj.fuzic.model.remote.SongDto
 import com.androidprj.fuzic.model.remote.TypingDto
 import com.androidprj.fuzic.model.ui.ChatConversation
 import com.androidprj.fuzic.model.ui.ChatMessage
+import com.androidprj.fuzic.model.ui.ChatMessageStatus
 import com.androidprj.fuzic.model.ui.SongItem
 import com.androidprj.fuzic.model.mapper.toFollowUser
 import com.androidprj.fuzic.model.mapper.toChatMessage
@@ -60,6 +61,20 @@ class RemoteChatRepository @Inject constructor(
             val currentUserId = supabaseClient.auth.currentUserOrNull()?.id
                 ?: throw Exception("Not logged in")
             var messages = getChatHistory(conversationId).getOrDefault(emptyList())
+            val unreadMessageIds = messages
+                .filter { message -> message.senderId != currentUserId && message.status != ChatMessageStatus.Read }
+                .map(ChatMessage::id)
+            if (unreadMessageIds.isNotEmpty()) {
+                markMessagesAsRead(conversationId, unreadMessageIds).onSuccess {
+                    messages = messages.map { message ->
+                        if (message.id in unreadMessageIds) {
+                            message.copy(status = ChatMessageStatus.Read)
+                        } else {
+                            message
+                        }
+                    }
+                }
+            }
             emit(PagingData.from(messages))
             messageChanges.collect { change ->
                 val messageDto = change.decodeRecord<MessageDto>()
